@@ -1,44 +1,98 @@
-import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
 
-export default function Home() {
+type ConnState =
+  | { status: "ok"; greeting: string | null; note?: string }
+  | { status: "unconfigured" }
+  | { status: "error"; message: string };
+
+async function checkSupabase(): Promise<ConnState> {
+  if (
+    !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  ) {
+    return { status: "unconfigured" };
+  }
+
+  try {
+    const supabase = await createClient();
+
+    // Proves the client can reach Supabase Auth with the configured keys
+    // (succeeds with no error even when there is no logged-in session).
+    const { error: authError } = await supabase.auth.getSession();
+    if (authError) return { status: "error", message: authError.message };
+
+    // Optional: read a row from the `greetings` table if it exists.
+    const { data, error } = await supabase
+      .from("greetings")
+      .select("message")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      return {
+        status: "ok",
+        greeting: null,
+        note: "Connected. Run supabase/migrations/0001_greetings.sql to see a live row.",
+      };
+    }
+
+    return { status: "ok", greeting: data?.message ?? null };
+  } catch (e) {
+    return { status: "error", message: e instanceof Error ? e.message : String(e) };
+  }
+}
+
+export default async function Home() {
+  const conn = await checkSupabase();
+
   return (
-    <main className="mx-auto flex max-w-3xl flex-1 flex-col gap-8 px-6 py-16">
-      <header className="flex flex-col gap-3">
-        <h1 className="text-3xl font-bold tracking-tight">
-          Melange — Errand Marketplace
-        </h1>
+    <main className="mx-auto flex max-w-xl flex-1 flex-col items-center justify-center gap-8 px-6 py-20 text-center">
+      <div className="flex flex-col gap-2">
+        <h1 className="text-4xl font-bold tracking-tight">Hello, world 👋</h1>
         <p className="text-slate-600 dark:text-slate-300">
-          A student errand marketplace built around a closed-loop trust
-          framework: multi-criteria runner matching, a time-decayed reputation
-          model, rule-based fraud detection, and rule-based dispute resolution
-          with AI-assisted human escalation.
+          Melange — walking skeleton (Next.js + Supabase + Vercel).
         </p>
-      </header>
+      </div>
 
-      <section className="grid gap-4 sm:grid-cols-2">
-        {[
-          ["Matching", "Normalized multi-criteria weighted-sum ranking."],
-          ["Trust", "Time-decayed reputation with Bayesian cold-start."],
-          ["Fraud", "Explainable rule-based detection, two-tier response."],
-          ["Arbitration", "Rule-based resolution, confidence-gated escalation."],
-        ].map(([title, body]) => (
-          <div
-            key={title}
-            className="rounded-lg border border-slate-200 p-4 dark:border-slate-700"
-          >
-            <h2 className="font-semibold">{title}</h2>
-            <p className="text-sm text-slate-600 dark:text-slate-300">{body}</p>
+      <div className="w-full rounded-xl border border-slate-200 p-5 text-left dark:border-slate-700">
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
+          Supabase connection
+        </h2>
+
+        {conn.status === "ok" && (
+          <div className="flex flex-col gap-1">
+            <span className="inline-flex items-center gap-2 font-medium text-green-600 dark:text-green-400">
+              <span className="h-2.5 w-2.5 rounded-full bg-green-500" />
+              Connected
+            </span>
+            {conn.greeting ? (
+              <p className="text-slate-700 dark:text-slate-200">
+                Message from the database:{" "}
+                <strong>&ldquo;{conn.greeting}&rdquo;</strong>
+              </p>
+            ) : (
+              <p className="text-sm text-slate-500">{conn.note}</p>
+            )}
           </div>
-        ))}
-      </section>
+        )}
 
-      <div>
-        <Link
-          href="/demo/matching"
-          className="inline-flex rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 dark:bg-white dark:text-slate-900"
-        >
-          View the matching demo →
-        </Link>
+        {conn.status === "unconfigured" && (
+          <span className="inline-flex items-center gap-2 font-medium text-amber-600 dark:text-amber-400">
+            <span className="h-2.5 w-2.5 rounded-full bg-amber-500" />
+            Not configured — set the Supabase env vars in .env.local
+          </span>
+        )}
+
+        {conn.status === "error" && (
+          <div className="flex flex-col gap-1">
+            <span className="inline-flex items-center gap-2 font-medium text-red-600 dark:text-red-400">
+              <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
+              Connection error
+            </span>
+            <p className="text-sm text-slate-500">{conn.message}</p>
+          </div>
+        )}
       </div>
     </main>
   );

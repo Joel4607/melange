@@ -1,7 +1,6 @@
-import type { Metadata, Viewport } from "next";
+import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -17,12 +16,6 @@ export const metadata: Metadata = {
   title: "Melange — Errand Marketplace",
   description:
     "A student errand marketplace with trust-based runner matching.",
-  manifest: "/manifest.webmanifest",
-  appleWebApp: { capable: true, title: "Melange", statusBarStyle: "default" },
-};
-
-export const viewport: Viewport = {
-  themeColor: "#0f172a",
 };
 
 export default function RootLayout({
@@ -35,10 +28,7 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
-        <ServiceWorkerRegister />
-        {children}
-      </body>
+      <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );
 }
