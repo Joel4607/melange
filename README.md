@@ -52,6 +52,30 @@ DATABASE_URL=postgres://postgres:postgres@localhost:5432/postgres \
   ./scripts/verify-migrations.sh
 ```
 
+## Trust framework (algorithm module)
+
+The core technical contribution lives in `src/lib/algorithm/` as **pure,
+framework-agnostic functions** (inputs → scores/decisions) with no database,
+network, or Next.js imports, so it can be unit-tested and reasoned about in
+isolation:
+
+| Module | Responsibility |
+| ------ | -------------- |
+| `geo.ts` | Haversine great-circle distance |
+| `trust.ts` | `computeTrust` — time-decayed, Bayesian cold-start trust score |
+| `matching.ts` | `rankRunners` — normalized weighted-sum multi-criteria ranking |
+| `fraud.ts` | `evaluateFraud` — explainable rule-based risk (noisy-OR aggregation) |
+| `arbitration.ts` | `arbitrate` — rule-based dispute resolution with human escalation |
+| `types.ts` | Shared input/output types and config shapes |
+
+Unit tests live in `src/lib/algorithm/__tests__/` and run with
+[Vitest](https://vitest.dev):
+
+```bash
+npm test          # run once (CI)
+npm run test:watch
+```
+
 ## Environment variables
 
 | Variable                        | Where        | Notes                              |
@@ -69,6 +93,7 @@ Set the same variables in the Vercel project (Settings → Environment Variables
 | `npm run dev`       | Dev server               |
 | `npm run build`     | Production build         |
 | `npm run lint`      | ESLint                   |
+| `npm test`          | Vitest (algorithm tests) |
 | `npm run typecheck` | TypeScript (no emit)     |
 
 ## Deploy (Vercel)
