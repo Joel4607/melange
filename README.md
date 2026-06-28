@@ -76,6 +76,26 @@ npm test          # run once (CI)
 npm run test:watch
 ```
 
+## Wiring layer (DB ⇄ algorithm)
+
+`src/lib/server/` is the only place the pure algorithm meets the database. It
+runs through a **service-role** Supabase client (`src/lib/supabase/service.ts`)
+for the privileged writes RLS bars clients from — escrow, match snapshots,
+dispute resolutions:
+
+| Function | What it does |
+| -------- | ------------ |
+| `generateMatchRun(taskId)` | loads available runners, derives fresh trust + fraud risk, ranks via `rankRunners`, persists a `match_runs` + `match_candidates` snapshot |
+| `holdFunds` / `releaseFunds` / `refund` | simulated escrow: move a task's price between `wallets.balance` / `held`, append the `ledger_entries` audit row |
+| `resolveDispute(disputeId)` | gathers proof/GPS/fraud context, runs `arbitrate`, auto-resolves clear cases (applying the escrow effect) or marks the dispute `escalated` |
+
+Seed a fresh end-to-end scenario (users → task → match → hold → proof → dispute
+→ release) against your project:
+
+```bash
+npm run seed      # needs SUPABASE_SERVICE_ROLE_KEY in .env.local
+```
+
 ## Environment variables
 
 | Variable                        | Where        | Notes                              |
