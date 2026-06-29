@@ -22,6 +22,7 @@ import {
   MessageCircle,
   Check,
   X,
+  Camera,
   type LucideIcon,
 } from "lucide-react";
 
@@ -79,6 +80,37 @@ const exceptions = [
   "No banking transactions requiring PINs or passwords",
 ];
 
+// Hand-drawn marker underline (echoes the brand flyer's orange swoosh).
+function HandUnderline({ className = "" }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 300 18"
+      fill="none"
+      preserveAspectRatio="none"
+      aria-hidden
+      className={className}
+    >
+      <path
+        d="M4 12.5C61 6 121 4.5 180 6.5c40 1.4 80 3.6 116 6.5"
+        stroke="currentColor"
+        strokeWidth="5"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+// Editorial eyebrow: small label, a rule, and a small label on the right.
+function EyebrowRule({ left, right }: { left: string; right: string }) {
+  return (
+    <div className="flex items-center gap-4 text-xs font-medium uppercase tracking-[0.18em] text-muted">
+      <span className="shrink-0">{left}</span>
+      <span className="h-px flex-1 bg-cream-deep" />
+      <span className="shrink-0">{right}</span>
+    </div>
+  );
+}
+
 function Logo() {
   return (
     <span className="inline-flex items-baseline gap-1 font-display text-2xl font-semibold tracking-tight text-green-deep">
@@ -113,7 +145,10 @@ export default function Home() {
 
       {/* Hero */}
       <section className="relative overflow-hidden">
-        <div className="mx-auto grid max-w-6xl items-center gap-10 px-5 py-16 md:grid-cols-2 md:py-24">
+        <div className="mx-auto max-w-6xl px-5 pt-10">
+          <EyebrowRule left="Concierge errands" right="Serving Accra & beyond" />
+        </div>
+        <div className="mx-auto grid max-w-6xl items-center gap-10 px-5 pb-16 pt-10 md:grid-cols-2 md:pb-24">
           <div className="flex flex-col gap-6">
             <span className="inline-flex w-fit items-center gap-2 rounded-full bg-green/10 px-4 py-1.5 text-sm font-medium text-green-deep">
               <Sparkles className="h-4 w-4" aria-hidden />
@@ -121,7 +156,10 @@ export default function Home() {
             </span>
             <h1 className="font-display text-5xl font-semibold leading-[1.05] tracking-tight text-green-deep md:text-6xl">
               Errands,{" "}
-              <span className="italic text-orange">run for you.</span>
+              <span className="relative inline-block italic text-orange">
+                run for you.
+                <HandUnderline className="absolute -bottom-2 left-0 h-3 w-full text-orange" />
+              </span>
             </h1>
             <p className="max-w-md text-lg text-muted">
               You take care of life — we&apos;ll take care of the rest. Market
@@ -237,22 +275,21 @@ export default function Home() {
               Three steps to stress-free
             </h2>
           </div>
-          <div className="mt-12 grid gap-6 md:grid-cols-3">
+          <div className="mt-14 grid gap-10 md:grid-cols-3 md:gap-8">
             {steps.map((s, i) => (
-              <div
-                key={s.title}
-                className="relative rounded-2xl border border-cream-deep bg-white p-7 shadow-sm"
-              >
-                <span className="absolute right-6 top-6 font-display text-5xl font-semibold text-cream-deep">
-                  {i + 1}
-                </span>
-                <span className="grid h-12 w-12 place-items-center rounded-2xl bg-orange/10 text-orange-deep">
-                  <s.icon className="h-6 w-6" aria-hidden />
-                </span>
-                <h3 className="mt-4 font-display text-xl font-semibold text-green-deep">
+              <div key={s.title} className="flex flex-col">
+                <div className="flex items-baseline justify-between border-t-2 border-cream-deep pt-4">
+                  <span className="font-display text-5xl font-semibold text-orange">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <span className="grid h-11 w-11 place-items-center rounded-2xl bg-green/10 text-green">
+                    <s.icon className="h-5 w-5" aria-hidden />
+                  </span>
+                </div>
+                <h3 className="mt-5 font-display text-2xl font-semibold text-green-deep">
                   {s.title}
                 </h3>
-                <p className="mt-1 text-muted">{s.blurb}</p>
+                <p className="mt-2 text-muted">{s.blurb}</p>
               </div>
             ))}
           </div>
@@ -320,21 +357,54 @@ export default function Home() {
             </ul>
           </div>
 
-          <div className="rounded-[2rem] border border-cream-deep bg-white p-8 shadow-lg">
-            <p className="text-sm font-medium text-muted">Errand service fee starts from</p>
-            <p className="mt-1 font-display text-6xl font-semibold text-green-deep">
-              GHS 50
+          {/* Sample errand receipt (transparency device) */}
+          <div className="rounded-[2rem] border border-cream-deep bg-white p-7 shadow-lg">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-display text-lg font-semibold text-green-deep">
+                  Sample errand
+                </p>
+                <p className="text-sm text-muted">Market run · Accra</p>
+              </div>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-green/10 px-3 py-1 text-xs font-semibold text-green-deep">
+                <span className="h-2 w-2 rounded-full bg-green-soft" />
+                Delivered
+              </span>
+            </div>
+
+            <div className="my-5 border-t border-dashed border-cream-deep" />
+
+            <dl className="space-y-2.5 text-sm">
+              {[
+                ["Groceries (paid at store)", "GHS 180.00"],
+                ["Errand service fee", "GHS 50.00"],
+                ["Delivery fee (3.2 km)", "GHS 22.00"],
+              ].map(([label, amount]) => (
+                <div key={label} className="flex justify-between">
+                  <dt className="text-muted">{label}</dt>
+                  <dd className="font-medium text-ink">{amount}</dd>
+                </div>
+              ))}
+              <div className="flex justify-between border-t border-cream-deep pt-3">
+                <dt className="font-semibold text-green-deep">Total</dt>
+                <dd className="font-display text-xl font-semibold text-green-deep">
+                  GHS 252.00
+                </dd>
+              </div>
+            </dl>
+
+            <div className="mt-5 flex items-center gap-2 rounded-2xl bg-cream p-3 text-sm text-green-deep">
+              <Camera className="h-4 w-4 shrink-0 text-orange-deep" aria-hidden />
+              Photo proof shared on delivery — no surprises.
+            </div>
+
+            <p className="mt-4 text-center font-display text-sm italic text-orange-deep">
+              Receipts always provided on request →
             </p>
-            <p className="mt-1 text-muted">and above</p>
-            <div className="my-6 h-px bg-cream-deep" />
-            <p className="text-sm text-muted">
-              Delivery fee is paid separately and depends on the factors listed.
-              Advance payment may be required for large purchases; same-day
-              service is subject to availability.
-            </p>
+
             <a
               href="#get-started"
-              className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-orange px-6 py-3.5 font-semibold text-white transition hover:bg-orange-deep"
+              className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-orange px-6 py-3.5 font-semibold text-white transition hover:bg-orange-deep"
             >
               Post an errand
               <ArrowRight className="h-4 w-4" aria-hidden />
