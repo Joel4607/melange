@@ -25,6 +25,7 @@ import {
   Camera,
   type LucideIcon,
 } from "lucide-react";
+import Link from "next/link";
 
 const WHATSAPP = "https://wa.me/233557644244";
 const PHONE = "tel:+233557644244";
@@ -134,12 +135,20 @@ export default function Home() {
             <a href="#how" className="hover:text-orange-deep">How it works</a>
             <a href="#pricing" className="hover:text-orange-deep">Pricing</a>
           </div>
-          <a
-            href="#get-started"
-            className="rounded-full bg-orange px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-deep"
-          >
-            Post an errand
-          </a>
+          <div className="flex items-center gap-4">
+            <Link
+              href="/login"
+              className="hidden text-sm font-medium text-green-deep hover:text-orange-deep sm:inline"
+            >
+              Log in
+            </Link>
+            <Link
+              href="/get-started"
+              className="rounded-full bg-orange px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-deep"
+            >
+              Post an errand
+            </Link>
+          </div>
         </nav>
       </header>
 
@@ -167,8 +176,8 @@ export default function Home() {
               between.
             </p>
 
-            {/* Intent input (visual for now) */}
-            <form action="#get-started" className="flex max-w-md flex-col gap-3 sm:flex-row">
+            {/* Intent input (visual entry point into onboarding) */}
+            <form action="/get-started" className="flex max-w-md flex-col gap-3 sm:flex-row">
               <input
                 type="text"
                 placeholder="What do you need run today?"
@@ -402,13 +411,13 @@ export default function Home() {
               Receipts always provided on request →
             </p>
 
-            <a
-              href="#get-started"
+            <Link
+              href="/get-started"
               className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-orange px-6 py-3.5 font-semibold text-white transition hover:bg-orange-deep"
             >
               Post an errand
               <ArrowRight className="h-4 w-4" aria-hidden />
-            </a>
+            </Link>
           </div>
         </div>
       </section>
