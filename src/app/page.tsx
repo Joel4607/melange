@@ -103,9 +103,9 @@ function HandUnderline({ className = "" }: { className?: string }) {
 // Editorial eyebrow: small label, a rule, and a small label on the right.
 function EyebrowRule({ left, right }: { left: string; right: string }) {
   return (
-    <div className="flex items-center gap-4 text-xs font-medium uppercase tracking-[0.18em] text-muted">
+    <div className="flex items-center gap-2.5 text-[10px] font-medium uppercase tracking-[0.12em] text-muted sm:gap-4 sm:text-xs sm:tracking-[0.18em]">
       <span className="shrink-0">{left}</span>
-      <span className="h-px flex-1 bg-cream-deep" />
+      <span className="h-px min-w-3 flex-1 bg-cream-deep" />
       <span className="shrink-0">{right}</span>
     </div>
   );
@@ -146,7 +146,7 @@ export default function Home() {
       {/* Hero */}
       <section className="relative overflow-hidden">
         <div className="mx-auto max-w-6xl px-5 pt-10">
-          <EyebrowRule left="Concierge errands" right="Serving Accra & beyond" />
+          <EyebrowRule left="Concierge errands" right="Accra & beyond" />
         </div>
         <div className="mx-auto grid max-w-6xl items-center gap-10 px-5 pb-16 pt-10 md:grid-cols-2 md:pb-24">
           <div className="flex flex-col gap-6">
@@ -154,7 +154,7 @@ export default function Home() {
               <Sparkles className="h-4 w-4" aria-hidden />
               Busy schedule? I&apos;m here to help.
             </span>
-            <h1 className="font-display text-5xl font-semibold leading-[1.05] tracking-tight text-green-deep md:text-6xl">
+            <h1 className="font-display text-fluid-hero font-semibold tracking-tight text-green-deep">
               Errands,{" "}
               <span className="relative inline-block italic text-orange">
                 run for you.
@@ -235,13 +235,13 @@ export default function Home() {
       </section>
 
       {/* Services */}
-      <section id="services" className="bg-white py-20">
+      <section id="services" className="bg-white py-14 sm:py-20">
         <div className="mx-auto max-w-6xl px-5">
           <div className="mx-auto max-w-2xl text-center">
             <p className="font-semibold uppercase tracking-wide text-orange">
               Services I offer
             </p>
-            <h2 className="mt-2 font-display text-4xl font-semibold text-green-deep">
+            <h2 className="mt-2 font-display text-fluid-h2 font-semibold text-green-deep">
               Whatever the errand, consider it done
             </h2>
           </div>
@@ -265,13 +265,13 @@ export default function Home() {
       </section>
 
       {/* How it works */}
-      <section id="how" className="py-20">
+      <section id="how" className="py-14 sm:py-20">
         <div className="mx-auto max-w-6xl px-5">
           <div className="mx-auto max-w-2xl text-center">
             <p className="font-semibold uppercase tracking-wide text-orange">
               How it works
             </p>
-            <h2 className="mt-2 font-display text-4xl font-semibold text-green-deep">
+            <h2 className="mt-2 font-display text-fluid-h2 font-semibold text-green-deep">
               Three steps to stress-free
             </h2>
           </div>
@@ -297,13 +297,13 @@ export default function Home() {
       </section>
 
       {/* Why choose us */}
-      <section className="bg-green py-20 text-cream">
+      <section className="bg-green py-14 sm:py-20 text-cream">
         <div className="mx-auto max-w-6xl px-5">
           <div className="mx-auto max-w-2xl text-center">
             <p className="font-semibold uppercase tracking-wide text-orange">
               Why choose us
             </p>
-            <h2 className="mt-2 font-display text-4xl font-semibold">
+            <h2 className="mt-2 font-display text-fluid-h2 font-semibold">
               Save time. Reduce stress. Let us handle it.
             </h2>
           </div>
@@ -327,13 +327,13 @@ export default function Home() {
       </section>
 
       {/* Pricing */}
-      <section id="pricing" className="py-20">
+      <section id="pricing" className="py-14 sm:py-20">
         <div className="mx-auto grid max-w-6xl gap-10 px-5 md:grid-cols-2 md:items-center">
           <div>
             <p className="font-semibold uppercase tracking-wide text-orange">
               Charges &amp; fees
             </p>
-            <h2 className="mt-2 font-display text-4xl font-semibold text-green-deep">
+            <h2 className="mt-2 font-display text-fluid-h2 font-semibold text-green-deep">
               Fair, transparent pricing
             </h2>
             <p className="mt-4 text-muted">
@@ -414,13 +414,13 @@ export default function Home() {
       </section>
 
       {/* Testimonials */}
-      <section className="bg-white py-20">
+      <section className="bg-white py-14 sm:py-20">
         <div className="mx-auto max-w-6xl px-5">
           <div className="mx-auto max-w-2xl text-center">
             <p className="font-semibold uppercase tracking-wide text-orange">
               Loved by busy people
             </p>
-            <h2 className="mt-2 font-display text-4xl font-semibold text-green-deep">
+            <h2 className="mt-2 font-display text-fluid-h2 font-semibold text-green-deep">
               You relax — we run
             </h2>
           </div>
@@ -447,9 +447,9 @@ export default function Home() {
       </section>
 
       {/* Important notes / exceptions */}
-      <section className="py-20">
+      <section className="py-14 sm:py-20">
         <div className="mx-auto max-w-3xl px-5">
-          <div className="rounded-[2rem] border border-cream-deep bg-white p-8 shadow-sm">
+          <div className="rounded-[2rem] border border-cream-deep bg-white p-6 shadow-sm sm:p-8">
             <h2 className="font-display text-2xl font-semibold text-green-deep">
               A few things we don&apos;t handle
             </h2>
@@ -471,9 +471,9 @@ export default function Home() {
       </section>
 
       {/* Get started / CTA band */}
-      <section id="get-started" className="px-5 pb-20">
-        <div className="mx-auto max-w-6xl overflow-hidden rounded-[2.5rem] bg-green px-8 py-14 text-center text-cream shadow-xl">
-          <h2 className="mx-auto max-w-2xl font-display text-4xl font-semibold md:text-5xl">
+      <section id="get-started" className="px-5 pb-14 sm:pb-20">
+        <div className="mx-auto max-w-6xl overflow-hidden rounded-[2rem] bg-green px-6 py-12 text-center text-cream shadow-xl sm:rounded-[2.5rem] sm:px-8 sm:py-14">
+          <h2 className="mx-auto max-w-2xl font-display text-fluid-cta font-semibold">
             Save time. Reduce stress. Get more done.
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-cream/80">

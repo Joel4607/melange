@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Fraunces } from "next/font/google";
 import "./globals.css";
 
@@ -23,6 +23,13 @@ export const metadata: Metadata = {
   title: "Mélange — Errands, run for you",
   description:
     "You take care of life — we'll take care of the rest. Mélange runs your errands: market runs, groceries, pharmacy pickups, deliveries and more.",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#1e5631",
 };
 
 export default function RootLayout({
