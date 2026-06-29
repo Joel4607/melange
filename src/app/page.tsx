@@ -1,99 +1,442 @@
-import { createClient } from "@/lib/supabase/server";
+import {
+  ShoppingCart,
+  ShoppingBasket,
+  Pill,
+  Shirt,
+  PackageOpen,
+  House,
+  Gift,
+  Sparkles,
+  ShieldCheck,
+  EyeOff,
+  BadgeCheck,
+  Clock,
+  Wallet,
+  Smile,
+  ClipboardList,
+  UserCheck,
+  PackageCheck,
+  Star,
+  ArrowRight,
+  Phone,
+  MessageCircle,
+  Check,
+  X,
+  type LucideIcon,
+} from "lucide-react";
 
-type ConnState =
-  | { status: "ok"; greeting: string | null; note?: string }
-  | { status: "unconfigured" }
-  | { status: "error"; message: string };
+const WHATSAPP = "https://wa.me/233557644244";
+const PHONE = "tel:+233557644244";
 
-async function checkSupabase(): Promise<ConnState> {
-  if (
-    !process.env.NEXT_PUBLIC_SUPABASE_URL ||
-    !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  ) {
-    return { status: "unconfigured" };
-  }
+const services: { icon: LucideIcon; title: string; blurb: string }[] = [
+  { icon: ShoppingCart, title: "Market Runs", blurb: "Fresh produce, groceries, provisions & more" },
+  { icon: ShoppingBasket, title: "Grocery Shopping", blurb: "Supermarkets, bulk buying, monthly restocking" },
+  { icon: Pill, title: "Pharmacy Pickup", blurb: "Medicines, toiletries, drugs & personal care" },
+  { icon: Shirt, title: "Clothes & Apparel", blurb: "Fashion, shoes, accessories for every occasion" },
+  { icon: PackageOpen, title: "Pickup & Delivery", blurb: "Documents, packages, items, drop-offs & more" },
+  { icon: House, title: "Household Items", blurb: "Everything you need for your home" },
+  { icon: Gift, title: "Gifts & Occasions", blurb: "Birthdays, surprises, celebrations & more" },
+  { icon: Sparkles, title: "Any Other Errand", blurb: "Just tell us what you need — we'll handle it" },
+];
 
-  try {
-    const supabase = await createClient();
+const steps: { icon: LucideIcon; title: string; blurb: string }[] = [
+  { icon: ClipboardList, title: "Post your errand", blurb: "Tell us what you need run, where, and your budget." },
+  { icon: UserCheck, title: "We match a runner", blurb: "A trusted, nearby runner is matched by distance, rating & availability." },
+  { icon: PackageCheck, title: "Track, get proof, pay", blurb: "Follow it live, get photo proof on delivery, then pay securely." },
+];
 
-    // Proves the client can reach Supabase Auth with the configured keys
-    // (succeeds with no error even when there is no logged-in session).
-    const { error: authError } = await supabase.auth.getSession();
-    if (authError) return { status: "error", message: authError.message };
+const trust: { icon: LucideIcon; title: string; blurb: string }[] = [
+  { icon: ShieldCheck, title: "Reliable", blurb: "You can count on us" },
+  { icon: EyeOff, title: "Discreet", blurb: "Your privacy matters" },
+  { icon: BadgeCheck, title: "Professional", blurb: "Quality service always" },
+  { icon: Clock, title: "On time", blurb: "Punctual & efficient" },
+  { icon: Wallet, title: "Affordable", blurb: "Fair pricing always" },
+  { icon: Smile, title: "Friendly", blurb: "Service with a smile" },
+];
 
-    // Optional: read a row from the `greetings` table if it exists.
-    const { data, error } = await supabase
-      .from("greetings")
-      .select("message")
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+const testimonials: { quote: string; name: string; tag: string }[] = [
+  {
+    quote: "We made our first delivery today — fast and stress-free. Thank you for trusting us!",
+    name: "Ama K.",
+    tag: "Market run, Accra",
+  },
+  {
+    quote: "Picked up my prescription and dropped it at my door while I was at work. Lifesaver.",
+    name: "Kofi A.",
+    tag: "Pharmacy pickup",
+  },
+  {
+    quote: "Sent a birthday gift across town in an hour. The runner even sent a photo on delivery.",
+    name: "Esi M.",
+    tag: "Gifts & occasions",
+  },
+];
 
-    if (error) {
-      return {
-        status: "ok",
-        greeting: null,
-        note: "Connected. Run supabase/migrations/0001_greetings.sql to see a live row.",
-      };
-    }
+const exceptions = [
+  "No handling of illegal items",
+  "No cash lending or financial transactions on behalf of clients",
+  "No purchase of restricted items without proper authorisation",
+  "No banking transactions requiring PINs or passwords",
+];
 
-    return { status: "ok", greeting: data?.message ?? null };
-  } catch (e) {
-    return { status: "error", message: e instanceof Error ? e.message : String(e) };
-  }
+function Logo() {
+  return (
+    <span className="inline-flex items-baseline gap-1 font-display text-2xl font-semibold tracking-tight text-green-deep">
+      <span className="grid h-8 w-8 place-items-center rounded-full bg-green text-cream">
+        <ShoppingBasket className="h-4 w-4" aria-hidden />
+      </span>
+      Mélange
+    </span>
+  );
 }
 
-export default async function Home() {
-  const conn = await checkSupabase();
-
+export default function Home() {
   return (
-    <main className="mx-auto flex max-w-xl flex-1 flex-col items-center justify-center gap-8 px-6 py-20 text-center">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-4xl font-bold tracking-tight">Hello, world 👋</h1>
-        <p className="text-slate-600 dark:text-slate-300">
-          Melange — walking skeleton (Next.js + Supabase + Vercel).
-        </p>
-      </div>
+    <div className="flex flex-col">
+      {/* Header */}
+      <header className="sticky top-0 z-20 border-b border-cream-deep/70 bg-cream/85 backdrop-blur">
+        <nav className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4">
+          <Logo />
+          <div className="hidden items-center gap-8 text-sm font-medium text-green-deep md:flex">
+            <a href="#services" className="hover:text-orange-deep">Services</a>
+            <a href="#how" className="hover:text-orange-deep">How it works</a>
+            <a href="#pricing" className="hover:text-orange-deep">Pricing</a>
+          </div>
+          <a
+            href="#get-started"
+            className="rounded-full bg-orange px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-deep"
+          >
+            Post an errand
+          </a>
+        </nav>
+      </header>
 
-      <div className="w-full rounded-xl border border-slate-200 p-5 text-left dark:border-slate-700">
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
-          Supabase connection
-        </h2>
-
-        {conn.status === "ok" && (
-          <div className="flex flex-col gap-1">
-            <span className="inline-flex items-center gap-2 font-medium text-green-600 dark:text-green-400">
-              <span className="h-2.5 w-2.5 rounded-full bg-green-500" />
-              Connected
+      {/* Hero */}
+      <section className="relative overflow-hidden">
+        <div className="mx-auto grid max-w-6xl items-center gap-10 px-5 py-16 md:grid-cols-2 md:py-24">
+          <div className="flex flex-col gap-6">
+            <span className="inline-flex w-fit items-center gap-2 rounded-full bg-green/10 px-4 py-1.5 text-sm font-medium text-green-deep">
+              <Sparkles className="h-4 w-4" aria-hidden />
+              Busy schedule? I&apos;m here to help.
             </span>
-            {conn.greeting ? (
-              <p className="text-slate-700 dark:text-slate-200">
-                Message from the database:{" "}
-                <strong>&ldquo;{conn.greeting}&rdquo;</strong>
+            <h1 className="font-display text-5xl font-semibold leading-[1.05] tracking-tight text-green-deep md:text-6xl">
+              Errands,{" "}
+              <span className="italic text-orange">run for you.</span>
+            </h1>
+            <p className="max-w-md text-lg text-muted">
+              You take care of life — we&apos;ll take care of the rest. Market
+              runs, groceries, pharmacy pickups, deliveries and anything in
+              between.
+            </p>
+
+            {/* Intent input (visual for now) */}
+            <form action="#get-started" className="flex max-w-md flex-col gap-3 sm:flex-row">
+              <input
+                type="text"
+                placeholder="What do you need run today?"
+                aria-label="What do you need run today?"
+                className="w-full rounded-full border border-cream-deep bg-white px-5 py-3.5 text-ink shadow-sm outline-none placeholder:text-muted focus:border-green-soft"
+              />
+              <button
+                type="submit"
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-green px-6 py-3.5 font-semibold text-cream transition hover:bg-green-deep"
+              >
+                Get started
+                <ArrowRight className="h-4 w-4" aria-hidden />
+              </button>
+            </form>
+
+            <div className="flex items-center gap-3 text-sm text-muted">
+              <span className="flex text-orange">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Star key={i} className="h-4 w-4 fill-current" aria-hidden />
+                ))}
+              </span>
+              Trusted for fast, reliable errands across the city.
+            </div>
+          </div>
+
+          {/* Hero card */}
+          <div className="relative">
+            <div className="absolute -right-6 -top-6 hidden h-32 w-32 rounded-full bg-orange/15 md:block" />
+            <div className="relative rounded-[2rem] bg-green p-7 text-cream shadow-xl">
+              <div className="flex items-center justify-between">
+                <span className="font-display text-xl font-semibold">
+                  Errands by Mélange
+                </span>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-cream px-3 py-1 text-xs font-semibold text-green-deep">
+                  <span className="h-2 w-2 rounded-full bg-green-soft" />
+                  Open
+                </span>
+              </div>
+              <p className="mt-2 text-cream/80">
+                I run it, so you don&apos;t have to.
               </p>
-            ) : (
-              <p className="text-sm text-slate-500">{conn.note}</p>
-            )}
-          </div>
-        )}
 
-        {conn.status === "unconfigured" && (
-          <span className="inline-flex items-center gap-2 font-medium text-amber-600 dark:text-amber-400">
-            <span className="h-2.5 w-2.5 rounded-full bg-amber-500" />
-            Not configured — set the Supabase env vars in .env.local
-          </span>
-        )}
+              <div className="mt-6 grid grid-cols-2 gap-3">
+                {services.slice(0, 4).map((s) => (
+                  <div
+                    key={s.title}
+                    className="flex items-center gap-3 rounded-2xl bg-cream/10 p-3"
+                  >
+                    <span className="grid h-9 w-9 place-items-center rounded-xl bg-cream text-green">
+                      <s.icon className="h-4 w-4" aria-hidden />
+                    </span>
+                    <span className="text-sm font-medium">{s.title}</span>
+                  </div>
+                ))}
+              </div>
 
-        {conn.status === "error" && (
-          <div className="flex flex-col gap-1">
-            <span className="inline-flex items-center gap-2 font-medium text-red-600 dark:text-red-400">
-              <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
-              Connection error
-            </span>
-            <p className="text-sm text-slate-500">{conn.message}</p>
+              <div className="mt-6 flex items-center justify-between rounded-2xl bg-orange px-4 py-3 text-white">
+                <span className="text-sm font-medium">Errand fee from</span>
+                <span className="font-display text-2xl font-semibold">GHS 50</span>
+              </div>
+            </div>
           </div>
-        )}
-      </div>
-    </main>
+        </div>
+      </section>
+
+      {/* Services */}
+      <section id="services" className="bg-white py-20">
+        <div className="mx-auto max-w-6xl px-5">
+          <div className="mx-auto max-w-2xl text-center">
+            <p className="font-semibold uppercase tracking-wide text-orange">
+              Services I offer
+            </p>
+            <h2 className="mt-2 font-display text-4xl font-semibold text-green-deep">
+              Whatever the errand, consider it done
+            </h2>
+          </div>
+          <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {services.map((s) => (
+              <div
+                key={s.title}
+                className="group rounded-2xl border border-cream-deep bg-cream p-6 transition hover:-translate-y-1 hover:shadow-lg"
+              >
+                <span className="grid h-12 w-12 place-items-center rounded-2xl bg-green text-cream transition group-hover:bg-orange">
+                  <s.icon className="h-6 w-6" aria-hidden />
+                </span>
+                <h3 className="mt-4 font-display text-xl font-semibold text-green-deep">
+                  {s.title}
+                </h3>
+                <p className="mt-1 text-sm text-muted">{s.blurb}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* How it works */}
+      <section id="how" className="py-20">
+        <div className="mx-auto max-w-6xl px-5">
+          <div className="mx-auto max-w-2xl text-center">
+            <p className="font-semibold uppercase tracking-wide text-orange">
+              How it works
+            </p>
+            <h2 className="mt-2 font-display text-4xl font-semibold text-green-deep">
+              Three steps to stress-free
+            </h2>
+          </div>
+          <div className="mt-12 grid gap-6 md:grid-cols-3">
+            {steps.map((s, i) => (
+              <div
+                key={s.title}
+                className="relative rounded-2xl border border-cream-deep bg-white p-7 shadow-sm"
+              >
+                <span className="absolute right-6 top-6 font-display text-5xl font-semibold text-cream-deep">
+                  {i + 1}
+                </span>
+                <span className="grid h-12 w-12 place-items-center rounded-2xl bg-orange/10 text-orange-deep">
+                  <s.icon className="h-6 w-6" aria-hidden />
+                </span>
+                <h3 className="mt-4 font-display text-xl font-semibold text-green-deep">
+                  {s.title}
+                </h3>
+                <p className="mt-1 text-muted">{s.blurb}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Why choose us */}
+      <section className="bg-green py-20 text-cream">
+        <div className="mx-auto max-w-6xl px-5">
+          <div className="mx-auto max-w-2xl text-center">
+            <p className="font-semibold uppercase tracking-wide text-orange">
+              Why choose us
+            </p>
+            <h2 className="mt-2 font-display text-4xl font-semibold">
+              Save time. Reduce stress. Let us handle it.
+            </h2>
+          </div>
+          <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {trust.map((t) => (
+              <div
+                key={t.title}
+                className="flex items-start gap-4 rounded-2xl bg-cream/10 p-6"
+              >
+                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-cream text-green">
+                  <t.icon className="h-5 w-5" aria-hidden />
+                </span>
+                <div>
+                  <h3 className="font-display text-lg font-semibold">{t.title}</h3>
+                  <p className="text-sm text-cream/80">{t.blurb}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing */}
+      <section id="pricing" className="py-20">
+        <div className="mx-auto grid max-w-6xl gap-10 px-5 md:grid-cols-2 md:items-center">
+          <div>
+            <p className="font-semibold uppercase tracking-wide text-orange">
+              Charges &amp; fees
+            </p>
+            <h2 className="mt-2 font-display text-4xl font-semibold text-green-deep">
+              Fair, transparent pricing
+            </h2>
+            <p className="mt-4 text-muted">
+              Shopping costs are paid by the customer. Delivery fees are separate
+              from service fees, and receipts are always provided on request.
+            </p>
+            <ul className="mt-6 space-y-3">
+              {[
+                "Distance",
+                "Waiting time",
+                "Number of stops",
+                "Complexity of errand",
+              ].map((f) => (
+                <li key={f} className="flex items-center gap-3 text-ink">
+                  <span className="grid h-6 w-6 place-items-center rounded-full bg-green text-cream">
+                    <Check className="h-3.5 w-3.5" aria-hidden />
+                  </span>
+                  {f}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="rounded-[2rem] border border-cream-deep bg-white p-8 shadow-lg">
+            <p className="text-sm font-medium text-muted">Errand service fee starts from</p>
+            <p className="mt-1 font-display text-6xl font-semibold text-green-deep">
+              GHS 50
+            </p>
+            <p className="mt-1 text-muted">and above</p>
+            <div className="my-6 h-px bg-cream-deep" />
+            <p className="text-sm text-muted">
+              Delivery fee is paid separately and depends on the factors listed.
+              Advance payment may be required for large purchases; same-day
+              service is subject to availability.
+            </p>
+            <a
+              href="#get-started"
+              className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-orange px-6 py-3.5 font-semibold text-white transition hover:bg-orange-deep"
+            >
+              Post an errand
+              <ArrowRight className="h-4 w-4" aria-hidden />
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials */}
+      <section className="bg-white py-20">
+        <div className="mx-auto max-w-6xl px-5">
+          <div className="mx-auto max-w-2xl text-center">
+            <p className="font-semibold uppercase tracking-wide text-orange">
+              Loved by busy people
+            </p>
+            <h2 className="mt-2 font-display text-4xl font-semibold text-green-deep">
+              You relax — we run
+            </h2>
+          </div>
+          <div className="mt-12 grid gap-6 md:grid-cols-3">
+            {testimonials.map((t) => (
+              <figure
+                key={t.name}
+                className="flex flex-col gap-4 rounded-2xl border border-cream-deep bg-cream p-6"
+              >
+                <span className="flex text-orange">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Star key={i} className="h-4 w-4 fill-current" aria-hidden />
+                  ))}
+                </span>
+                <blockquote className="text-ink">&ldquo;{t.quote}&rdquo;</blockquote>
+                <figcaption className="mt-auto">
+                  <p className="font-semibold text-green-deep">{t.name}</p>
+                  <p className="text-sm text-muted">{t.tag}</p>
+                </figcaption>
+              </figure>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Important notes / exceptions */}
+      <section className="py-20">
+        <div className="mx-auto max-w-3xl px-5">
+          <div className="rounded-[2rem] border border-cream-deep bg-white p-8 shadow-sm">
+            <h2 className="font-display text-2xl font-semibold text-green-deep">
+              A few things we don&apos;t handle
+            </h2>
+            <p className="mt-2 text-muted">
+              For everyone&apos;s safety, there are some errands we can&apos;t run.
+            </p>
+            <ul className="mt-6 grid gap-3 sm:grid-cols-2">
+              {exceptions.map((e) => (
+                <li key={e} className="flex items-start gap-3 text-ink">
+                  <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full bg-orange/15 text-orange-deep">
+                    <X className="h-3.5 w-3.5" aria-hidden />
+                  </span>
+                  {e}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      {/* Get started / CTA band */}
+      <section id="get-started" className="px-5 pb-20">
+        <div className="mx-auto max-w-6xl overflow-hidden rounded-[2.5rem] bg-green px-8 py-14 text-center text-cream shadow-xl">
+          <h2 className="mx-auto max-w-2xl font-display text-4xl font-semibold md:text-5xl">
+            Save time. Reduce stress. Get more done.
+          </h2>
+          <p className="mx-auto mt-4 max-w-xl text-cream/80">
+            Tell us what you need and we&apos;ll run it. The Mélange app is
+            launching soon — start an errand with us today.
+          </p>
+          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <a
+              href={WHATSAPP}
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-orange px-7 py-3.5 font-semibold text-white transition hover:bg-orange-deep"
+            >
+              <MessageCircle className="h-5 w-5" aria-hidden />
+              Chat on WhatsApp
+            </a>
+            <a
+              href={PHONE}
+              className="inline-flex items-center justify-center gap-2 rounded-full border border-cream/40 px-7 py-3.5 font-semibold text-cream transition hover:bg-cream/10"
+            >
+              <Phone className="h-5 w-5" aria-hidden />
+              055 764 4244
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="border-t border-cream-deep bg-white">
+        <div className="mx-auto flex max-w-6xl flex-col gap-4 px-5 py-10 text-sm text-muted sm:flex-row sm:items-center sm:justify-between">
+          <Logo />
+          <p>Fast · Reliable · Trusted · Convenient</p>
+          <p>© {new Date().getFullYear()} Errands by Mélange</p>
+        </div>
+      </footer>
+    </div>
   );
 }
