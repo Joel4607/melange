@@ -17,8 +17,33 @@
   --font-display: var(--font-fraunces);
 }
 
+html {
+  /* Prevent iOS Safari from auto-inflating text in landscape. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 body {
   background: var(--color-cream);
   color: var(--color-ink);
   font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  /* Never let a stray wide element cause horizontal scroll on phones. */
+  overflow-x: hidden;
+}
+
+/* Fluid headings: scale smoothly with the viewport (no breakpoint jumps),
+   so the same layout reads well from a 320px phone up to desktop. */
+@utility text-fluid-hero {
+  font-size: clamp(2.5rem, 10vw, 3.75rem);
+  line-height: 1.04;
+}
+
+@utility text-fluid-h2 {
+  font-size: clamp(1.75rem, 5.5vw, 2.25rem);
+  line-height: 1.15;
+}
+
+@utility text-fluid-cta {
+  font-size: clamp(1.875rem, 6vw, 3rem);
+  line-height: 1.1;
 }
