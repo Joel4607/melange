@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
+import Link from "next/link";
 import {
   ArrowRight,
   Bike,
@@ -16,6 +17,15 @@ export const metadata: Metadata = {
 };
 
 type Role = "buyer" | "runner";
+
+interface ErrandSummary {
+  id: string;
+  title: string;
+  status: string;
+  price: string;
+  category: string | null;
+  created_at: string;
+}
 
 export default async function AppHome() {
   const supabase = await createClient();
@@ -41,6 +51,16 @@ export default async function AppHome() {
 
   const role: Role = user.user_metadata?.role === "runner" ? "runner" : "buyer";
   const firstName = (profile?.name ?? "there").split(" ")[0];
+
+  const { data: errands } =
+    role === "buyer"
+      ? await supabase
+          .from("tasks")
+          .select("id, title, status, price, category, created_at")
+          .eq("buyer_id", user.id)
+          .order("created_at", { ascending: false })
+          .returns<ErrandSummary[]>()
+      : { data: null };
 
   return (
     <div className="flex min-h-dvh flex-col bg-cream">
@@ -77,7 +97,7 @@ export default async function AppHome() {
             : "You're all set. Post an errand and a trusted runner will pick it up."}
         </p>
 
-        {role === "buyer" ? <BuyerStub /> : <RunnerStub />}
+        {role === "buyer" ? <BuyerHome errands={errands ?? []} /> : <RunnerStub />}
 
         <p className="mt-10 text-sm text-muted">
           Signed in as {user.email}
@@ -88,33 +108,77 @@ export default async function AppHome() {
   );
 }
 
-function BuyerStub() {
+const STATUS_LABELS: Record<string, { label: string; tone: string }> = {
+  posted: { label: "Finding runner", tone: "bg-orange/15 text-orange-deep" },
+  matched: { label: "Runner matched", tone: "bg-orange/15 text-orange-deep" },
+  accepted: { label: "In progress", tone: "bg-green/10 text-green-deep" },
+  in_progress: { label: "In progress", tone: "bg-green/10 text-green-deep" },
+  completed: { label: "Delivered", tone: "bg-green text-cream" },
+  resolved: { label: "Resolved", tone: "bg-green text-cream" },
+  disputed: { label: "In dispute", tone: "bg-orange/15 text-orange-deep" },
+  cancelled: { label: "Cancelled", tone: "bg-cream-deep text-muted" },
+};
+
+function BuyerHome({ errands }: { errands: ErrandSummary[] }) {
   return (
-    <div className="mt-8 grid gap-5 sm:grid-cols-2">
-      <button
-        type="button"
-        disabled
-        className="flex items-center justify-between rounded-[1.5rem] bg-green p-6 text-left text-cream shadow-sm disabled:opacity-90"
+    <div className="mt-8 space-y-5">
+      <Link
+        href="/app/post"
+        className="flex items-center justify-between rounded-[1.5rem] bg-green p-6 text-left text-cream shadow-sm transition hover:bg-green-deep"
       >
         <span>
           <span className="flex items-center gap-2 font-display text-xl font-semibold">
             <Plus className="h-5 w-5" aria-hidden /> Post an errand
           </span>
           <span className="mt-1 block text-sm text-cream/80">
-            Coming next — wired to matching & escrow.
+            Matched to a trusted runner by distance, rating &amp; availability.
           </span>
         </span>
         <ArrowRight className="h-5 w-5" aria-hidden />
-      </button>
+      </Link>
 
       <div className="rounded-[1.5rem] border border-cream-deep bg-white p-6">
         <p className="flex items-center gap-2 font-display text-lg font-semibold text-green-deep">
           <Clock className="h-5 w-5 text-orange-deep" aria-hidden /> Your errands
         </p>
-        <p className="mt-2 text-sm text-muted">
-          No errands yet. Once you post one, you&apos;ll track it here from
-          matched → delivered.
-        </p>
+
+        {errands.length === 0 ? (
+          <p className="mt-2 text-sm text-muted">
+            No errands yet. Once you post one, you&apos;ll track it here from
+            matched → delivered.
+          </p>
+        ) : (
+          <ul className="mt-4 divide-y divide-cream-deep">
+            {errands.map((e) => {
+              const s = STATUS_LABELS[e.status] ?? {
+                label: e.status,
+                tone: "bg-cream-deep text-muted",
+              };
+              return (
+                <li key={e.id}>
+                  <Link
+                    href={`/app/errands/${e.id}`}
+                    className="flex items-center justify-between gap-4 py-3.5 transition hover:opacity-80"
+                  >
+                    <span className="min-w-0">
+                      <span className="block truncate font-medium text-ink">
+                        {e.title}
+                      </span>
+                      <span className="text-sm text-muted">
+                        {e.category ?? "Errand"} · GHS {Number(e.price).toFixed(2)}
+                      </span>
+                    </span>
+                    <span
+                      className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium ${s.tone}`}
+                    >
+                      {s.label}
+                    </span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </div>
     </div>
   );
