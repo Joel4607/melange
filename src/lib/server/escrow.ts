@@ -49,6 +49,28 @@ async function loadWallet(db: Db, userId: string): Promise<WalletRow> {
 }
 
 /**
+ * Credit simulated funds to a user's available balance, recording a `topup`
+ * ledger entry. There is no real payment rail in this walking skeleton, so this
+ * stands in for "the buyer loaded their wallet". Returns the new balance.
+ */
+export async function topUp(userId: string, amount: number): Promise<number> {
+  const db = getServiceClient();
+  const cents = toCents(amount);
+  if (cents <= 0) throw new Error("escrow: top-up amount must be positive");
+
+  const wallet = await loadWallet(db, userId);
+  const balance = toCents(wallet.balance) + cents;
+
+  await db.from("wallets").update({ balance: fromCents(balance) }).eq("user_id", userId);
+  await db.from("ledger_entries").insert({
+    user_id: userId,
+    type: "topup",
+    amount: fromCents(cents),
+  });
+  return fromCents(balance);
+}
+
+/**
  * Move a task's price from the buyer's available balance into escrow (`held`),
  * recording a `hold` ledger entry. Throws if the buyer has insufficient funds.
  */
