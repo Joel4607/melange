@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getServiceClient } from "@/lib/supabase/service";
-import { generateMatchRun } from "@/lib/server/matching";
+import { generateMatchRun, offerToTopCandidate } from "@/lib/server/matching";
 import { holdFunds, releaseFunds, topUp } from "@/lib/server/escrow";
 import type { Urgency } from "@/lib/algorithm";
 
@@ -17,6 +17,10 @@ async function requireUserId(): Promise<string> {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
   return user.id;
+}
+
+async function requireRunnerId(): Promise<string> {
+  return requireUserId();
 }
 
 /** Load a task via service-role and assert the caller owns it. */
@@ -34,6 +38,24 @@ async function ownedTask(taskId: string, userId: string) {
       selected_runner_id: string | null;
     }>();
   if (!task || task.buyer_id !== userId) {
+    throw new Error("Errand not found");
+  }
+  return task;
+}
+
+async function assignedTask(taskId: string, runnerId: string) {
+  const db = getServiceClient();
+  const { data: task } = await db
+    .from("tasks")
+    .select("id, status, selected_runner_id, declined_runner_ids")
+    .eq("id", taskId)
+    .maybeSingle<{
+      id: string;
+      status: string;
+      selected_runner_id: string | null;
+      declined_runner_ids: string[];
+    }>();
+  if (!task || task.selected_runner_id !== runnerId) {
     throw new Error("Errand not found");
   }
   return task;
@@ -105,31 +127,31 @@ export async function rematch(taskId: string) {
 export async function payIntoEscrow(taskId: string) {
   const userId = await requireUserId();
   const task = await ownedTask(taskId, userId);
-  if (task.status !== "posted" && task.status !== "matched") return;
+  if (
+    (task.status !== "posted" && task.status !== "matched") ||
+    task.selected_runner_id
+  ) {
+    return;
+  }
 
   const db = getServiceClient();
+  const { data: run } = await db
+    .from("match_runs")
+    .select("id")
+    .eq("task_id", taskId)
+    .order("generated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle<{ id: string }>();
+  if (!run) throw new Error("No runner matched yet");
 
-  let runnerId = task.selected_runner_id;
-  if (!runnerId) {
-    const { data: run } = await db
-      .from("match_runs")
-      .select("id")
-      .eq("task_id", taskId)
-      .order("generated_at", { ascending: false })
-      .limit(1)
-      .maybeSingle<{ id: string }>();
-    if (run) {
-      const { data: top } = await db
-        .from("match_candidates")
-        .select("runner_id")
-        .eq("match_run_id", run.id)
-        .order("rank", { ascending: true })
-        .limit(1)
-        .maybeSingle<{ runner_id: string }>();
-      runnerId = top?.runner_id ?? null;
-    }
-  }
-  if (!runnerId) throw new Error("No runner matched yet");
+  const { data: candidate } = await db
+    .from("match_candidates")
+    .select("runner_id")
+    .eq("match_run_id", run.id)
+    .order("rank", { ascending: true })
+    .limit(1)
+    .maybeSingle<{ runner_id: string }>();
+  if (!candidate) throw new Error("No runner matched yet");
 
   const price = Number(task.price);
   const { data: wallet } = await db
@@ -142,39 +164,138 @@ export async function payIntoEscrow(taskId: string) {
     await topUp(userId, price - balance);
   }
 
-  await db
-    .from("tasks")
-    .update({
-      selected_runner_id: runnerId,
-      status: "accepted",
-      accepted_at: new Date().toISOString(),
-    })
-    .eq("id", taskId);
+  await db.from("tasks").update({ status: "matched" }).eq("id", taskId);
   await holdFunds(taskId);
+  await offerToTopCandidate(taskId);
 
   revalidatePath(`/app/errands/${taskId}`);
   revalidatePath("/app");
 }
 
-/** Buyer confirms delivery: releases escrow to the runner and closes the task. */
-export async function confirmDelivery(taskId: string) {
-  const userId = await requireUserId();
-  const task = await ownedTask(taskId, userId);
+export async function setAvailability(
+  available: boolean,
+  lat: number | null,
+  lng: number | null,
+) {
+  const runnerId = await requireRunnerId();
+  const db = getServiceClient();
+  await db.from("runner_profile").upsert({
+    user_id: runnerId,
+    is_available: available,
+    current_lat: lat,
+    current_lng: lng,
+    status: "active",
+    updated_at: new Date().toISOString(),
+  });
+
+  revalidatePath("/app");
+}
+
+export async function acceptOffer(taskId: string) {
+  const runnerId = await requireRunnerId();
+  const db = getServiceClient();
+  const task = await assignedTask(taskId, runnerId);
+  if (task.status !== "matched") return;
+
+  await db
+    .from("tasks")
+    .update({
+      status: "accepted",
+      accepted_at: new Date().toISOString(),
+    })
+    .eq("id", taskId);
+  await db.from("trust_events").insert({
+    runner_id: runnerId,
+    type: "responsiveness",
+    value: 1,
+  });
+
+  const { data: profile } = await db
+    .from("runner_profile")
+    .select("active_load")
+    .eq("user_id", runnerId)
+    .maybeSingle<{ active_load: number }>();
+  await db.from("runner_profile").upsert({
+    user_id: runnerId,
+    active_load: (profile?.active_load ?? 0) + 1,
+    updated_at: new Date().toISOString(),
+  });
+
+  revalidatePath(`/app/errands/${taskId}`);
+  revalidatePath("/app");
+}
+
+export async function declineOffer(taskId: string) {
+  const runnerId = await requireRunnerId();
+  const db = getServiceClient();
+  const task = await assignedTask(taskId, runnerId);
+  if (task.status !== "matched") return;
+
+  await db
+    .from("tasks")
+    .update({
+      declined_runner_ids: Array.from(
+        new Set([...(task.declined_runner_ids ?? []), runnerId]),
+      ),
+    })
+    .eq("id", taskId);
+  await db.from("trust_events").insert({
+    runner_id: runnerId,
+    type: "responsiveness",
+    value: 0,
+  });
+
+  await offerToTopCandidate(taskId);
+
+  revalidatePath(`/app/errands/${taskId}`);
+  revalidatePath("/app");
+}
+
+export async function markPickedUp(taskId: string) {
+  const runnerId = await requireRunnerId();
+  const db = getServiceClient();
+  const task = await assignedTask(taskId, runnerId);
+  if (task.status !== "accepted") return;
+
+  await db
+    .from("tasks")
+    .update({ status: "in_progress" })
+    .eq("id", taskId);
+
+  revalidatePath(`/app/errands/${taskId}`);
+  revalidatePath("/app");
+}
+
+export async function markDelivered(taskId: string) {
+  const runnerId = await requireRunnerId();
+  const db = getServiceClient();
+  const task = await assignedTask(taskId, runnerId);
   if (task.status !== "accepted" && task.status !== "in_progress") return;
 
-  const db = getServiceClient();
   await releaseFunds(taskId);
   await db
     .from("tasks")
-    .update({ status: "completed", completed_at: new Date().toISOString() })
+    .update({
+      status: "completed",
+      completed_at: new Date().toISOString(),
+    })
     .eq("id", taskId);
-  if (task.selected_runner_id) {
-    await db.from("trust_events").insert({
-      runner_id: task.selected_runner_id,
-      type: "completed",
-      value: 1,
-    });
-  }
+  await db.from("trust_events").insert({
+    runner_id: runnerId,
+    type: "completed",
+    value: 1,
+  });
+
+  const { data: profile } = await db
+    .from("runner_profile")
+    .select("active_load")
+    .eq("user_id", runnerId)
+    .maybeSingle<{ active_load: number }>();
+  await db.from("runner_profile").upsert({
+    user_id: runnerId,
+    active_load: Math.max(0, (profile?.active_load ?? 0) - 1),
+    updated_at: new Date().toISOString(),
+  });
 
   revalidatePath(`/app/errands/${taskId}`);
   revalidatePath("/app");

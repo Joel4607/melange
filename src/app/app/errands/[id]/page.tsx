@@ -7,7 +7,6 @@ import {
   CircleCheck,
   Clock,
   MapPin,
-  PackageCheck,
   ShieldCheck,
   Star,
   Wallet,
@@ -16,7 +15,6 @@ import { createClient } from "@/lib/supabase/server";
 import { getServiceClient } from "@/lib/supabase/service";
 import { Logo } from "@/components/brand";
 import {
-  confirmDelivery,
   payIntoEscrow,
   rateRunner,
   rematch,
@@ -38,12 +36,12 @@ type TaskStatus =
 
 const STEPS = ["Posted", "Matched", "Paid", "Delivered"] as const;
 
-function stepIndex(status: TaskStatus): number {
+function stepIndex(status: TaskStatus, selectedRunnerId: string | null): number {
   switch (status) {
     case "posted":
       return 0;
     case "matched":
-      return 1;
+      return selectedRunnerId ? 2 : 1;
     case "accepted":
     case "in_progress":
       return 2;
@@ -148,7 +146,7 @@ export default async function ErrandPage({
     .eq("rater_id", user.id)
     .maybeSingle<{ stars: number }>();
 
-  const step = stepIndex(task.status);
+  const step = stepIndex(task.status, task.selected_runner_id);
   const price = Number(task.price).toFixed(2);
   const trustStars = candidate ? (candidate.trust * 5).toFixed(1) : null;
 
@@ -264,7 +262,7 @@ export default async function ErrandPage({
 
         {/* Action */}
         <div className="mt-6">
-          {(task.status === "posted" || task.status === "matched") && runnerId ? (
+          {task.status === "matched" && !task.selected_runner_id && candidate ? (
             <form action={payIntoEscrow.bind(null, task.id)}>
               <PrimaryButton>
                 Confirm &amp; pay GHS {price} into escrow
@@ -272,13 +270,28 @@ export default async function ErrandPage({
             </form>
           ) : null}
 
-          {task.status === "accepted" || task.status === "in_progress" ? (
-            <form action={confirmDelivery.bind(null, task.id)}>
-              <PrimaryButton>
-                <PackageCheck className="h-5 w-5" aria-hidden /> Mark delivered &amp;
-                release payment
-              </PrimaryButton>
-            </form>
+          {task.status === "matched" && task.selected_runner_id ? (
+            <div className="rounded-[1.5rem] border border-cream-deep bg-white p-6 text-center shadow-sm">
+              <p className="font-medium text-green-deep">
+                Paid — waiting for {runnerName} to accept
+              </p>
+            </div>
+          ) : null}
+
+          {task.status === "accepted" ? (
+            <div className="rounded-[1.5rem] border border-cream-deep bg-white p-6 text-center shadow-sm">
+              <p className="font-medium text-green-deep">
+                {runnerName} accepted — heading to pickup
+              </p>
+            </div>
+          ) : null}
+
+          {task.status === "in_progress" ? (
+            <div className="rounded-[1.5rem] border border-cream-deep bg-white p-6 text-center shadow-sm">
+              <p className="font-medium text-green-deep">
+                {runnerName} is out for delivery
+              </p>
+            </div>
           ) : null}
 
           {task.status === "completed" || task.status === "resolved" ? (
