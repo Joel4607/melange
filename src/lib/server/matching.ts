@@ -143,6 +143,52 @@ export async function generateMatchRun(taskId: string): Promise<MatchResult[]> {
   return results;
 }
 
+export async function offerToTopCandidate(taskId: string): Promise<string | null> {
+  const db = getServiceClient();
+  const { data: task, error: taskError } = await db
+    .from("tasks")
+    .select("id, declined_runner_ids")
+    .eq("id", taskId)
+    .single<{ id: string; declined_runner_ids: string[] }>();
+  if (taskError || !task) {
+    throw new Error(`offerToTopCandidate: task ${taskId} not found`);
+  }
+
+  const { data: run, error: runError } = await db
+    .from("match_runs")
+    .select("id")
+    .eq("task_id", taskId)
+    .order("generated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle<{ id: string }>();
+  if (runError) {
+    throw new Error(`offerToTopCandidate: ${runError.message}`);
+  }
+
+  let runnerId: string | null = null;
+  if (run) {
+    const { data: candidates, error: candidateError } = await db
+      .from("match_candidates")
+      .select("runner_id")
+      .eq("match_run_id", run.id)
+      .order("rank", { ascending: true })
+      .returns<{ runner_id: string }[]>();
+    if (candidateError) {
+      throw new Error(`offerToTopCandidate: ${candidateError.message}`);
+    }
+
+    const declined = new Set(task.declined_runner_ids ?? []);
+    runnerId = (candidates ?? []).find((candidate) => !declined.has(candidate.runner_id))?.runner_id ?? null;
+  }
+
+  await db
+    .from("tasks")
+    .update({ selected_runner_id: runnerId })
+    .eq("id", taskId);
+
+  return runnerId;
+}
+
 async function loadTrustEvents(
   db: ReturnType<typeof getServiceClient>,
   runnerIds: string[],
