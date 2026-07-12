@@ -68,8 +68,16 @@ export interface DisputeRow {
   task_id: string;
   reason: string;
   status: DisputeStatus;
+  created_at: string;
 }
 
 export interface FraudFlagRow {
   id: string;
+  runner_id: string;
+  task_id: string | null;
+  rule_type: string;
+  severity: number;
+  status: "active" | "cleared" | "confirmed";
+  detail: string | null;
+  created_at: string;
 }

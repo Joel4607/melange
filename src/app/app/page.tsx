@@ -82,7 +82,7 @@ export default async function AppHome() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("name, phone, verified")
+    .select("name, phone, verified, is_admin")
     .eq("id", user.id)
     .single();
 
@@ -138,14 +138,24 @@ export default async function AppHome() {
       <header className="border-b border-cream-deep/70 bg-cream/85 backdrop-blur">
         <div className="mx-auto flex max-w-4xl items-center justify-between px-5 py-4">
           <Logo />
-          <form action="/auth/signout" method="post">
-            <button
-              type="submit"
-              className="rounded-full border border-cream-deep px-4 py-2 text-sm font-medium text-green-deep transition hover:bg-white"
-            >
-              Sign out
-            </button>
-          </form>
+          <div className="flex items-center gap-3">
+            {profile?.is_admin ? (
+              <Link
+                href="/app/admin"
+                className="rounded-full border border-cream-deep px-4 py-2 text-sm font-medium text-green-deep transition hover:bg-white"
+              >
+                Admin
+              </Link>
+            ) : null}
+            <form action="/auth/signout" method="post">
+              <button
+                type="submit"
+                className="rounded-full border border-cream-deep px-4 py-2 text-sm font-medium text-green-deep transition hover:bg-white"
+              >
+                Sign out
+              </button>
+            </form>
+          </div>
         </div>
       </header>
 
