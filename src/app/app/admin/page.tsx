@@ -1,10 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { AlertTriangle, Shield } from "lucide-react";
+import { AlertTriangle, Shield, ShieldCheck } from "lucide-react";
 import { getServiceClient } from "@/lib/supabase/service";
 import { Logo } from "@/components/brand";
-import { requireAdmin, adminResolveDispute, updateFraudFlag } from "./actions";
-import type { DisputeRow, FraudFlagRow } from "@/lib/server/rows";
+import {
+  requireAdmin,
+  adminResolveDispute,
+  updateFraudFlag,
+  approveVerification,
+  rejectVerification,
+} from "./actions";
+import type { DisputeRow, FraudFlagRow, VerificationRequestRow } from "@/lib/server/rows";
 
 export const metadata: Metadata = {
   title: "Admin — Mélange",
@@ -19,6 +25,10 @@ interface DisputeWithTask extends DisputeRow {
 interface FraudFlagWithNames extends FraudFlagRow {
   runner_name: string | null;
   task_title: string | null;
+}
+
+interface VerificationRequestWithNames extends VerificationRequestRow {
+  user_name: string | null;
 }
 
 export default async function AdminPage() {
@@ -74,6 +84,17 @@ export default async function AdminPage() {
     }
   }
 
+  const { data: verificationRequests } = await db
+    .from("verification_requests")
+    .select("id, user_id, id_photo_url, status, created_at")
+    .eq("status", "pending")
+    .order("created_at", { ascending: false })
+    .returns<VerificationRequestRow[]>();
+
+  for (const v of verificationRequests ?? []) {
+    userIds.add(v.user_id);
+  }
+
   const { data: profiles } = await db
     .from("profiles")
     .select("id, name")
@@ -92,6 +113,11 @@ export default async function AdminPage() {
     ...f,
     runner_name: nameById.get(f.runner_id) ?? null,
     task_title: f.task_id ? taskTitleById.get(f.task_id) ?? null : null,
+  }));
+
+  const verificationRequestsWithNames: VerificationRequestWithNames[] = (verificationRequests ?? []).map((v) => ({
+    ...v,
+    user_name: nameById.get(v.user_id) ?? null,
   }));
 
   return (
@@ -207,6 +233,56 @@ export default async function AdminPage() {
                         className="rounded-full border border-cream-deep px-4 py-2 text-sm font-semibold text-green-deep transition hover:bg-cream/40"
                       >
                         Clear
+                      </button>
+                    </form>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        <section className="mt-10">
+          <h2 className="flex items-center gap-2 font-display text-lg font-semibold text-green-deep">
+            <ShieldCheck className="h-5 w-5 text-orange-deep" aria-hidden />
+            Verification requests
+          </h2>
+          {verificationRequestsWithNames.length === 0 ? (
+            <p className="mt-3 text-sm text-muted">No pending verification requests.</p>
+          ) : (
+            <ul className="mt-4 space-y-3">
+              {verificationRequestsWithNames.map((v) => (
+                <li
+                  key={v.id}
+                  className="rounded-[1.25rem] border border-cream-deep bg-white p-5 shadow-sm"
+                >
+                  <p className="font-medium text-ink">{v.user_name ?? "Unknown user"}</p>
+                  <p className="mt-1 text-xs text-muted">
+                    {new Date(v.created_at).toLocaleString()}
+                  </p>
+                  <a
+                    href={v.id_photo_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-2 inline-block text-sm text-green-soft underline"
+                  >
+                    View ID photo
+                  </a>
+                  <div className="mt-4 flex gap-2">
+                    <form action={approveVerification.bind(null, v.id)}>
+                      <button
+                        type="submit"
+                        className="rounded-full bg-green px-4 py-2 text-sm font-semibold text-cream transition hover:bg-green-deep"
+                      >
+                        Approve
+                      </button>
+                    </form>
+                    <form action={rejectVerification.bind(null, v.id)}>
+                      <button
+                        type="submit"
+                        className="rounded-full bg-orange px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-deep"
+                      >
+                        Reject
                       </button>
                     </form>
                   </div>

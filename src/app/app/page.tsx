@@ -9,7 +9,9 @@ import {
   Clock,
   PackageCheck,
   Plus,
+  ShieldCheck,
   Star,
+  XCircle,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getServiceClient } from "@/lib/supabase/service";
@@ -139,6 +141,14 @@ export default async function AppHome() {
     .limit(10)
     .returns<NotificationSummary[]>();
 
+  const { data: verificationRequest } = await supabase
+    .from("verification_requests")
+    .select("id, status, created_at")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle<{ id: string; status: "pending" | "approved" | "rejected"; created_at: string }>();
+
   return (
     <div className="flex min-h-dvh flex-col bg-cream">
       <header className="border-b border-cream-deep/70 bg-cream/85 backdrop-blur">
@@ -184,6 +194,11 @@ export default async function AppHome() {
             : "You're all set. Post an errand and a trusted runner will pick it up."}
         </p>
 
+        <VerificationCard
+          verified={profile?.verified ?? false}
+          request={verificationRequest ?? null}
+        />
+
         {role === "buyer" ? (
           <BuyerHome errands={errands ?? []} />
         ) : (
@@ -198,6 +213,75 @@ export default async function AppHome() {
           {profile?.verified ? "" : " · verification pending"}
         </p>
       </main>
+    </div>
+  );
+}
+
+function VerificationCard({
+  verified,
+  request,
+}: {
+  verified: boolean;
+  request: { id: string; status: "pending" | "approved" | "rejected"; created_at: string } | null;
+}) {
+  if (verified) {
+    return (
+      <div className="mt-8 rounded-[1.5rem] border border-green/30 bg-green/5 p-6">
+        <p className="flex items-center gap-2 font-medium text-green-deep">
+          <ShieldCheck className="h-5 w-5 text-green-deep" aria-hidden /> Verified
+        </p>
+        <p className="mt-1 text-sm text-muted">Your identity has been verified.</p>
+      </div>
+    );
+  }
+
+  if (request?.status === "pending") {
+    return (
+      <div className="mt-8 rounded-[1.5rem] border border-cream-deep bg-white p-6 shadow-sm">
+        <p className="flex items-center gap-2 font-medium text-green-deep">
+          <Clock className="h-5 w-5 text-orange-deep" aria-hidden /> Verification pending
+        </p>
+        <p className="mt-1 text-sm text-muted">
+          Submitted {new Date(request.created_at).toLocaleDateString()}. We&apos;ll let you know once
+          it&apos;s reviewed.
+        </p>
+      </div>
+    );
+  }
+
+  if (request?.status === "rejected") {
+    return (
+      <div className="mt-8 rounded-[1.5rem] border border-orange/15 bg-orange/5 p-6">
+        <p className="flex items-center gap-2 font-medium text-green-deep">
+          <XCircle className="h-5 w-5 text-orange-deep" aria-hidden /> Verification rejected
+        </p>
+        <p className="mt-1 text-sm text-muted">
+          Your last submission was rejected. Submit a clearer ID photo.
+        </p>
+        <Link
+          href="/app/verify"
+          className="mt-4 inline-block rounded-full border border-cream-deep bg-white px-4 py-2 text-sm font-medium text-green-deep transition hover:bg-cream/40"
+        >
+          Re-submit
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-8 rounded-[1.5rem] border border-cream-deep bg-white p-6 shadow-sm">
+      <p className="flex items-center gap-2 font-medium text-green-deep">
+        <ShieldCheck className="h-5 w-5 text-orange-deep" aria-hidden /> Identity verification
+      </p>
+      <p className="mt-1 text-sm text-muted">
+        Get verified to build trust and unlock full platform features.
+      </p>
+      <Link
+        href="/app/verify"
+        className="mt-4 inline-block rounded-full border border-cream-deep bg-white px-4 py-2 text-sm font-medium text-green-deep transition hover:bg-cream/40"
+      >
+        Verify now
+      </Link>
     </div>
   );
 }

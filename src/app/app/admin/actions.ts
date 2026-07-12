@@ -77,3 +77,45 @@ export async function updateFraudFlag(
 
   revalidatePath("/app/admin");
 }
+
+export async function approveVerification(requestId: string) {
+  const adminId = await requireAdmin();
+  const db = getServiceClient();
+  const { data: request } = await db
+    .from("verification_requests")
+    .select("user_id, status")
+    .eq("id", requestId)
+    .single<{ user_id: string; status: string }>();
+  if (!request || request.status !== "pending") return;
+  const now = new Date().toISOString();
+  await db
+    .from("verification_requests")
+    .update({ status: "approved", reviewed_at: now, reviewed_by: adminId })
+    .eq("id", requestId);
+  await db.from("profiles").update({ verified: true }).eq("id", request.user_id);
+
+  revalidatePath("/app/admin");
+  revalidatePath("/app");
+  revalidatePath("/app/verify");
+}
+
+export async function rejectVerification(requestId: string) {
+  const adminId = await requireAdmin();
+  const db = getServiceClient();
+  const { data: request } = await db
+    .from("verification_requests")
+    .select("user_id, status")
+    .eq("id", requestId)
+    .single<{ user_id: string; status: string }>();
+  if (!request || request.status !== "pending") return;
+  const now = new Date().toISOString();
+  await db
+    .from("verification_requests")
+    .update({ status: "rejected", reviewed_at: now, reviewed_by: adminId })
+    .eq("id", requestId);
+  await db.from("profiles").update({ verified: false }).eq("id", request.user_id);
+
+  revalidatePath("/app/admin");
+  revalidatePath("/app");
+  revalidatePath("/app/verify");
+}
