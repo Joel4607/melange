@@ -18,6 +18,7 @@ import { AvailabilityToggle } from "./availability-toggle";
 import { MarkDeliveredForm } from "./mark-delivered-form";
 import { CapabilitiesEditor } from "./capabilities-editor";
 import { LiveLocationUpdater } from "./live-location-updater";
+import { RealtimeStatus } from "./realtime-status";
 import {
   acceptOffer,
   cancelRunnerErrand,
@@ -190,6 +191,7 @@ export default async function AppHome() {
         )}
 
         <Notifications notifications={notifications ?? []} />
+        <RealtimeStatus userId={user.id} />
 
         <p className="mt-10 text-sm text-muted">
           Signed in as {user.email}

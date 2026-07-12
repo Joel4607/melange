@@ -16,6 +16,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getServiceClient } from "@/lib/supabase/service";
 import { hasLedgerEntry } from "@/lib/server/escrow";
 import { Logo } from "@/components/brand";
+import { RealtimeStatus } from "../../realtime-status";
 import {
   cancelErrand,
   payIntoEscrow,
@@ -453,6 +454,7 @@ export default async function ErrandPage({
             </div>
           ) : null}
         </div>
+        <RealtimeStatus userId={user.id} taskId={task.id} />
       </main>
     </div>
   );
