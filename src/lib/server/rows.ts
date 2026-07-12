@@ -19,6 +19,7 @@ export type TaskStatus =
 
 export type DisputeStatus = "open" | "auto_resolved" | "escalated" | "resolved";
 export type DisputeResolutionDb = "refund" | "release" | "partial";
+export type VerificationStatus = "pending" | "approved" | "rejected";
 
 export interface TaskRow {
   id: string;
@@ -82,5 +83,15 @@ export interface FraudFlagRow {
   severity: number;
   status: "active" | "cleared" | "confirmed";
   detail: string | null;
+  created_at: string;
+}
+
+export interface VerificationRequestRow {
+  id: string;
+  user_id: string;
+  id_photo_url: string;
+  status: VerificationStatus;
+  reviewed_at: string | null;
+  reviewed_by: string | null;
   created_at: string;
 }

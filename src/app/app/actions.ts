@@ -518,6 +518,38 @@ export async function updateLocation(lat: number, lng: number) {
   );
 }
 
+/** Submit an ID verification request for the signed-in user. */
+export async function submitVerification(formData: FormData) {
+  const userId = await requireUserId();
+  const supabase = await createClient();
+  const idPhotoUrl = String(formData.get("id_photo_url") ?? "").trim();
+
+  if (!idPhotoUrl) {
+    throw new Error("Please provide a photo URL");
+  }
+
+  const { data: existing } = await supabase
+    .from("verification_requests")
+    .select("id")
+    .eq("user_id", userId)
+    .in("status", ["pending", "approved"])
+    .maybeSingle<{ id: string }>();
+  if (existing) {
+    throw new Error("You already have a pending or approved verification request");
+  }
+
+  const { error } = await supabase.from("verification_requests").insert({
+    user_id: userId,
+    id_photo_url: idPhotoUrl,
+  });
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidatePath("/app");
+  redirect("/app");
+}
+
 /** Mark a notification as read for the signed-in user. */
 export async function markNotificationRead(notificationId: string) {
   const userId = await requireUserId();
