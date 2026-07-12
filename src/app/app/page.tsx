@@ -11,6 +11,7 @@ import {
   Plus,
   ShieldCheck,
   Star,
+  Wallet,
   XCircle,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
@@ -150,6 +151,12 @@ export default async function AppHome() {
     .limit(1)
     .maybeSingle<{ id: string; status: "pending" | "approved" | "rejected"; created_at: string }>();
 
+  const { data: wallet } = await supabase
+    .from("wallets")
+    .select("balance, held")
+    .eq("user_id", user.id)
+    .maybeSingle<{ balance: string; held: string }>();
+
   return (
     <div className="flex min-h-dvh flex-col bg-cream">
       <header className="border-b border-cream-deep/70 bg-cream/85 backdrop-blur">
@@ -199,6 +206,7 @@ export default async function AppHome() {
           verified={profile?.verified ?? false}
           request={verificationRequest ?? null}
         />
+        <WalletCard wallet={wallet ?? null} />
 
         {role === "buyer" ? (
           <BuyerHome errands={errands ?? []} />
@@ -282,6 +290,34 @@ function VerificationCard({
         className="mt-4 inline-block rounded-full border border-cream-deep bg-white px-4 py-2 text-sm font-medium text-green-deep transition hover:bg-cream/40"
       >
         Verify now
+      </Link>
+    </div>
+  );
+}
+
+function WalletCard({ wallet }: { wallet: { balance: string; held: string } | null }) {
+  const balance = wallet ? Number(wallet.balance).toFixed(2) : "0.00";
+  const held = wallet ? Number(wallet.held).toFixed(2) : "0.00";
+  return (
+    <div className="mt-8 rounded-[1.5rem] border border-cream-deep bg-white p-6 shadow-sm">
+      <p className="flex items-center gap-2 font-display text-lg font-semibold text-green-deep">
+        <Wallet className="h-5 w-5 text-orange-deep" aria-hidden /> Wallet
+      </p>
+      <div className="mt-3 grid grid-cols-2 gap-4">
+        <div>
+          <p className="text-sm text-muted">Available</p>
+          <p className="font-display text-2xl font-semibold text-green-deep">GHS {balance}</p>
+        </div>
+        <div>
+          <p className="text-sm text-muted">In escrow</p>
+          <p className="font-display text-2xl font-semibold text-green-deep">GHS {held}</p>
+        </div>
+      </div>
+      <Link
+        href="/app/wallet"
+        className="mt-4 inline-block rounded-full border border-cream-deep bg-white px-4 py-2 text-sm font-medium text-green-deep transition hover:bg-cream/40"
+      >
+        View transactions
       </Link>
     </div>
   );

@@ -63,6 +63,15 @@ export interface WalletRow {
   held: string;
 }
 
+export interface LedgerRow {
+  id: string;
+  task_id: string | null;
+  user_id: string;
+  type: "hold" | "release" | "refund" | "topup" | "payout";
+  amount: string;
+  created_at: string;
+}
+
 export interface ProofRow {
   gps_lat: number | null;
   gps_lng: number | null;

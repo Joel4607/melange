@@ -508,6 +508,18 @@ export async function updateCapabilities(formData: FormData) {
   revalidatePath("/app");
 }
 
+/** Top up the signed-in user's simulated wallet. */
+export async function topUpWallet(formData: FormData) {
+  const userId = await requireUserId();
+  const amount = Math.max(0, Number(formData.get("amount") ?? 0));
+  if (amount <= 0) {
+    throw new Error("Amount must be greater than 0");
+  }
+  await topUp(userId, amount);
+  revalidatePath("/app");
+  revalidatePath("/app/wallet");
+}
+
 /** Update the runner's current latitude and longitude while available. */
 export async function updateLocation(lat: number, lng: number) {
   const runnerId = await requireRunnerId();
