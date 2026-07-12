@@ -83,6 +83,28 @@ export function RealtimeStatus({
       refresh,
     );
 
+    channel.on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "wallets",
+        filter: `user_id=eq.${userId}`,
+      },
+      refresh,
+    );
+
+    channel.on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "ledger_entries",
+        filter: `user_id=eq.${userId}`,
+      },
+      refresh,
+    );
+
     channel.subscribe();
 
     return () => {
