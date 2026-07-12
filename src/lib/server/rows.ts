@@ -43,6 +43,7 @@ export interface RunnerProfileRow {
   active_load: number;
   trust_score: number;
   status: "active" | "suspended" | "quarantined";
+  capabilities: string[] | null;
 }
 
 export interface TrustEventRow {

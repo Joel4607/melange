@@ -480,6 +480,23 @@ export async function raiseDispute(taskId: string, formData: FormData) {
   revalidatePath(`/app/errands/${taskId}`);
 }
 
+/** Update the runner's accepted task categories. */
+export async function updateCapabilities(formData: FormData) {
+  const runnerId = await requireRunnerId();
+  const capabilities = formData.getAll("capabilities").map(String);
+  const db = getServiceClient();
+  await db.from("runner_profile").upsert(
+    {
+      user_id: runnerId,
+      capabilities,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "user_id" },
+  );
+
+  revalidatePath("/app");
+}
+
 /** Mark a notification as read for the signed-in user. */
 export async function markNotificationRead(notificationId: string) {
   const userId = await requireUserId();
