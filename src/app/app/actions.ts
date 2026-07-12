@@ -246,6 +246,46 @@ export async function acceptOffer(taskId: string) {
   revalidatePath("/app");
 }
 
+export async function claimTask(taskId: string) {
+  const runnerId = await requireRunnerId();
+  const db = getServiceClient();
+  const { data: task } = await db
+    .from("tasks")
+    .select("id, buyer_id, title, price, status, selected_runner_id")
+    .eq("id", taskId)
+    .maybeSingle<{
+      id: string;
+      buyer_id: string;
+      title: string;
+      price: string;
+      status: string;
+      selected_runner_id: string | null;
+    }>();
+  if (!task || task.status !== "posted" || task.selected_runner_id) return;
+
+  const price = Number(task.price);
+  const { data: wallet } = await db
+    .from("wallets")
+    .select("balance")
+    .eq("user_id", task.buyer_id)
+    .maybeSingle<{ balance: string }>();
+  const balance = wallet ? Number(wallet.balance) : 0;
+  if (balance < price) {
+    await topUp(task.buyer_id, price - balance);
+  }
+
+  await db
+    .from("tasks")
+    .update({ status: "matched", selected_runner_id: runnerId })
+    .eq("id", taskId);
+  await holdFunds(taskId);
+  await acceptOffer(taskId);
+
+  revalidatePath("/app/feed");
+  revalidatePath(`/app/errands/${taskId}`);
+  revalidatePath("/app");
+}
+
 export async function declineOffer(taskId: string) {
   const runnerId = await requireRunnerId();
   const db = getServiceClient();

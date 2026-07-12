@@ -416,6 +416,21 @@ function RunnerHome({
 
   return (
     <div className="mt-8 space-y-5">
+      <Link
+        href="/app/feed"
+        className="flex items-center justify-between rounded-[1.5rem] bg-green p-6 text-left text-cream shadow-sm transition hover:bg-green-deep"
+      >
+        <span>
+          <span className="flex items-center gap-2 font-display text-xl font-semibold">
+            <ArrowRight className="h-5 w-5" aria-hidden /> Open errands
+          </span>
+          <span className="mt-1 block text-sm text-cream/80">
+            Browse and claim posted errands near you.
+          </span>
+        </span>
+        <ArrowRight className="h-5 w-5" aria-hidden />
+      </Link>
+
       <div className="rounded-[1.5rem] border border-cream-deep bg-white p-6 shadow-sm">
         <p className="flex items-center gap-2 font-display text-lg font-semibold text-green-deep">
           <CircleCheck className="h-5 w-5 text-orange-deep" aria-hidden /> Availability
