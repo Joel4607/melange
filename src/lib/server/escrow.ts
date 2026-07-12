@@ -16,6 +16,22 @@ type Db = ReturnType<typeof getServiceClient>;
 const toCents = (v: string | number): number => Math.round(Number(v) * 100);
 const fromCents = (cents: number): number => cents / 100;
 
+export async function hasLedgerEntry(
+  db: Db,
+  taskId: string,
+  types: string[],
+): Promise<boolean> {
+  const { data, error } = await db
+    .from("ledger_entries")
+    .select("id")
+    .eq("task_id", taskId)
+    .in("type", types)
+    .limit(1)
+    .maybeSingle<{ id: string }>();
+  if (error) throw new Error(`escrow: ${error.message}`);
+  return data != null;
+}
+
 async function loadTask(db: Db, taskId: string): Promise<TaskRow> {
   const { data, error } = await db
     .from("tasks")
@@ -79,6 +95,8 @@ export async function holdFunds(taskId: string): Promise<void> {
   const task = await loadTask(db, taskId);
   const amount = toCents(task.price);
 
+  if (await hasLedgerEntry(db, taskId, ["hold"])) return;
+
   const wallet = await loadWallet(db, task.buyer_id);
   const balance = toCents(wallet.balance);
   if (balance < amount) {
@@ -114,6 +132,12 @@ export async function releaseFunds(taskId: string): Promise<void> {
   }
   const amount = toCents(task.price);
 
+  if (!await hasLedgerEntry(db, taskId, ["hold"])) return;
+  if (await hasLedgerEntry(db, taskId, ["release", "payout"])) return;
+  if (await hasLedgerEntry(db, taskId, ["refund"])) {
+    throw new Error(`escrow: task ${taskId} has already been refunded`);
+  }
+
   const buyer = await loadWallet(db, task.buyer_id);
   const runner = await loadWallet(db, task.selected_runner_id);
 
@@ -140,6 +164,12 @@ export async function refund(taskId: string): Promise<void> {
   const db = getServiceClient();
   const task = await loadTask(db, taskId);
   const amount = toCents(task.price);
+
+  if (!await hasLedgerEntry(db, taskId, ["hold"])) return;
+  if (await hasLedgerEntry(db, taskId, ["refund"])) return;
+  if (await hasLedgerEntry(db, taskId, ["release", "payout"])) {
+    throw new Error(`escrow: task ${taskId} has already been released`);
+  }
 
   const buyer = await loadWallet(db, task.buyer_id);
   await db

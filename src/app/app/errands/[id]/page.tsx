@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
+  AlertTriangle,
   ArrowLeft,
   Bike,
   CircleCheck,
@@ -13,9 +14,12 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getServiceClient } from "@/lib/supabase/service";
+import { hasLedgerEntry } from "@/lib/server/escrow";
 import { Logo } from "@/components/brand";
 import {
+  cancelErrand,
   payIntoEscrow,
+  raiseDispute,
   rateRunner,
   rematch,
 } from "../../actions";
@@ -47,9 +51,10 @@ function stepIndex(status: TaskStatus, selectedRunnerId: string | null): number 
       return 2;
     case "completed":
     case "resolved":
+    case "disputed":
       return 3;
-    default:
-      return 0;
+    case "cancelled":
+      return -1;
   }
 }
 
@@ -133,18 +138,18 @@ export default async function ErrandPage({
     if (rp?.name) runnerName = rp.name;
   }
 
-  const { data: wallet } = await db
-    .from("wallets")
-    .select("balance, held")
-    .eq("user_id", user.id)
-    .maybeSingle<{ balance: string; held: string }>();
-
   const { data: existingRating } = await db
     .from("ratings")
     .select("stars")
     .eq("task_id", task.id)
     .eq("rater_id", user.id)
     .maybeSingle<{ stars: number }>();
+
+  const [held, released, refunded] = await Promise.all([
+    hasLedgerEntry(db, task.id, ["hold"]),
+    hasLedgerEntry(db, task.id, ["release", "payout"]),
+    hasLedgerEntry(db, task.id, ["refund"]),
+  ]);
 
   const step = stepIndex(task.status, task.selected_runner_id);
   const price = Number(task.price).toFixed(2);
@@ -252,23 +257,32 @@ export default async function ErrandPage({
             </span>
           </div>
           <p className="mt-2 text-sm text-muted">
-            {step >= 3
-              ? "Released to your runner on delivery."
-              : step === 2
-                ? `Held safely in escrow${wallet ? ` (GHS ${Number(wallet.held).toFixed(2)} held)` : ""}. Released when you confirm delivery.`
-                : "You'll pay into escrow when you confirm the match. Funds are only released on delivery."}
+            {refunded
+              ? "Refunded to your wallet — the errand was cancelled or the dispute was resolved in your favour."
+              : released
+                ? `Released to ${runnerName}.`
+                : held
+                  ? `GHS ${price} held in escrow. ${task.status === "completed" ? "Rate to release or raise a dispute." : "Released when you confirm delivery."}`
+                  : "You'll pay into escrow when you confirm the match. Funds are only released on delivery."}
           </p>
         </section>
 
         {/* Action */}
-        <div className="mt-6">
-          {task.status === "matched" && !task.selected_runner_id && candidate ? (
-            <form action={payIntoEscrow.bind(null, task.id)}>
-              <PrimaryButton>
-                Confirm &amp; pay GHS {price} into escrow
-              </PrimaryButton>
-            </form>
-          ) : null}
+        <div className="mt-6 space-y-4">
+          {(task.status === "posted" || task.status === "matched") && (
+            <div className="flex flex-col gap-3">
+              {task.status === "matched" && !task.selected_runner_id && candidate ? (
+                <form action={payIntoEscrow.bind(null, task.id)}>
+                  <PrimaryButton>
+                    Confirm &amp; pay GHS {price} into escrow
+                  </PrimaryButton>
+                </form>
+              ) : null}
+              <form action={cancelErrand.bind(null, task.id)}>
+                <SecondaryButton>Cancel errand</SecondaryButton>
+              </form>
+            </div>
+          )}
 
           {task.status === "matched" && task.selected_runner_id ? (
             <div className="rounded-[1.5rem] border border-cream-deep bg-white p-6 text-center shadow-sm">
@@ -294,17 +308,79 @@ export default async function ErrandPage({
             </div>
           ) : null}
 
-          {task.status === "completed" || task.status === "resolved" ? (
+          {task.status === "completed" ? (
             <div className="rounded-[1.5rem] border border-green/30 bg-green/5 p-6 text-center">
               <CircleCheck className="mx-auto h-7 w-7 text-green-soft" aria-hidden />
               <p className="mt-2 font-display text-lg font-semibold text-green-deep">
-                Delivered &amp; paid
+                Delivered
               </p>
               {existingRating ? (
                 <p className="mt-1 text-sm text-muted">
                   You rated {runnerName} {existingRating.stars}★. Thanks!
                 </p>
+              ) : released ? (
+                <p className="mt-1 text-sm text-muted">
+                  Payment released. How did {runnerName} do?
+                </p>
               ) : (
+                <p className="mt-1 text-sm text-muted">
+                  Rate to release payment, or raise a dispute if something is wrong.
+                </p>
+              )}
+              {!existingRating && (
+                <div className="mt-3 flex justify-center gap-2">
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <form key={n} action={rateRunner.bind(null, task.id, n)}>
+                      <button
+                        type="submit"
+                        aria-label={`Rate ${n} stars`}
+                        className="grid h-10 w-10 place-items-center rounded-full border border-cream-deep text-orange-deep transition hover:bg-orange/10"
+                      >
+                        <Star className="h-5 w-5" aria-hidden />
+                      </button>
+                    </form>
+                  ))}
+                </div>
+              )}
+              {!existingRating && !released && (
+                <form action={raiseDispute.bind(null, task.id)} className="mt-4">
+                  <div className="flex flex-col gap-2">
+                    <textarea
+                      name="reason"
+                      required
+                      placeholder="What went wrong?"
+                      className="mx-auto w-full max-w-xs rounded-xl border border-cream-deep bg-white px-4 py-2 text-sm text-ink outline-none transition placeholder:text-muted focus:border-green-soft"
+                      rows={2}
+                    />
+                    <button
+                      type="submit"
+                      className="mx-auto inline-flex items-center gap-2 rounded-full border border-orange-deep px-5 py-2 text-sm font-semibold text-orange-deep transition hover:bg-orange/10"
+                    >
+                      <AlertTriangle className="h-4 w-4" aria-hidden />
+                      Raise dispute
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+          ) : null}
+
+          {task.status === "resolved" ? (
+            <div className="rounded-[1.5rem] border border-green/30 bg-green/5 p-6 text-center">
+              <CircleCheck className="mx-auto h-7 w-7 text-green-soft" aria-hidden />
+              <p className="mt-2 font-display text-lg font-semibold text-green-deep">
+                Resolved
+              </p>
+              <p className="mt-1 text-sm text-muted">
+                {refunded
+                  ? "Dispute resolved with a refund to your wallet."
+                  : `Payment released to ${runnerName}.`}
+              </p>
+              {existingRating ? (
+                <p className="mt-1 text-sm text-muted">
+                  You rated {runnerName} {existingRating.stars}★.
+                </p>
+              ) : !refunded ? (
                 <>
                   <p className="mt-1 text-sm text-muted">
                     How did {runnerName} do?
@@ -323,7 +399,32 @@ export default async function ErrandPage({
                     ))}
                   </div>
                 </>
-              )}
+              ) : null}
+            </div>
+          ) : null}
+
+          {task.status === "disputed" ? (
+            <div className="rounded-[1.5rem] border border-orange/15 bg-orange/5 p-6 text-center">
+              <AlertTriangle className="mx-auto h-7 w-7 text-orange-deep" aria-hidden />
+              <p className="mt-2 font-display text-lg font-semibold text-green-deep">
+                In dispute
+              </p>
+              <p className="mt-1 text-sm text-muted">
+                Your dispute is under review. Funds stay in escrow until a decision is made.
+              </p>
+            </div>
+          ) : null}
+
+          {task.status === "cancelled" ? (
+            <div className="rounded-[1.5rem] border border-cream-deep bg-white p-6 text-center shadow-sm">
+              <p className="font-display text-lg font-semibold text-green-deep">
+                Cancelled
+              </p>
+              <p className="mt-1 text-sm text-muted">
+                {refunded
+                  ? "Your wallet has been refunded."
+                  : "This errand was cancelled."}
+              </p>
             </div>
           ) : null}
         </div>
@@ -376,6 +477,11 @@ function Stepper({
           In dispute
         </span>
       ) : null}
+      {status === "cancelled" ? (
+        <span className="ml-3 rounded-full bg-cream-deep px-3 py-1 text-xs font-medium text-muted">
+          Cancelled
+        </span>
+      ) : null}
     </ol>
   );
 }
@@ -385,6 +491,17 @@ function PrimaryButton({ children }: { children: React.ReactNode }) {
     <button
       type="submit"
       className="flex w-full items-center justify-center gap-2 rounded-full bg-orange px-6 py-3.5 font-semibold text-white shadow-sm transition hover:bg-orange-deep"
+    >
+      {children}
+    </button>
+  );
+}
+
+function SecondaryButton({ children }: { children: React.ReactNode }) {
+  return (
+    <button
+      type="submit"
+      className="flex w-full items-center justify-center gap-2 rounded-full border border-cream-deep bg-white px-6 py-3.5 font-semibold text-green-deep transition hover:bg-cream/40"
     >
       {children}
     </button>

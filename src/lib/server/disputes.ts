@@ -66,6 +66,7 @@ export async function resolveDispute(disputeId: string): Promise<ArbitrationResu
         confidence: result.confidence,
       })
       .eq("id", dispute.id);
+    await db.from("tasks").update({ status: "disputed" }).eq("id", task.id);
     return result;
   }
 
