@@ -17,6 +17,7 @@ import { Logo } from "@/components/brand";
 import { AvailabilityToggle } from "./availability-toggle";
 import { MarkDeliveredForm } from "./mark-delivered-form";
 import { CapabilitiesEditor } from "./capabilities-editor";
+import { LiveLocationUpdater } from "./live-location-updater";
 import {
   acceptOffer,
   cancelRunnerErrand,
@@ -339,6 +340,8 @@ function RunnerHome({
           <CapabilitiesEditor capabilities={profile?.capabilities ?? null} />
         </div>
       </div>
+
+      <LiveLocationUpdater available={profile?.is_available ?? false} />
 
       <Section title="Offers" icon={<Clock className="h-5 w-5 text-orange-deep" aria-hidden />}>
         {offers.length === 0 ? (
