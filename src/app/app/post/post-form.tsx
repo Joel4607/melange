@@ -22,6 +22,10 @@ const URGENCIES: { value: string; label: string; hint: string }[] = [
   { value: "express", label: "ASAP", hint: "Express" },
 ];
 
+function fromCents(cents: number): number {
+  return Math.max(0, cents) / 100;
+}
+
 export function PostForm() {
   const [coords, setCoords] = useState<{ lat: string; lng: string }>({
     lat: "",
@@ -34,9 +38,15 @@ export function PostForm() {
   const [locating, setLocating] = useState(false);
   const [locError, setLocError] = useState<string | null>(null);
   const [urgency, setUrgency] = useState("normal");
+  const [price, setPrice] = useState("50");
 
   const hasLocation = coords.lat !== "" && coords.lng !== "";
   const hasDropoff = dropoffCoords.lat !== "" && dropoffCoords.lng !== "";
+
+  const priceNum = Math.max(0, Number(price) || 0);
+  const priceCents = Math.round(priceNum * 100);
+  const feeCents = Math.round(priceCents * 0.1);
+  const runnerPayout = fromCents(priceCents - feeCents);
 
   function useMyLocation() {
     setLocError(null);
@@ -99,9 +109,13 @@ export function PostForm() {
             min={0}
             step="1"
             required
-            defaultValue={50}
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
             className={inputClass}
           />
+          <p className="mt-2 text-sm text-muted">
+            Includes a 10% platform fee. Runner receives GHS {runnerPayout.toFixed(2)}.
+          </p>
         </Field>
       </div>
 

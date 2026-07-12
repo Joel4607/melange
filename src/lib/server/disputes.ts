@@ -100,7 +100,7 @@ async function loadTask(db: Db, taskId: string): Promise<TaskRow> {
   const { data: task, error: tErr } = await db
     .from("tasks")
     .select(
-      "id, buyer_id, title, category, pickup_lat, pickup_lng, dropoff_lat, dropoff_lng, urgency, price, status, selected_runner_id, accepted_at, completed_at",
+      "id, buyer_id, title, category, pickup_lat, pickup_lng, dropoff_lat, dropoff_lng, urgency, price, fee, status, selected_runner_id, accepted_at, completed_at",
     )
     .eq("id", taskId)
     .single<TaskRow>();

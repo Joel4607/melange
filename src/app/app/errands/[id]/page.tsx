@@ -76,7 +76,7 @@ export default async function ErrandPage({
   const { data: task } = await db
     .from("tasks")
     .select(
-      "id, buyer_id, title, description, category, urgency, price, status, selected_runner_id, pickup_lat, pickup_lng, dropoff_lat, dropoff_lng, created_at, accepted_at, completed_at",
+      "id, buyer_id, title, description, category, urgency, price, fee, status, selected_runner_id, pickup_lat, pickup_lng, dropoff_lat, dropoff_lng, created_at, accepted_at, completed_at",
     )
     .eq("id", id)
     .maybeSingle<{
@@ -87,6 +87,7 @@ export default async function ErrandPage({
       category: string | null;
       urgency: string;
       price: string;
+      fee: string;
       status: TaskStatus;
       selected_runner_id: string | null;
       pickup_lat: number;
@@ -158,6 +159,8 @@ export default async function ErrandPage({
 
   const step = stepIndex(task.status, task.selected_runner_id);
   const price = Number(task.price).toFixed(2);
+  const fee = Number(task.fee).toFixed(2);
+  const runnerPayout = Number(Number(task.price) - Number(task.fee)).toFixed(2);
   const trustStars = candidate ? (candidate.trust * 5).toFixed(1) : null;
 
   return (
@@ -270,6 +273,20 @@ export default async function ErrandPage({
                   ? `GHS ${price} held in escrow. ${task.status === "completed" ? "Rate to release or raise a dispute." : "Released when you confirm delivery."}`
                   : "You'll pay into escrow when you confirm the match. Funds are only released on delivery."}
           </p>
+          <div className="mt-3 rounded-xl border border-cream-deep bg-cream/40 p-4 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted">Total</span>
+              <span className="font-medium text-ink">GHS {price}</span>
+            </div>
+            <div className="mt-1 flex justify-between">
+              <span className="text-muted">Platform fee</span>
+              <span className="font-medium text-ink">GHS {fee}</span>
+            </div>
+            <div className="mt-1 flex justify-between border-t border-cream-deep pt-1">
+              <span className="text-muted">Runner payout</span>
+              <span className="font-medium text-ink">GHS {runnerPayout}</span>
+            </div>
+          </div>
         </section>
 
         {/* Locations */}

@@ -59,6 +59,7 @@ interface RunnerTaskSummary {
   title: string;
   status: string;
   price: string;
+  fee: string;
   category: string | null;
   pickup_lat: number;
   pickup_lng: number;
@@ -127,7 +128,7 @@ export default async function AppHome() {
     role === "runner"
       ? await db
           .from("tasks")
-          .select("id, title, status, price, category, pickup_lat, pickup_lng")
+          .select("id, title, status, price, fee, category, pickup_lat, pickup_lng")
           .eq("selected_runner_id", user.id)
           .order("created_at", { ascending: false })
           .returns<RunnerTaskSummary[]>()
@@ -624,7 +625,7 @@ function TaskCard({
         <div className="min-w-0">
           <p className="truncate font-medium text-ink">{task.title}</p>
           <p className="text-sm text-muted">
-            {task.category ?? "Errand"} · GHS {Number(task.price).toFixed(2)}
+            {task.category ?? "Errand"} · Payout GHS {Number(Number(task.price) - Number(task.fee)).toFixed(2)}
           </p>
         </div>
         <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium ${status.tone}`}>
