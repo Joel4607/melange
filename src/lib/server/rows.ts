@@ -27,6 +27,8 @@ export interface TaskRow {
   category: string | null;
   pickup_lat: number;
   pickup_lng: number;
+  dropoff_lat: number | null;
+  dropoff_lng: number | null;
   urgency: Urgency;
   price: string;
   status: TaskStatus;
