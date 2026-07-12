@@ -503,6 +503,21 @@ export async function updateCapabilities(formData: FormData) {
   revalidatePath("/app");
 }
 
+/** Update the runner's current latitude and longitude while available. */
+export async function updateLocation(lat: number, lng: number) {
+  const runnerId = await requireRunnerId();
+  const db = getServiceClient();
+  await db.from("runner_profile").upsert(
+    {
+      user_id: runnerId,
+      current_lat: lat,
+      current_lng: lng,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "user_id" },
+  );
+}
+
 /** Mark a notification as read for the signed-in user. */
 export async function markNotificationRead(notificationId: string) {
   const userId = await requireUserId();
