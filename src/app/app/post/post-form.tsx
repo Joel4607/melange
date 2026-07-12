@@ -27,11 +27,16 @@ export function PostForm() {
     lat: "",
     lng: "",
   });
+  const [dropoffCoords, setDropoffCoords] = useState<{ lat: string; lng: string }>({
+    lat: "",
+    lng: "",
+  });
   const [locating, setLocating] = useState(false);
   const [locError, setLocError] = useState<string | null>(null);
   const [urgency, setUrgency] = useState("normal");
 
   const hasLocation = coords.lat !== "" && coords.lng !== "";
+  const hasDropoff = dropoffCoords.lat !== "" && dropoffCoords.lng !== "";
 
   function useMyLocation() {
     setLocError(null);
@@ -170,6 +175,45 @@ export function PostForm() {
             placeholder="Longitude"
             value={coords.lng}
             onChange={(e) => setCoords((c) => ({ ...c, lng: e.target.value }))}
+            className={`${inputClass} text-sm`}
+          />
+        </div>
+      </Field>
+
+      <Field label="Dropoff location (optional)">
+        <input type="hidden" name="dropoff_lat" value={dropoffCoords.lat} />
+        <input type="hidden" name="dropoff_lng" value={dropoffCoords.lng} />
+        <button
+          type="button"
+          onClick={() => setDropoffCoords(coords)}
+          className="flex w-full items-center justify-center gap-2 rounded-xl border border-cream-deep bg-cream/40 px-4 py-3 font-medium text-green-deep transition hover:bg-white"
+        >
+          <MapPin className="h-4 w-4" aria-hidden />
+          Same as pickup
+        </button>
+
+        {hasDropoff ? (
+          <p className="mt-2 flex items-center gap-1.5 text-sm text-green-soft">
+            <MapPin className="h-4 w-4" aria-hidden />
+            Dropoff set ({dropoffCoords.lat}, {dropoffCoords.lng})
+          </p>
+        ) : null}
+
+        <div className="mt-3 grid grid-cols-2 gap-2.5">
+          <input
+            aria-label="Dropoff latitude"
+            inputMode="decimal"
+            placeholder="Latitude"
+            value={dropoffCoords.lat}
+            onChange={(e) => setDropoffCoords((c) => ({ ...c, lat: e.target.value }))}
+            className={`${inputClass} text-sm`}
+          />
+          <input
+            aria-label="Dropoff longitude"
+            inputMode="decimal"
+            placeholder="Longitude"
+            value={dropoffCoords.lng}
+            onChange={(e) => setDropoffCoords((c) => ({ ...c, lng: e.target.value }))}
             className={`${inputClass} text-sm`}
           />
         </div>

@@ -82,6 +82,10 @@ export async function createErrand(formData: FormData) {
   const price = Math.max(0, Number(formData.get("price") ?? 0));
   const pickupLat = Number(formData.get("pickup_lat"));
   const pickupLng = Number(formData.get("pickup_lng"));
+  const dropoffLatRaw = String(formData.get("dropoff_lat") ?? "").trim();
+  const dropoffLngRaw = String(formData.get("dropoff_lng") ?? "").trim();
+  const dropoffLat = dropoffLatRaw ? Number(dropoffLatRaw) : Number.NaN;
+  const dropoffLng = dropoffLngRaw ? Number(dropoffLngRaw) : Number.NaN;
 
   if (!title || Number.isNaN(pickupLat) || Number.isNaN(pickupLng)) {
     throw new Error("Missing title or pickup location");
@@ -98,6 +102,8 @@ export async function createErrand(formData: FormData) {
       price,
       pickup_lat: pickupLat,
       pickup_lng: pickupLng,
+      dropoff_lat: Number.isNaN(dropoffLat) ? null : dropoffLat,
+      dropoff_lng: Number.isNaN(dropoffLng) ? null : dropoffLng,
     })
     .select("id")
     .single<{ id: string }>();

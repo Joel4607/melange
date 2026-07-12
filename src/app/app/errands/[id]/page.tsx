@@ -75,7 +75,7 @@ export default async function ErrandPage({
   const { data: task } = await db
     .from("tasks")
     .select(
-      "id, buyer_id, title, description, category, urgency, price, status, selected_runner_id, created_at, accepted_at, completed_at",
+      "id, buyer_id, title, description, category, urgency, price, status, selected_runner_id, pickup_lat, pickup_lng, dropoff_lat, dropoff_lng, created_at, accepted_at, completed_at",
     )
     .eq("id", id)
     .maybeSingle<{
@@ -88,6 +88,10 @@ export default async function ErrandPage({
       price: string;
       status: TaskStatus;
       selected_runner_id: string | null;
+      pickup_lat: number;
+      pickup_lng: number;
+      dropoff_lat: number | null;
+      dropoff_lng: number | null;
       created_at: string;
       accepted_at: string | null;
       completed_at: string | null;
@@ -265,6 +269,27 @@ export default async function ErrandPage({
                   ? `GHS ${price} held in escrow. ${task.status === "completed" ? "Rate to release or raise a dispute." : "Released when you confirm delivery."}`
                   : "You'll pay into escrow when you confirm the match. Funds are only released on delivery."}
           </p>
+        </section>
+
+        {/* Locations */}
+        <section className="mt-5 rounded-[1.5rem] border border-cream-deep bg-white p-6 shadow-sm">
+          <p className="flex items-center gap-2 font-medium text-green-deep">
+            <MapPin className="h-5 w-5 text-orange-deep" aria-hidden /> Locations
+          </p>
+          <div className="mt-3 space-y-2 text-sm">
+            <p className="text-muted">
+              <span className="font-medium text-ink">Pickup:</span>{" "}
+              {task.pickup_lat.toFixed(5)}, {task.pickup_lng.toFixed(5)}
+            </p>
+            {task.dropoff_lat != null && task.dropoff_lng != null ? (
+              <p className="text-muted">
+                <span className="font-medium text-ink">Dropoff:</span>{" "}
+                {task.dropoff_lat.toFixed(5)}, {task.dropoff_lng.toFixed(5)}
+              </p>
+            ) : (
+              <p className="text-muted">Dropoff: same as pickup</p>
+            )}
+          </div>
         </section>
 
         {/* Action */}
