@@ -2,31 +2,31 @@ import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
-  ArrowRight,
-  Bell,
   Bike,
   CircleCheck,
   Clock,
   PackageCheck,
   Plus,
-  ShieldCheck,
+  ArrowRight,
   Star,
-  Wallet,
-  XCircle,
+  Settings,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getServiceClient } from "@/lib/supabase/service";
+import { NotificationSummary } from "@/lib/notification-text";
 import { Logo } from "@/components/brand";
 import { AvailabilityToggle } from "./availability-toggle";
 import { MarkDeliveredForm } from "./mark-delivered-form";
 import { CapabilitiesEditor } from "./capabilities-editor";
 import { LiveLocationUpdater } from "./live-location-updater";
 import { RealtimeStatus } from "./realtime-status";
+import { WalletCard } from "./wallet-card";
+import { VerificationCard } from "./verification-card";
+import { NotificationsPopover } from "./notifications-popover";
 import {
   acceptOffer,
   cancelRunnerErrand,
   declineOffer,
-  markNotificationRead,
   markPickedUp,
 } from "./actions";
 
@@ -66,18 +66,6 @@ interface RunnerTaskSummary {
   pickup_lng: number;
 }
 
-interface NotificationSummary {
-  id: string;
-  type: string;
-  payload: {
-    task_title?: string;
-    task_id?: string;
-    resolution?: string;
-  };
-  read: boolean;
-  created_at: string;
-}
-
 export default async function AppHome() {
   const supabase = await createClient();
   const db = getServiceClient();
@@ -85,7 +73,6 @@ export default async function AppHome() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Middleware guards this route, but never trust that alone.
   if (!user) redirect("/login");
 
   const { data: profile } = await supabase
@@ -94,8 +81,6 @@ export default async function AppHome() {
     .eq("id", user.id)
     .single();
 
-  // Backfill the phone captured at sign-up into the profile if the trigger
-  // (which only sets the name) left it empty.
   const metaPhone = (user.user_metadata?.phone as string | undefined) ?? "";
   if (profile && !profile.phone && metaPhone) {
     await supabase.from("profiles").update({ phone: metaPhone }).eq("id", user.id);
@@ -160,7 +145,7 @@ export default async function AppHome() {
   return (
     <div className="flex min-h-dvh flex-col bg-cream">
       <header className="border-b border-cream-deep/70 bg-cream/85 backdrop-blur">
-        <div className="mx-auto flex max-w-4xl items-center justify-between px-5 py-4">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4">
           <Logo />
           <div className="flex items-center gap-3">
             {profile?.is_admin ? (
@@ -171,6 +156,13 @@ export default async function AppHome() {
                 Admin
               </Link>
             ) : null}
+            <NotificationsPopover notifications={notifications ?? []} />
+            <Link
+              href="/app/settings"
+              className="inline-flex items-center gap-2 rounded-full border border-cream-deep px-4 py-2 text-sm font-medium text-green-deep transition hover:bg-white"
+            >
+              <Settings className="h-4 w-4" aria-hidden /> Settings
+            </Link>
             <form action="/auth/signout" method="post">
               <button
                 type="submit"
@@ -183,163 +175,62 @@ export default async function AppHome() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-4xl flex-1 px-5 py-10">
-        <span className="inline-flex items-center gap-2 rounded-full bg-green/10 px-4 py-1.5 text-sm font-medium text-green-deep">
-          {role === "runner" ? (
-            <Bike className="h-4 w-4" aria-hidden />
-          ) : (
-            <PackageCheck className="h-4 w-4" aria-hidden />
-          )}
-          {role === "runner" ? "Runner" : "Customer"}
-        </span>
+      <main className="mx-auto w-full max-w-7xl flex-1 px-5 py-8">
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <span className="inline-flex items-center gap-2 rounded-full bg-green/10 px-4 py-1.5 text-sm font-medium text-green-deep">
+              {role === "runner" ? (
+                <Bike className="h-4 w-4" aria-hidden />
+              ) : (
+                <PackageCheck className="h-4 w-4" aria-hidden />
+              )}
+              {role === "runner" ? "Runner" : "Customer"}
+            </span>
+            <h1 className="mt-3 font-display text-fluid-h2 font-semibold text-green-deep">
+              Welcome back, {firstName}
+            </h1>
+            <p className="mt-1 max-w-xl text-muted">
+              {role === "runner"
+                ? "Your dashboard shows open errands, offers, and active jobs."
+                : "Post an errand, track deliveries, and manage your wallet from one place."}
+            </p>
+          </div>
+        </div>
 
-        <h1 className="mt-4 font-display text-fluid-h2 font-semibold text-green-deep">
-          Welcome, {firstName} 👋
-        </h1>
-        <p className="mt-2 max-w-xl text-muted">
-          {role === "runner"
-            ? "You're all set. Go available to start receiving errand offers near you."
-            : "You're all set. Post an errand and a trusted runner will pick it up."}
-        </p>
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+          <div className="order-1 flex flex-col gap-5 lg:col-span-2">
+            {role === "buyer" ? (
+              <BuyerHome errands={errands ?? []} />
+            ) : (
+              <RunnerHome profile={runnerProfile ?? null} tasks={runnerTasks ?? []} />
+            )}
+          </div>
 
-        <VerificationCard
-          verified={profile?.verified ?? false}
-          request={verificationRequest ?? null}
-        />
-        <WalletCard wallet={wallet ?? null} />
+          <aside className="order-2 flex flex-col gap-5 lg:col-span-1">
+            <WalletCard wallet={wallet ?? null} className="h-52" />
+            {role === "buyer" ? (
+              <VerificationCard
+                verified={profile?.verified ?? false}
+                request={verificationRequest ?? null}
+              />
+            ) : (
+              <RunnerSidebar profile={runnerProfile ?? null} />
+            )}
+          </aside>
+        </div>
 
-        {role === "buyer" ? (
-          <BuyerHome errands={errands ?? []} />
-        ) : (
-          <RunnerHome profile={runnerProfile ?? null} tasks={runnerTasks ?? []} />
-        )}
-
-        <Notifications notifications={notifications ?? []} />
         <RealtimeStatus userId={user.id} />
-
-        <p className="mt-10 text-sm text-muted">
-          Signed in as {user.email}
-          {profile?.verified ? "" : " · verification pending"}
-        </p>
       </main>
     </div>
   );
 }
 
-function VerificationCard({
-  verified,
-  request,
-}: {
-  verified: boolean;
-  request: { id: string; status: "pending" | "approved" | "rejected"; created_at: string } | null;
-}) {
-  if (verified) {
-    return (
-      <div className="mt-8 rounded-[1.5rem] border border-green/30 bg-green/5 p-6">
-        <p className="flex items-center gap-2 font-medium text-green-deep">
-          <ShieldCheck className="h-5 w-5 text-green-deep" aria-hidden /> Verified
-        </p>
-        <p className="mt-1 text-sm text-muted">Your identity has been verified.</p>
-      </div>
-    );
-  }
-
-  if (request?.status === "pending") {
-    return (
-      <div className="mt-8 rounded-[1.5rem] border border-cream-deep bg-white p-6 shadow-sm">
-        <p className="flex items-center gap-2 font-medium text-green-deep">
-          <Clock className="h-5 w-5 text-orange-deep" aria-hidden /> Verification pending
-        </p>
-        <p className="mt-1 text-sm text-muted">
-          Submitted {new Date(request.created_at).toLocaleDateString()}. We&apos;ll let you know once
-          it&apos;s reviewed.
-        </p>
-      </div>
-    );
-  }
-
-  if (request?.status === "rejected") {
-    return (
-      <div className="mt-8 rounded-[1.5rem] border border-orange/15 bg-orange/5 p-6">
-        <p className="flex items-center gap-2 font-medium text-green-deep">
-          <XCircle className="h-5 w-5 text-orange-deep" aria-hidden /> Verification rejected
-        </p>
-        <p className="mt-1 text-sm text-muted">
-          Your last submission was rejected. Submit a clearer ID photo.
-        </p>
-        <Link
-          href="/app/verify"
-          className="mt-4 inline-block rounded-full border border-cream-deep bg-white px-4 py-2 text-sm font-medium text-green-deep transition hover:bg-cream/40"
-        >
-          Re-submit
-        </Link>
-      </div>
-    );
-  }
-
-  return (
-    <div className="mt-8 rounded-[1.5rem] border border-cream-deep bg-white p-6 shadow-sm">
-      <p className="flex items-center gap-2 font-medium text-green-deep">
-        <ShieldCheck className="h-5 w-5 text-orange-deep" aria-hidden /> Identity verification
-      </p>
-      <p className="mt-1 text-sm text-muted">
-        Get verified to build trust and unlock full platform features.
-      </p>
-      <Link
-        href="/app/verify"
-        className="mt-4 inline-block rounded-full border border-cream-deep bg-white px-4 py-2 text-sm font-medium text-green-deep transition hover:bg-cream/40"
-      >
-        Verify now
-      </Link>
-    </div>
-  );
-}
-
-function WalletCard({ wallet }: { wallet: { balance: string; held: string } | null }) {
-  const balance = wallet ? Number(wallet.balance).toFixed(2) : "0.00";
-  const held = wallet ? Number(wallet.held).toFixed(2) : "0.00";
-  return (
-    <div className="mt-8 rounded-[1.5rem] border border-cream-deep bg-white p-6 shadow-sm">
-      <p className="flex items-center gap-2 font-display text-lg font-semibold text-green-deep">
-        <Wallet className="h-5 w-5 text-orange-deep" aria-hidden /> Wallet
-      </p>
-      <div className="mt-3 grid grid-cols-2 gap-4">
-        <div>
-          <p className="text-sm text-muted">Available</p>
-          <p className="font-display text-2xl font-semibold text-green-deep">GHS {balance}</p>
-        </div>
-        <div>
-          <p className="text-sm text-muted">In escrow</p>
-          <p className="font-display text-2xl font-semibold text-green-deep">GHS {held}</p>
-        </div>
-      </div>
-      <Link
-        href="/app/wallet"
-        className="mt-4 inline-block rounded-full border border-cream-deep bg-white px-4 py-2 text-sm font-medium text-green-deep transition hover:bg-cream/40"
-      >
-        View transactions
-      </Link>
-    </div>
-  );
-}
-
-const STATUS_LABELS: Record<string, { label: string; tone: string }> = {
-  posted: { label: "Finding runner", tone: "bg-orange/15 text-orange-deep" },
-  matched: { label: "Runner matched", tone: "bg-orange/15 text-orange-deep" },
-  accepted: { label: "In progress", tone: "bg-green/10 text-green-deep" },
-  in_progress: { label: "In progress", tone: "bg-green/10 text-green-deep" },
-  completed: { label: "Delivered", tone: "bg-green text-cream" },
-  resolved: { label: "Resolved", tone: "bg-green text-cream" },
-  disputed: { label: "In dispute", tone: "bg-orange/15 text-orange-deep" },
-  cancelled: { label: "Cancelled", tone: "bg-cream-deep text-muted" },
-};
-
 function BuyerHome({ errands }: { errands: ErrandSummary[] }) {
   return (
-    <div className="mt-8 space-y-5">
+    <div className="space-y-5">
       <Link
         href="/app/post"
-        className="flex items-center justify-between rounded-[1.5rem] bg-green p-6 text-left text-cream shadow-sm transition hover:bg-green-deep"
+        className="flex items-center justify-between rounded-2xl bg-green p-6 text-left text-cream shadow-sm transition hover:bg-green-deep"
       >
         <span>
           <span className="flex items-center gap-2 font-display text-xl font-semibold">
@@ -352,18 +243,11 @@ function BuyerHome({ errands }: { errands: ErrandSummary[] }) {
         <ArrowRight className="h-5 w-5" aria-hidden />
       </Link>
 
-      <div className="rounded-[1.5rem] border border-cream-deep bg-white p-6">
-        <p className="flex items-center gap-2 font-display text-lg font-semibold text-green-deep">
-          <Clock className="h-5 w-5 text-orange-deep" aria-hidden /> Your errands
-        </p>
-
+      <Section title="Your errands" icon={<Clock className="h-5 w-5 text-orange-deep" aria-hidden />}>
         {errands.length === 0 ? (
-          <p className="mt-2 text-sm text-muted">
-            No errands yet. Once you post one, you&apos;ll track it here from
-            matched → delivered.
-          </p>
+          <Empty>No errands yet. Post one and track it from matched to delivered.</Empty>
         ) : (
-          <ul className="mt-4 divide-y divide-cream-deep">
+          <ul className="divide-y divide-cream-deep">
             {errands.map((e) => {
               const s = STATUS_LABELS[e.status] ?? {
                 label: e.status,
@@ -376,9 +260,7 @@ function BuyerHome({ errands }: { errands: ErrandSummary[] }) {
                     className="flex items-center justify-between gap-4 py-3.5 transition hover:opacity-80"
                   >
                     <span className="min-w-0">
-                      <span className="block truncate font-medium text-ink">
-                        {e.title}
-                      </span>
+                      <span className="block truncate font-medium text-ink">{e.title}</span>
                       <span className="text-sm text-muted">
                         {e.category ?? "Errand"} · GHS {Number(e.price).toFixed(2)}
                       </span>
@@ -394,7 +276,7 @@ function BuyerHome({ errands }: { errands: ErrandSummary[] }) {
             })}
           </ul>
         )}
-      </div>
+      </Section>
     </div>
   );
 }
@@ -415,10 +297,10 @@ function RunnerHome({
   );
 
   return (
-    <div className="mt-8 space-y-5">
+    <div className="space-y-5">
       <Link
         href="/app/feed"
-        className="flex items-center justify-between rounded-[1.5rem] bg-green p-6 text-left text-cream shadow-sm transition hover:bg-green-deep"
+        className="flex items-center justify-between rounded-2xl bg-green p-6 text-left text-cream shadow-sm transition hover:bg-green-deep"
       >
         <span>
           <span className="flex items-center gap-2 font-display text-xl font-semibold">
@@ -430,56 +312,6 @@ function RunnerHome({
         </span>
         <ArrowRight className="h-5 w-5" aria-hidden />
       </Link>
-
-      <div className="rounded-[1.5rem] border border-cream-deep bg-white p-6 shadow-sm">
-        <p className="flex items-center gap-2 font-display text-lg font-semibold text-green-deep">
-          <CircleCheck className="h-5 w-5 text-orange-deep" aria-hidden /> Availability
-        </p>
-        <p className="mt-1 text-sm text-muted">
-          {profile?.is_available
-            ? `Available${
-                profile.current_lat != null && profile.current_lng != null
-                  ? ` · ${profile.current_lat.toFixed(4)}, ${profile.current_lng.toFixed(4)}`
-                  : ""
-              }`
-            : "Offline"}
-        </p>
-        <div className="mt-4">
-          <AvailabilityToggle
-            available={profile?.is_available ?? false}
-            lat={profile?.current_lat ?? null}
-            lng={profile?.current_lng ?? null}
-          />
-        </div>
-      </div>
-
-      <div className="rounded-[1.5rem] border border-cream-deep bg-white p-6 shadow-sm">
-        <p className="flex items-center gap-2 font-display text-lg font-semibold text-green-deep">
-          <Star className="h-5 w-5 text-orange-deep" aria-hidden /> Trust score
-        </p>
-        <p className="mt-1 text-sm text-muted">
-          {profile ? (
-            <span className="inline-flex items-center gap-1.5">
-              <Star className="h-4 w-4 fill-orange text-orange" aria-hidden />
-              {(profile.trust_score * 5).toFixed(1)} / 5
-            </span>
-          ) : (
-            "Go available to start building your trust score."
-          )}
-        </p>
-      </div>
-
-      <div className="rounded-[1.5rem] border border-cream-deep bg-white p-6 shadow-sm">
-        <p className="font-display text-lg font-semibold text-green-deep">Capabilities</p>
-        <p className="mt-1 text-sm text-muted">
-          Select the categories you want to be matched for.
-        </p>
-        <div className="mt-4">
-          <CapabilitiesEditor capabilities={profile?.capabilities ?? null} />
-        </div>
-      </div>
-
-      <LiveLocationUpdater available={profile?.is_available ?? false} />
 
       <Section title="Offers" icon={<Clock className="h-5 w-5 text-orange-deep" aria-hidden />}>
         {offers.length === 0 ? (
@@ -562,9 +394,74 @@ function RunnerHome({
           </div>
         </Section>
       ) : null}
+
+      <LiveLocationUpdater available={profile?.is_available ?? false} />
     </div>
   );
 }
+
+function RunnerSidebar({ profile }: { profile: RunnerProfileSummary | null }) {
+  return (
+    <div className="space-y-5">
+      <div className="rounded-2xl border border-cream-deep bg-white p-5 shadow-sm">
+        <p className="flex items-center gap-2 font-display font-semibold text-green-deep">
+          <CircleCheck className="h-5 w-5 text-orange-deep" aria-hidden /> Availability
+        </p>
+        <p className="mt-1 text-sm text-muted">
+          {profile?.is_available
+            ? `Available${
+                profile.current_lat != null && profile.current_lng != null
+                  ? ` · ${profile.current_lat.toFixed(4)}, ${profile.current_lng.toFixed(4)}`
+                  : ""
+              }`
+            : "Offline"}
+        </p>
+        <div className="mt-4">
+          <AvailabilityToggle
+            available={profile?.is_available ?? false}
+            lat={profile?.current_lat ?? null}
+            lng={profile?.current_lng ?? null}
+          />
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-cream-deep bg-white p-5 shadow-sm">
+        <p className="flex items-center gap-2 font-display font-semibold text-green-deep">
+          <Star className="h-5 w-5 text-orange-deep" aria-hidden /> Trust score
+        </p>
+        <p className="mt-1 text-sm text-muted">
+          {profile ? (
+            <span className="inline-flex items-center gap-1.5">
+              <Star className="h-4 w-4 fill-orange text-orange" aria-hidden />
+              {(profile.trust_score * 5).toFixed(1)} / 5
+            </span>
+          ) : (
+            "Go available to start building your trust score."
+          )}
+        </p>
+      </div>
+
+      <div className="rounded-2xl border border-cream-deep bg-white p-5 shadow-sm">
+        <p className="font-display font-semibold text-green-deep">Capabilities</p>
+        <p className="mt-1 text-sm text-muted">Select the categories you want to be matched for.</p>
+        <div className="mt-4">
+          <CapabilitiesEditor capabilities={profile?.capabilities ?? null} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const STATUS_LABELS: Record<string, { label: string; tone: string }> = {
+  posted: { label: "Finding runner", tone: "bg-orange/15 text-orange-deep" },
+  matched: { label: "Runner matched", tone: "bg-orange/15 text-orange-deep" },
+  accepted: { label: "In progress", tone: "bg-green/10 text-green-deep" },
+  in_progress: { label: "In progress", tone: "bg-green/10 text-green-deep" },
+  completed: { label: "Delivered", tone: "bg-green text-cream" },
+  resolved: { label: "Resolved", tone: "bg-green text-cream" },
+  disputed: { label: "In dispute", tone: "bg-orange/15 text-orange-deep" },
+  cancelled: { label: "Cancelled", tone: "bg-cream-deep text-muted" },
+};
 
 function Section({
   title,
@@ -576,8 +473,8 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-[1.5rem] border border-cream-deep bg-white p-6 shadow-sm">
-      <p className="flex items-center gap-2 font-display text-lg font-semibold text-green-deep">
+    <div className="rounded-2xl border border-cream-deep bg-white p-6 shadow-sm">
+      <p className="flex items-center gap-2 font-display font-semibold text-green-deep">
         {icon}
         {title}
       </p>
@@ -588,74 +485,6 @@ function Section({
 
 function Empty({ children }: { children: React.ReactNode }) {
   return <p className="text-sm text-muted">{children}</p>;
-}
-
-function Notifications({ notifications }: { notifications: NotificationSummary[] }) {
-  const unread = notifications.filter((n) => !n.read).length;
-
-  const textByType: Record<string, string> = {
-    offer: "New errand offer",
-    offer_accepted: "Runner accepted your errand",
-    picked_up: "Runner picked up your errand",
-    delivered: "Your errand was delivered",
-    rated: "Buyer rated you",
-    buyer_cancelled: "Buyer cancelled the errand",
-    runner_cancelled: "Runner cancelled the errand",
-    dispute_raised: "A dispute was raised",
-    dispute_resolved: "Dispute resolved",
-  };
-
-  function message(n: NotificationSummary): string {
-    const base = textByType[n.type] ?? n.type;
-    const title = n.payload?.task_title ? ` · ${n.payload.task_title}` : "";
-    const resolution =
-      n.type === "dispute_resolved" && n.payload.resolution
-        ? ` (${n.payload.resolution})`
-        : "";
-    return `${base}${title}${resolution}`;
-  }
-
-  return (
-    <div className="mt-8 rounded-[1.5rem] border border-cream-deep bg-white p-6 shadow-sm">
-      <p className="flex items-center gap-2 font-display text-lg font-semibold text-green-deep">
-        <Bell className="h-5 w-5 text-orange-deep" aria-hidden /> Notifications
-        {unread > 0 ? (
-          <span className="ml-auto rounded-full bg-orange px-2.5 py-0.5 text-xs font-semibold text-white">
-            {unread}
-          </span>
-        ) : null}
-      </p>
-
-      {notifications.length === 0 ? (
-        <p className="mt-2 text-sm text-muted">No notifications yet.</p>
-      ) : (
-        <ul className="mt-4 space-y-3">
-          {notifications.map((n) => (
-            <li
-              key={n.id}
-              className={`flex items-center justify-between gap-4 rounded-xl border border-cream-deep p-3 ${
-                n.read ? "bg-cream/30" : "bg-cream/60"
-              }`}
-            >
-              <span className={`text-sm ${n.read ? "text-muted" : "text-ink"}`}>
-                {message(n)}
-              </span>
-              {!n.read ? (
-                <form action={markNotificationRead.bind(null, n.id)}>
-                  <button
-                    type="submit"
-                    className="shrink-0 rounded-full border border-green-soft px-3 py-1 text-xs font-medium text-green-deep transition hover:bg-cream"
-                  >
-                    Mark read
-                  </button>
-                </form>
-              ) : null}
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
 }
 
 function TaskCard({

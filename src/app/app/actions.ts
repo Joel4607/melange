@@ -560,6 +560,45 @@ export async function topUpWallet(formData: FormData) {
   revalidatePath("/app/wallet");
 }
 
+/** Mark all notifications read for the signed-in user. */
+export async function markAllNotificationsRead() {
+  const userId = await requireUserId();
+  const db = getServiceClient();
+  await db
+    .from("notifications")
+    .update({ read: true })
+    .eq("recipient_id", userId)
+    .eq("read", false);
+
+  revalidatePath("/app");
+  revalidatePath("/app/notifications");
+}
+
+/** Update the signed-in user's profile name and phone. */
+export async function updateProfile(formData: FormData) {
+  const userId = await requireUserId();
+  const db = getServiceClient();
+  const name = String(formData.get("name") ?? "").trim();
+  const phone = String(formData.get("phone") ?? "").trim();
+
+  const { data: existing } = await db
+    .from("profiles")
+    .select("name")
+    .eq("id", userId)
+    .single();
+
+  await db
+    .from("profiles")
+    .update({
+      name: name || existing?.name || "User",
+      phone: phone || null,
+    })
+    .eq("id", userId);
+
+  revalidatePath("/app");
+  revalidatePath("/app/settings");
+}
+
 /** Update the runner's current latitude and longitude while available. */
 export async function updateLocation(lat: number, lng: number) {
   const runnerId = await requireRunnerId();
