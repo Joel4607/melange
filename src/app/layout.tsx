@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Fraunces } from "next/font/google";
 import "./globals.css";
+import { ServiceWorkerRegister } from "./service-worker-register";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -23,6 +24,13 @@ export const metadata: Metadata = {
   title: "Mélange — Errands, run for you",
   description:
     "You take care of life — we'll take care of the rest. Mélange runs your errands: market runs, groceries, pharmacy pickups, deliveries and more.",
+  manifest: "/manifest.json",
+  icons: "/icon-512x512.png",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Mélange",
+  },
 };
 
 export const viewport: Viewport = {
@@ -44,6 +52,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-cream text-ink">
         {children}
+        <ServiceWorkerRegister />
       </body>
     </html>
   );
