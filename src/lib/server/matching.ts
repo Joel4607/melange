@@ -3,7 +3,7 @@ import {
   computeTrust,
   evaluateFraud,
   rankRunners,
-  type FraudContext,
+  type FraudResult,
   type MatchResult,
   type RunnerCandidate,
   type TaskRequest,
@@ -76,22 +76,22 @@ export async function generateMatchRun(taskId: string): Promise<MatchResult[]> {
   );
 
   const candidates: RunnerCandidate[] = [];
+  const trustScores: { user_id: string; trust_score: number; updated_at: string }[] = [];
   for (const r of located) {
     const events = eventsByRunner.get(r.user_id) ?? [];
-    const recentCancellations = events.filter(
-      (e) => e.type === "cancelled" && now - e.at <= CANCELLATION_WINDOW_MS,
-    ).length;
-
-    const fraudCtx: FraudContext = { recentCancellations };
-    const fraud = evaluateFraud(fraudCtx);
-    if (fraud.action === "exclude") continue;
-
-    const { trust } = computeTrust({
+    const { trust, action } = runnerTrustSnapshot(
       events,
-      verified: verifiedById.get(r.user_id) ?? false,
-      fraudRisk: fraud.risk,
+      verifiedById.get(r.user_id) ?? false,
       now,
+    );
+
+    trustScores.push({
+      user_id: r.user_id,
+      trust_score: trust,
+      updated_at: new Date(now).toISOString(),
     });
+
+    if (action === "exclude") continue;
 
     candidates.push({
       runnerId: r.user_id,
@@ -100,6 +100,15 @@ export async function generateMatchRun(taskId: string): Promise<MatchResult[]> {
       activeLoad: r.active_load,
       available: true,
     });
+  }
+
+  if (trustScores.length > 0) {
+    const { error: trustError } = await db
+      .from("runner_profile")
+      .upsert(trustScores, { onConflict: "user_id" });
+    if (trustError) {
+      throw new Error(`generateMatchRun: ${trustError.message}`);
+    }
   }
 
   const request: TaskRequest = {
@@ -141,6 +150,53 @@ export async function generateMatchRun(taskId: string): Promise<MatchResult[]> {
   }
 
   return results;
+}
+
+/**
+ * Recompute and persist a single runner's cached `trust_score`.
+ * Call this after a `trust_events` row is inserted so the cache stays fresh
+ * between full match runs.
+ */
+export async function refreshTrustScore(runnerId: string): Promise<void> {
+  const db = getServiceClient();
+  const now = Date.now();
+
+  const eventsByRunner = await loadTrustEvents(db, [runnerId]);
+  const verifiedById = await loadVerified(db, [runnerId]);
+
+  const { trust } = runnerTrustSnapshot(
+    eventsByRunner.get(runnerId) ?? [],
+    verifiedById.get(runnerId) ?? false,
+    now,
+  );
+
+  const { error } = await db
+    .from("runner_profile")
+    .update({ trust_score: trust, updated_at: new Date(now).toISOString() })
+    .eq("user_id", runnerId);
+  if (error) {
+    throw new Error(`refreshTrustScore: ${error.message}`);
+  }
+}
+
+function runnerTrustSnapshot(
+  events: TrustEvent[],
+  verified: boolean,
+  now: number,
+): { trust: number; action: FraudResult["action"] } {
+  const recentCancellations = events.filter(
+    (e) => e.type === "cancelled" && now - e.at <= CANCELLATION_WINDOW_MS,
+  ).length;
+
+  const fraud = evaluateFraud({ recentCancellations });
+  const { trust } = computeTrust({
+    events,
+    verified,
+    fraudRisk: fraud.risk,
+    now,
+  });
+
+  return { trust, action: fraud.action };
 }
 
 export async function offerToTopCandidate(taskId: string): Promise<string | null> {

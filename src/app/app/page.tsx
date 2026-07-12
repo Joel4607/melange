@@ -8,6 +8,7 @@ import {
   Clock,
   PackageCheck,
   Plus,
+  Star,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getServiceClient } from "@/lib/supabase/service";
@@ -36,6 +37,7 @@ interface RunnerProfileSummary {
   current_lat: number | null;
   current_lng: number | null;
   active_load: number;
+  trust_score: number;
   status: string;
 }
 
@@ -89,7 +91,7 @@ export default async function AppHome() {
     role === "runner"
       ? await db
           .from("runner_profile")
-          .select("is_available, current_lat, current_lng, active_load, status")
+          .select("is_available, current_lat, current_lng, active_load, trust_score, status")
           .eq("user_id", user.id)
           .maybeSingle<RunnerProfileSummary>()
       : { data: null };
@@ -267,6 +269,22 @@ function RunnerHome({
             lng={profile?.current_lng ?? null}
           />
         </div>
+      </div>
+
+      <div className="rounded-[1.5rem] border border-cream-deep bg-white p-6 shadow-sm">
+        <p className="flex items-center gap-2 font-display text-lg font-semibold text-green-deep">
+          <Star className="h-5 w-5 text-orange-deep" aria-hidden /> Trust score
+        </p>
+        <p className="mt-1 text-sm text-muted">
+          {profile ? (
+            <span className="inline-flex items-center gap-1.5">
+              <Star className="h-4 w-4 fill-orange text-orange" aria-hidden />
+              {(profile.trust_score * 5).toFixed(1)} / 5
+            </span>
+          ) : (
+            "Go available to start building your trust score."
+          )}
+        </p>
       </div>
 
       <Section title="Offers" icon={<Clock className="h-5 w-5 text-orange-deep" aria-hidden />}>
