@@ -51,7 +51,7 @@ export async function generateMatchRun(taskId: string): Promise<MatchResult[]> {
   const { data: runners, error: runnersError } = await db
     .from("runner_profile")
     .select(
-      "user_id, current_lat, current_lng, is_available, active_load, trust_score, status",
+      "user_id, current_lat, current_lng, is_available, active_load, trust_score, status, capabilities",
     )
     .eq("is_available", true)
     .eq("status", "active")
@@ -100,6 +100,7 @@ export async function generateMatchRun(taskId: string): Promise<MatchResult[]> {
       trust,
       activeLoad: r.active_load,
       available: true,
+      capabilities: r.capabilities ?? undefined,
     });
   }
 

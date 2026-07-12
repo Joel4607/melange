@@ -16,6 +16,7 @@ import { getServiceClient } from "@/lib/supabase/service";
 import { Logo } from "@/components/brand";
 import { AvailabilityToggle } from "./availability-toggle";
 import { MarkDeliveredForm } from "./mark-delivered-form";
+import { CapabilitiesEditor } from "./capabilities-editor";
 import {
   acceptOffer,
   cancelRunnerErrand,
@@ -46,6 +47,7 @@ interface RunnerProfileSummary {
   active_load: number;
   trust_score: number;
   status: string;
+  capabilities: string[] | null;
 }
 
 interface RunnerTaskSummary {
@@ -110,7 +112,9 @@ export default async function AppHome() {
     role === "runner"
       ? await db
           .from("runner_profile")
-          .select("is_available, current_lat, current_lng, active_load, trust_score, status")
+          .select(
+            "is_available, current_lat, current_lng, active_load, trust_score, status, capabilities",
+          )
           .eq("user_id", user.id)
           .maybeSingle<RunnerProfileSummary>()
       : { data: null };
@@ -324,6 +328,16 @@ function RunnerHome({
             "Go available to start building your trust score."
           )}
         </p>
+      </div>
+
+      <div className="rounded-[1.5rem] border border-cream-deep bg-white p-6 shadow-sm">
+        <p className="font-display text-lg font-semibold text-green-deep">Capabilities</p>
+        <p className="mt-1 text-sm text-muted">
+          Select the categories you want to be matched for.
+        </p>
+        <div className="mt-4">
+          <CapabilitiesEditor capabilities={profile?.capabilities ?? null} />
+        </div>
       </div>
 
       <Section title="Offers" icon={<Clock className="h-5 w-5 text-orange-deep" aria-hidden />}>
