@@ -91,6 +91,10 @@ export async function createErrand(formData: FormData) {
     throw new Error("Missing title or pickup location");
   }
 
+  const priceCents = Math.round(price * 100);
+  const feeCents = Math.round(priceCents * 0.1);
+  const fee = feeCents / 100;
+
   const { data: task, error } = await supabase
     .from("tasks")
     .insert({
@@ -100,6 +104,7 @@ export async function createErrand(formData: FormData) {
       category: category || null,
       urgency,
       price,
+      fee,
       pickup_lat: pickupLat,
       pickup_lng: pickupLng,
       dropoff_lat: Number.isNaN(dropoffLat) ? null : dropoffLat,

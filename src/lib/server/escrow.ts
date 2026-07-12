@@ -36,12 +36,18 @@ async function loadTask(db: Db, taskId: string): Promise<TaskRow> {
   const { data, error } = await db
     .from("tasks")
     .select(
-      "id, buyer_id, category, pickup_lat, pickup_lng, urgency, price, status, selected_runner_id, accepted_at, completed_at",
+      "id, buyer_id, category, pickup_lat, pickup_lng, urgency, price, fee, status, selected_runner_id, accepted_at, completed_at",
     )
     .eq("id", taskId)
     .single<TaskRow>();
   if (error || !data) throw new Error(`escrow: task ${taskId} not found`);
   return data;
+}
+
+function runnerPayoutCents(task: TaskRow): number {
+  const total = toCents(task.price);
+  const fee = toCents(task.fee);
+  return Math.max(0, total - fee);
 }
 
 async function loadWallet(db: Db, userId: string): Promise<WalletRow> {
@@ -131,6 +137,7 @@ export async function releaseFunds(taskId: string): Promise<void> {
     throw new Error(`escrow: task ${taskId} has no selected runner`);
   }
   const amount = toCents(task.price);
+  const payout = runnerPayoutCents(task);
 
   if (!await hasLedgerEntry(db, taskId, ["hold"])) return;
   if (await hasLedgerEntry(db, taskId, ["release", "payout"])) return;
@@ -147,12 +154,12 @@ export async function releaseFunds(taskId: string): Promise<void> {
     .eq("user_id", task.buyer_id);
   await db
     .from("wallets")
-    .update({ balance: fromCents(toCents(runner.balance) + amount) })
+    .update({ balance: fromCents(toCents(runner.balance) + payout) })
     .eq("user_id", task.selected_runner_id);
 
   await db.from("ledger_entries").insert([
     { task_id: task.id, user_id: task.buyer_id, type: "release", amount: fromCents(-amount) },
-    { task_id: task.id, user_id: task.selected_runner_id, type: "payout", amount: fromCents(amount) },
+    { task_id: task.id, user_id: task.selected_runner_id, type: "payout", amount: fromCents(payout) },
   ]);
 }
 
