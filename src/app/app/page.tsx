@@ -13,7 +13,8 @@ import { createClient } from "@/lib/supabase/server";
 import { getServiceClient } from "@/lib/supabase/service";
 import { Logo } from "@/components/brand";
 import { AvailabilityToggle } from "./availability-toggle";
-import { acceptOffer, declineOffer, markDelivered, markPickedUp } from "./actions";
+import { MarkDeliveredForm } from "./mark-delivered-form";
+import { acceptOffer, cancelRunnerErrand, declineOffer, markPickedUp } from "./actions";
 
 export const metadata: Metadata = {
   title: "Your dashboard — Mélange",
@@ -320,15 +321,16 @@ function RunnerHome({
                       </button>
                     </form>
                   ) : null}
-                  <form action={markDelivered.bind(null, task.id)}>
+                  <form action={cancelRunnerErrand.bind(null, task.id)}>
                     <button
                       type="submit"
-                      className="rounded-full border border-cream-deep px-4 py-2 text-sm font-semibold text-green-deep transition hover:bg-cream/40"
+                      className="rounded-full border border-cream-deep px-4 py-2 text-sm font-semibold text-orange-deep transition hover:bg-orange/10"
                     >
-                      Mark delivered
+                      Cancel
                     </button>
                   </form>
                 </div>
+                <MarkDeliveredForm taskId={task.id} />
               </TaskCard>
             ))}
           </div>

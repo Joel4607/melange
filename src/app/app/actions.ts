@@ -5,7 +5,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getServiceClient } from "@/lib/supabase/service";
 import { generateMatchRun, offerToTopCandidate } from "@/lib/server/matching";
-import { holdFunds, releaseFunds, topUp } from "@/lib/server/escrow";
+import { hasLedgerEntry, holdFunds, releaseFunds, refund, topUp } from "@/lib/server/escrow";
+import { resolveDispute } from "@/lib/server/disputes";
 import type { Urgency } from "@/lib/algorithm";
 
 const URGENCIES: readonly Urgency[] = ["low", "normal", "express"];
@@ -266,13 +267,28 @@ export async function markPickedUp(taskId: string) {
   revalidatePath("/app");
 }
 
-export async function markDelivered(taskId: string) {
+export async function markDelivered(taskId: string, formData: FormData) {
   const runnerId = await requireRunnerId();
   const db = getServiceClient();
   const task = await assignedTask(taskId, runnerId);
   if (task.status !== "accepted" && task.status !== "in_progress") return;
 
-  await releaseFunds(taskId);
+  const photoUrl = String(formData.get("photo_url") ?? "").trim();
+  const gpsLat = Number(formData.get("gps_lat"));
+  const gpsLng = Number(formData.get("gps_lng"));
+
+  if (!photoUrl) {
+    throw new Error("A delivery photo URL is required");
+  }
+
+  await db.from("proofs").insert({
+    task_id: taskId,
+    runner_id: runnerId,
+    photo_url: photoUrl,
+    gps_lat: Number.isNaN(gpsLat) ? null : gpsLat,
+    gps_lng: Number.isNaN(gpsLng) ? null : gpsLng,
+  });
+
   await db
     .from("tasks")
     .update({
@@ -301,13 +317,27 @@ export async function markDelivered(taskId: string) {
   revalidatePath("/app");
 }
 
-/** Buyer rates the runner after delivery; feeds the trust framework. */
+/** Buyer rates the runner after delivery; releases escrow and feeds trust. */
 export async function rateRunner(taskId: string, stars: number) {
   const userId = await requireUserId();
   const task = await ownedTask(taskId, userId);
   if (!task.selected_runner_id) return;
+  if (task.status !== "completed" && task.status !== "resolved") return;
 
   const db = getServiceClient();
+
+  const { data: existingRating } = await db
+    .from("ratings")
+    .select("id")
+    .eq("task_id", taskId)
+    .eq("rater_id", userId)
+    .maybeSingle<{ id: string }>();
+  if (existingRating) return;
+
+  if (task.status === "completed") {
+    await releaseFunds(taskId);
+  }
+
   await db.from("ratings").insert({
     task_id: taskId,
     rater_id: userId,
@@ -319,6 +349,91 @@ export async function rateRunner(taskId: string, stars: number) {
     type: "rating",
     value: stars / 5,
   });
+
+  revalidatePath(`/app/errands/${taskId}`);
+}
+
+/** Buyer cancels an errand before the runner has accepted. */
+export async function cancelErrand(taskId: string) {
+  const userId = await requireUserId();
+  const task = await ownedTask(taskId, userId);
+  if (task.status !== "posted" && task.status !== "matched") return;
+
+  await refund(taskId);
+  const db = getServiceClient();
+  await db
+    .from("tasks")
+    .update({ status: "cancelled" })
+    .eq("id", taskId);
+
+  revalidatePath(`/app/errands/${taskId}`);
+  revalidatePath("/app");
+}
+
+/** Runner cancels an errand they have already accepted. */
+export async function cancelRunnerErrand(taskId: string) {
+  const runnerId = await requireRunnerId();
+  const db = getServiceClient();
+  const task = await assignedTask(taskId, runnerId);
+  if (task.status !== "accepted" && task.status !== "in_progress") return;
+
+  await refund(taskId);
+  await db
+    .from("tasks")
+    .update({ status: "cancelled" })
+    .eq("id", taskId);
+  await db.from("trust_events").insert({
+    runner_id: runnerId,
+    type: "cancelled",
+    value: 1,
+  });
+
+  const { data: profile } = await db
+    .from("runner_profile")
+    .select("active_load")
+    .eq("user_id", runnerId)
+    .maybeSingle<{ active_load: number }>();
+  await db.from("runner_profile").upsert({
+    user_id: runnerId,
+    active_load: Math.max(0, (profile?.active_load ?? 0) - 1),
+    updated_at: new Date().toISOString(),
+  });
+
+  revalidatePath(`/app/errands/${taskId}`);
+  revalidatePath("/app");
+}
+
+/** Buyer raises a dispute on a completed errand; auto-resolves or escalates. */
+export async function raiseDispute(taskId: string, formData: FormData) {
+  const userId = await requireUserId();
+  const task = await ownedTask(taskId, userId);
+  if (task.status !== "completed") return;
+
+  const reason = String(formData.get("reason") ?? "").trim();
+  if (!reason) throw new Error("A reason is required to raise a dispute");
+
+  const db = getServiceClient();
+
+  if (await hasLedgerEntry(db, taskId, ["release", "payout", "refund"])) return;
+
+  const { data: existingDispute } = await db
+    .from("disputes")
+    .select("id")
+    .eq("task_id", taskId)
+    .limit(1)
+    .maybeSingle<{ id: string }>();
+  if (existingDispute) return;
+
+  const { data: dispute, error } = await db
+    .from("disputes")
+    .insert({ task_id: taskId, raised_by: userId, reason })
+    .select("id")
+    .single<{ id: string }>();
+  if (error || !dispute) {
+    throw new Error(error?.message ?? "Could not raise dispute");
+  }
+
+  await resolveDispute(dispute.id);
 
   revalidatePath(`/app/errands/${taskId}`);
 }
