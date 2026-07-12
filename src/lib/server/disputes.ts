@@ -1,5 +1,6 @@
 import { getServiceClient } from "@/lib/supabase/service";
 import { releaseFunds, refund } from "./escrow";
+import { refreshTrustScore } from "./matching";
 import {
   arbitrate,
   DEFAULT_FRAUD_CONFIG,
@@ -81,6 +82,7 @@ export async function resolveDispute(disputeId: string): Promise<ArbitrationResu
         type: "dispute_lost",
         value: 1,
       });
+      await refreshTrustScore(task.selected_runner_id);
     }
   }
 

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getServiceClient } from "@/lib/supabase/service";
-import { generateMatchRun, offerToTopCandidate } from "@/lib/server/matching";
+import { generateMatchRun, offerToTopCandidate, refreshTrustScore } from "@/lib/server/matching";
 import { hasLedgerEntry, holdFunds, releaseFunds, refund, topUp } from "@/lib/server/escrow";
 import { resolveDispute } from "@/lib/server/disputes";
 import type { Urgency } from "@/lib/algorithm";
@@ -210,6 +210,7 @@ export async function acceptOffer(taskId: string) {
     type: "responsiveness",
     value: 1,
   });
+  await refreshTrustScore(runnerId);
 
   const { data: profile } = await db
     .from("runner_profile")
@@ -245,6 +246,7 @@ export async function declineOffer(taskId: string) {
     type: "responsiveness",
     value: 0,
   });
+  await refreshTrustScore(runnerId);
 
   await offerToTopCandidate(taskId);
 
@@ -301,6 +303,7 @@ export async function markDelivered(taskId: string, formData: FormData) {
     type: "completed",
     value: 1,
   });
+  await refreshTrustScore(runnerId);
 
   const { data: profile } = await db
     .from("runner_profile")
@@ -349,6 +352,7 @@ export async function rateRunner(taskId: string, stars: number) {
     type: "rating",
     value: stars / 5,
   });
+  await refreshTrustScore(task.selected_runner_id);
 
   revalidatePath(`/app/errands/${taskId}`);
 }
@@ -387,6 +391,7 @@ export async function cancelRunnerErrand(taskId: string) {
     type: "cancelled",
     value: 1,
   });
+  await refreshTrustScore(runnerId);
 
   const { data: profile } = await db
     .from("runner_profile")
