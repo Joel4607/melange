@@ -17,6 +17,7 @@ import { getServiceClient } from "@/lib/supabase/service";
 import { hasLedgerEntry } from "@/lib/server/escrow";
 import { Logo } from "@/components/brand";
 import { RealtimeStatus } from "../../realtime-status";
+import { MapView, MapMarker } from "../../map-view";
 import {
   cancelErrand,
   payIntoEscrow,
@@ -135,13 +136,20 @@ export default async function ErrandPage({
 
   const runnerId = task.selected_runner_id ?? candidate?.runner_id ?? null;
   let runnerName = "A trusted runner";
+  let runnerLocation: { lat: number; lng: number } | null = null;
   if (runnerId) {
-    const { data: rp } = await db
-      .from("profiles")
-      .select("name")
-      .eq("id", runnerId)
-      .maybeSingle<{ name: string | null }>();
+    const [{ data: rp }, { data: rprofile }] = await Promise.all([
+      db.from("profiles").select("name").eq("id", runnerId).maybeSingle<{ name: string | null }>(),
+      db
+        .from("runner_profile")
+        .select("current_lat, current_lng")
+        .eq("user_id", runnerId)
+        .maybeSingle<{ current_lat: number | null; current_lng: number | null }>(),
+    ]);
     if (rp?.name) runnerName = rp.name;
+    if (rprofile?.current_lat != null && rprofile?.current_lng != null) {
+      runnerLocation = { lat: rprofile.current_lat, lng: rprofile.current_lng };
+    }
   }
 
   const { data: existingRating } = await db
@@ -162,6 +170,27 @@ export default async function ErrandPage({
   const fee = Number(task.fee).toFixed(2);
   const runnerPayout = Number(Number(task.price) - Number(task.fee)).toFixed(2);
   const trustStars = candidate ? (candidate.trust * 5).toFixed(1) : null;
+
+  const mapCenter = { lat: task.pickup_lat, lng: task.pickup_lng };
+  const mapMarkers: MapMarker[] = [
+    { lat: task.pickup_lat, lng: task.pickup_lng, label: "Pickup", kind: "pickup" },
+  ];
+  if (task.dropoff_lat != null && task.dropoff_lng != null) {
+    mapMarkers.push({
+      lat: task.dropoff_lat,
+      lng: task.dropoff_lng,
+      label: "Dropoff",
+      kind: "dropoff",
+    });
+  }
+  if (runnerLocation) {
+    mapMarkers.push({
+      lat: runnerLocation.lat,
+      lng: runnerLocation.lng,
+      label: runnerName,
+      kind: "runner",
+    });
+  }
 
   return (
     <div className="flex min-h-dvh flex-col bg-cream">
@@ -307,6 +336,16 @@ export default async function ErrandPage({
             ) : (
               <p className="text-muted">Dropoff: same as pickup</p>
             )}
+          </div>
+        </section>
+
+        {/* Map */}
+        <section className="mt-5 rounded-[1.5rem] border border-cream-deep bg-white p-6 shadow-sm">
+          <p className="flex items-center gap-2 font-medium text-green-deep">
+            <MapPin className="h-5 w-5 text-orange-deep" aria-hidden /> Map
+          </p>
+          <div className="mt-3">
+            <MapView center={mapCenter} markers={mapMarkers} />
           </div>
         </section>
 
