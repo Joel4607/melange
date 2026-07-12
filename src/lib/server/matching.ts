@@ -10,6 +10,7 @@ import {
   type TrustEvent,
   type TrustEventType,
 } from "@/lib/algorithm";
+import { createNotification } from "./notifications";
 import type { RunnerProfileRow, TaskRow, TrustEventRow } from "./rows";
 
 const TRUST_EVENT_TYPES: ReadonlySet<string> = new Set<TrustEventType>([
@@ -203,9 +204,9 @@ export async function offerToTopCandidate(taskId: string): Promise<string | null
   const db = getServiceClient();
   const { data: task, error: taskError } = await db
     .from("tasks")
-    .select("id, declined_runner_ids")
+    .select("id, title, declined_runner_ids")
     .eq("id", taskId)
-    .single<{ id: string; declined_runner_ids: string[] }>();
+    .single<{ id: string; title: string; declined_runner_ids: string[] }>();
   if (taskError || !task) {
     throw new Error(`offerToTopCandidate: task ${taskId} not found`);
   }
@@ -241,6 +242,13 @@ export async function offerToTopCandidate(taskId: string): Promise<string | null
     .from("tasks")
     .update({ selected_runner_id: runnerId })
     .eq("id", taskId);
+
+  if (runnerId) {
+    await createNotification(runnerId, "offer", {
+      task_id: taskId,
+      task_title: task.title,
+    });
+  }
 
   return runnerId;
 }

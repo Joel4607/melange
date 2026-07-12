@@ -23,6 +23,7 @@ export type DisputeResolutionDb = "refund" | "release" | "partial";
 export interface TaskRow {
   id: string;
   buyer_id: string;
+  title: string;
   category: string | null;
   pickup_lat: number;
   pickup_lng: number;

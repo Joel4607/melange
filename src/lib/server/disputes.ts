@@ -1,6 +1,7 @@
 import { getServiceClient } from "@/lib/supabase/service";
 import { releaseFunds, refund } from "./escrow";
 import { refreshTrustScore } from "./matching";
+import { createNotification } from "./notifications";
 import {
   arbitrate,
   DEFAULT_FRAUD_CONFIG,
@@ -33,7 +34,7 @@ export async function resolveDispute(disputeId: string): Promise<ArbitrationResu
   const { data: task, error: tErr } = await db
     .from("tasks")
     .select(
-      "id, buyer_id, category, pickup_lat, pickup_lng, urgency, price, status, selected_runner_id, accepted_at, completed_at",
+      "id, buyer_id, title, category, pickup_lat, pickup_lng, urgency, price, status, selected_runner_id, accepted_at, completed_at",
     )
     .eq("id", dispute.task_id)
     .single<TaskRow>();
@@ -98,6 +99,16 @@ export async function resolveDispute(disputeId: string): Promise<ArbitrationResu
     })
     .eq("id", dispute.id);
   await db.from("tasks").update({ status: "resolved" }).eq("id", task.id);
+
+  const payload = {
+    task_id: task.id,
+    task_title: task.title,
+    resolution: result.resolution,
+  };
+  await createNotification(task.buyer_id, "dispute_resolved", payload);
+  if (task.selected_runner_id) {
+    await createNotification(task.selected_runner_id, "dispute_resolved", payload);
+  }
 
   return result;
 }

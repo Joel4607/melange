@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import {
   ArrowRight,
+  Bell,
   Bike,
   CircleCheck,
   Clock,
@@ -15,7 +16,13 @@ import { getServiceClient } from "@/lib/supabase/service";
 import { Logo } from "@/components/brand";
 import { AvailabilityToggle } from "./availability-toggle";
 import { MarkDeliveredForm } from "./mark-delivered-form";
-import { acceptOffer, cancelRunnerErrand, declineOffer, markPickedUp } from "./actions";
+import {
+  acceptOffer,
+  cancelRunnerErrand,
+  declineOffer,
+  markNotificationRead,
+  markPickedUp,
+} from "./actions";
 
 export const metadata: Metadata = {
   title: "Your dashboard — Mélange",
@@ -49,6 +56,18 @@ interface RunnerTaskSummary {
   category: string | null;
   pickup_lat: number;
   pickup_lng: number;
+}
+
+interface NotificationSummary {
+  id: string;
+  type: string;
+  payload: {
+    task_title?: string;
+    task_id?: string;
+    resolution?: string;
+  };
+  read: boolean;
+  created_at: string;
 }
 
 export default async function AppHome() {
@@ -106,6 +125,14 @@ export default async function AppHome() {
           .returns<RunnerTaskSummary[]>()
       : { data: null };
 
+  const { data: notifications } = await supabase
+    .from("notifications")
+    .select("id, type, payload, read, created_at")
+    .eq("recipient_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(10)
+    .returns<NotificationSummary[]>();
+
   return (
     <div className="flex min-h-dvh flex-col bg-cream">
       <header className="border-b border-cream-deep/70 bg-cream/85 backdrop-blur">
@@ -146,6 +173,8 @@ export default async function AppHome() {
         ) : (
           <RunnerHome profile={runnerProfile ?? null} tasks={runnerTasks ?? []} />
         )}
+
+        <Notifications notifications={notifications ?? []} />
 
         <p className="mt-10 text-sm text-muted">
           Signed in as {user.email}
@@ -394,6 +423,74 @@ function Section({
 
 function Empty({ children }: { children: React.ReactNode }) {
   return <p className="text-sm text-muted">{children}</p>;
+}
+
+function Notifications({ notifications }: { notifications: NotificationSummary[] }) {
+  const unread = notifications.filter((n) => !n.read).length;
+
+  const textByType: Record<string, string> = {
+    offer: "New errand offer",
+    offer_accepted: "Runner accepted your errand",
+    picked_up: "Runner picked up your errand",
+    delivered: "Your errand was delivered",
+    rated: "Buyer rated you",
+    buyer_cancelled: "Buyer cancelled the errand",
+    runner_cancelled: "Runner cancelled the errand",
+    dispute_raised: "A dispute was raised",
+    dispute_resolved: "Dispute resolved",
+  };
+
+  function message(n: NotificationSummary): string {
+    const base = textByType[n.type] ?? n.type;
+    const title = n.payload?.task_title ? ` · ${n.payload.task_title}` : "";
+    const resolution =
+      n.type === "dispute_resolved" && n.payload.resolution
+        ? ` (${n.payload.resolution})`
+        : "";
+    return `${base}${title}${resolution}`;
+  }
+
+  return (
+    <div className="mt-8 rounded-[1.5rem] border border-cream-deep bg-white p-6 shadow-sm">
+      <p className="flex items-center gap-2 font-display text-lg font-semibold text-green-deep">
+        <Bell className="h-5 w-5 text-orange-deep" aria-hidden /> Notifications
+        {unread > 0 ? (
+          <span className="ml-auto rounded-full bg-orange px-2.5 py-0.5 text-xs font-semibold text-white">
+            {unread}
+          </span>
+        ) : null}
+      </p>
+
+      {notifications.length === 0 ? (
+        <p className="mt-2 text-sm text-muted">No notifications yet.</p>
+      ) : (
+        <ul className="mt-4 space-y-3">
+          {notifications.map((n) => (
+            <li
+              key={n.id}
+              className={`flex items-center justify-between gap-4 rounded-xl border border-cream-deep p-3 ${
+                n.read ? "bg-cream/30" : "bg-cream/60"
+              }`}
+            >
+              <span className={`text-sm ${n.read ? "text-muted" : "text-ink"}`}>
+                {message(n)}
+              </span>
+              {!n.read ? (
+                <form action={markNotificationRead.bind(null, n.id)}>
+                  <button
+                    type="submit"
+                    className="shrink-0 rounded-full border border-green-soft px-3 py-1 text-xs font-medium text-green-deep transition hover:bg-cream"
+                  >
+                    Mark read
+                  </button>
+                </form>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
 }
 
 function TaskCard({
