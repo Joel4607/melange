@@ -7,6 +7,7 @@ import { getServiceClient } from "@/lib/supabase/service";
 import { generateMatchRun, offerToTopCandidate, refreshTrustScore } from "@/lib/server/matching";
 import { hasLedgerEntry, holdFunds, releaseFunds, refund, topUp } from "@/lib/server/escrow";
 import { resolveDispute } from "@/lib/server/disputes";
+import { createNotification } from "@/lib/server/notifications";
 import type { Urgency } from "@/lib/algorithm";
 
 const URGENCIES: readonly Urgency[] = ["low", "normal", "express"];
@@ -29,11 +30,12 @@ async function ownedTask(taskId: string, userId: string) {
   const db = getServiceClient();
   const { data: task } = await db
     .from("tasks")
-    .select("id, buyer_id, price, status, selected_runner_id")
+    .select("id, buyer_id, title, price, status, selected_runner_id")
     .eq("id", taskId)
     .maybeSingle<{
       id: string;
       buyer_id: string;
+      title: string;
       price: string;
       status: string;
       selected_runner_id: string | null;
@@ -48,10 +50,12 @@ async function assignedTask(taskId: string, runnerId: string) {
   const db = getServiceClient();
   const { data: task } = await db
     .from("tasks")
-    .select("id, status, selected_runner_id, declined_runner_ids")
+    .select("id, buyer_id, title, status, selected_runner_id, declined_runner_ids")
     .eq("id", taskId)
     .maybeSingle<{
       id: string;
+      buyer_id: string;
+      title: string;
       status: string;
       selected_runner_id: string | null;
       declined_runner_ids: string[];
@@ -211,6 +215,10 @@ export async function acceptOffer(taskId: string) {
     value: 1,
   });
   await refreshTrustScore(runnerId);
+  await createNotification(task.buyer_id, "offer_accepted", {
+    task_id: taskId,
+    task_title: task.title,
+  });
 
   const { data: profile } = await db
     .from("runner_profile")
@@ -264,6 +272,10 @@ export async function markPickedUp(taskId: string) {
     .from("tasks")
     .update({ status: "in_progress" })
     .eq("id", taskId);
+  await createNotification(task.buyer_id, "picked_up", {
+    task_id: taskId,
+    task_title: task.title,
+  });
 
   revalidatePath(`/app/errands/${taskId}`);
   revalidatePath("/app");
@@ -304,6 +316,10 @@ export async function markDelivered(taskId: string, formData: FormData) {
     value: 1,
   });
   await refreshTrustScore(runnerId);
+  await createNotification(task.buyer_id, "delivered", {
+    task_id: taskId,
+    task_title: task.title,
+  });
 
   const { data: profile } = await db
     .from("runner_profile")
@@ -353,6 +369,10 @@ export async function rateRunner(taskId: string, stars: number) {
     value: stars / 5,
   });
   await refreshTrustScore(task.selected_runner_id);
+  await createNotification(task.selected_runner_id, "rated", {
+    task_id: taskId,
+    task_title: task.title,
+  });
 
   revalidatePath(`/app/errands/${taskId}`);
 }
@@ -369,6 +389,12 @@ export async function cancelErrand(taskId: string) {
     .from("tasks")
     .update({ status: "cancelled" })
     .eq("id", taskId);
+  if (task.selected_runner_id) {
+    await createNotification(task.selected_runner_id, "buyer_cancelled", {
+      task_id: taskId,
+      task_title: task.title,
+    });
+  }
 
   revalidatePath(`/app/errands/${taskId}`);
   revalidatePath("/app");
@@ -392,6 +418,10 @@ export async function cancelRunnerErrand(taskId: string) {
     value: 1,
   });
   await refreshTrustScore(runnerId);
+  await createNotification(task.buyer_id, "runner_cancelled", {
+    task_id: taskId,
+    task_title: task.title,
+  });
 
   const { data: profile } = await db
     .from("runner_profile")
@@ -440,5 +470,25 @@ export async function raiseDispute(taskId: string, formData: FormData) {
 
   await resolveDispute(dispute.id);
 
+  if (task.selected_runner_id) {
+    await createNotification(task.selected_runner_id, "dispute_raised", {
+      task_id: taskId,
+      task_title: task.title,
+    });
+  }
+
   revalidatePath(`/app/errands/${taskId}`);
+}
+
+/** Mark a notification as read for the signed-in user. */
+export async function markNotificationRead(notificationId: string) {
+  const userId = await requireUserId();
+  const db = getServiceClient();
+  await db
+    .from("notifications")
+    .update({ read: true })
+    .eq("id", notificationId)
+    .eq("recipient_id", userId);
+
+  revalidatePath("/app");
 }
