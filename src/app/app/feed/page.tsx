@@ -8,6 +8,7 @@ import { Logo } from "@/components/brand";
 import { haversineKm } from "@/lib/algorithm";
 import { claimTask } from "../actions";
 import { RealtimeStatus } from "../realtime-status";
+import { MapView, MapMarker } from "../map-view";
 
 export const metadata: Metadata = {
   title: "Open errands — Mélange",
@@ -78,6 +79,17 @@ export default async function FeedPage() {
     return a.distance - b.distance;
   });
 
+  const mapCenter = runnerLocation ?? { lat: tasksWithDistance[0]?.pickup_lat ?? 0, lng: tasksWithDistance[0]?.pickup_lng ?? 0 };
+  const mapMarkers: MapMarker[] = [
+    ...(runnerLocation ? [{ lat: runnerLocation.lat, lng: runnerLocation.lng, label: "You", kind: "runner" as const }] : []),
+    ...tasksWithDistance.map((task) => ({
+      lat: task.pickup_lat,
+      lng: task.pickup_lng,
+      label: task.title,
+      kind: "pickup" as const,
+    })),
+  ];
+
   return (
     <div className="flex min-h-dvh flex-col bg-cream">
       <header className="border-b border-cream-deep/70 bg-cream/85 backdrop-blur">
@@ -97,6 +109,12 @@ export default async function FeedPage() {
         <p className="mt-2 text-muted">
           Browse posted errands near you and claim one to start.
         </p>
+
+        {tasksWithDistance.length > 0 && (
+          <div className="mt-6">
+            <MapView center={mapCenter} markers={mapMarkers} className="h-96" />
+          </div>
+        )}
 
         {tasksWithDistance.length === 0 ? (
           <div className="mt-8 rounded-[1.5rem] border border-cream-deep bg-white p-6 text-center shadow-sm">
