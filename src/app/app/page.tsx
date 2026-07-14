@@ -55,6 +55,7 @@ interface RunnerProfileSummary {
   current_lng: number | null;
   active_load: number;
   trust_score: number;
+  verified: boolean;
   status: string;
   capabilities: string[] | null;
 }
@@ -110,7 +111,7 @@ export default async function AppHome() {
       ? await db
           .from("runner_profile")
           .select(
-            "is_available, available_manual, scheduled_hours, current_lat, current_lng, active_load, trust_score, status, capabilities",
+            "is_available, available_manual, scheduled_hours, current_lat, current_lng, active_load, trust_score, verified, status, capabilities",
           )
           .eq("user_id", user.id)
           .maybeSingle<RunnerProfileSummary>()
@@ -489,6 +490,7 @@ function RunnerSidebar({
             scheduledHours={profile?.scheduled_hours ?? null}
             lat={profile?.current_lat ?? null}
             lng={profile?.current_lng ?? null}
+            verified={profile?.verified ?? false}
           />
         </div>
       </div>

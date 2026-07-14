@@ -93,6 +93,10 @@ export async function approveVerification(requestId: string) {
     .update({ status: "approved", reviewed_at: now, reviewed_by: adminId })
     .eq("id", requestId);
   await db.from("profiles").update({ verified: true }).eq("id", request.user_id);
+  await db
+    .from("runner_profile")
+    .update({ verified: true, updated_at: now })
+    .eq("user_id", request.user_id);
 
   revalidatePath("/app/admin");
   revalidatePath("/app");
@@ -114,6 +118,10 @@ export async function rejectVerification(requestId: string) {
     .update({ status: "rejected", reviewed_at: now, reviewed_by: adminId })
     .eq("id", requestId);
   await db.from("profiles").update({ verified: false }).eq("id", request.user_id);
+  await db
+    .from("runner_profile")
+    .update({ verified: false, updated_at: now })
+    .eq("user_id", request.user_id);
 
   revalidatePath("/app/admin");
   revalidatePath("/app");

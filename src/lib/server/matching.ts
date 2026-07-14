@@ -58,7 +58,7 @@ export async function generateMatchRun(taskId: string): Promise<MatchResult[]> {
   const { data: runners, error: runnersError } = await db
     .from("runner_profile")
     .select(
-      "user_id, current_lat, current_lng, is_available, active_load, trust_score, status, capabilities, available_manual, scheduled_hours",
+      "user_id, current_lat, current_lng, is_available, active_load, trust_score, verified, status, capabilities, available_manual, scheduled_hours",
     )
     .eq("status", "active")
     .returns<RunnerProfileRow[]>();
@@ -94,6 +94,8 @@ export async function generateMatchRun(taskId: string): Promise<MatchResult[]> {
   const candidates: RunnerCandidate[] = [];
   const trustScores: { user_id: string; trust_score: number; updated_at: string }[] = [];
   for (const r of located) {
+    if (!verifiedById.get(r.user_id)) continue;
+
     const events = eventsByRunner.get(r.user_id) ?? [];
     const fraudContext: FraudContext = {
       recentCancellations: cancellationCounts.get(r.user_id) ?? 0,

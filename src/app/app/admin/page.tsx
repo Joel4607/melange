@@ -33,6 +33,15 @@ interface DisputeWithTask extends DisputeRow {
   task_title: string | null;
   buyer_id: string | null;
   runner_id: string | null;
+  runner_verification: {
+    user_id: string;
+    front_url: string | null;
+    back_url: string | null;
+    phone: string | null;
+    email: string | null;
+  } | null;
+  ledger: { user_id: string; type: string; amount: string; created_at: string }[];
+  payment_reference: string | null;
 }
 
 interface FraudFlagWithNames extends FraudFlagRow {
@@ -67,9 +76,9 @@ export default async function AdminPage() {
     }
     const { data: tasks } = await db
       .from("tasks")
-      .select("id, title, buyer_id, selected_runner_id")
+      .select("id, title, buyer_id, selected_runner_id, payment_reference")
       .in("id", Array.from(taskIds))
-      .returns<{ id: string; title: string; buyer_id: string; selected_runner_id: string | null }[]>();
+      .returns<{ id: string; title: string; buyer_id: string; selected_runner_id: string | null; payment_reference: string | null }[]>();
     const taskById = new Map(tasks?.map((t) => [t.id, t]) ?? []);
     for (const d of disputes) {
       const t = taskById.get(d.task_id);
@@ -80,6 +89,9 @@ export default async function AdminPage() {
         task_title: t?.title ?? null,
         buyer_id: t?.buyer_id ?? null,
         runner_id: t?.selected_runner_id ?? null,
+        runner_verification: null,
+        ledger: [],
+        payment_reference: t?.payment_reference ?? null,
       });
     }
   }
@@ -112,12 +124,77 @@ export default async function AdminPage() {
     userIds.add(v.user_id);
   }
 
+  const { data: allVerifications } = await db
+    .from("verification_requests")
+    .select(
+      "user_id, front_photo_path, back_photo_path, phone, email, status, created_at",
+    )
+    .in("user_id", Array.from(userIds))
+    .order("created_at", { ascending: false })
+    .returns<
+      {
+        user_id: string;
+        front_photo_path: string;
+        back_photo_path: string | null;
+        phone: string | null;
+        email: string | null;
+        status: string;
+        created_at: string;
+      }[]
+    >();
+
+  const latestVerificationByUser = new Map<
+    string,
+    {
+      user_id: string;
+      front_photo_path: string;
+      back_photo_path: string | null;
+      phone: string | null;
+      email: string | null;
+      status: string;
+      created_at: string;
+    }
+  >();
+  for (const v of allVerifications ?? []) {
+    if (!latestVerificationByUser.has(v.user_id)) latestVerificationByUser.set(v.user_id, v);
+  }
+
+  const { data: ledgerRows } = await db
+    .from("ledger_entries")
+    .select("task_id, user_id, type, amount, created_at")
+    .in("task_id", Array.from(taskIds))
+    .order("created_at", { ascending: false })
+    .returns<
+      { task_id: string; user_id: string; type: string; amount: string; created_at: string }[]
+    >();
+
+  const ledgerByTask = new Map<string, { user_id: string; type: string; amount: string; created_at: string }[]>();
+  for (const row of ledgerRows ?? []) {
+    const list = ledgerByTask.get(row.task_id) ?? [];
+    list.push(row);
+    ledgerByTask.set(row.task_id, list);
+  }
+
   const { data: profiles } = await db
     .from("profiles")
     .select("id, name")
     .in("id", Array.from(userIds))
     .returns<{ id: string; name: string }[]>();
   const nameById = new Map(profiles?.map((p) => [p.id, p.name]) ?? []);
+
+  for (const d of disputesWithTasks) {
+    const v = d.runner_id ? latestVerificationByUser.get(d.runner_id) : undefined;
+    if (v) {
+      d.runner_verification = {
+        user_id: v.user_id,
+        front_url: await signedUrl(db, v.front_photo_path),
+        back_url: await signedUrl(db, v.back_photo_path),
+        phone: v.phone,
+        email: v.email,
+      };
+    }
+    d.ledger = ledgerByTask.get(d.task_id) ?? [];
+  }
 
   const { data: tasks } = await db
     .from("tasks")
@@ -184,9 +261,62 @@ export default async function AdminPage() {
                     {nameById.get(d.runner_id ?? "") ?? "Unknown"}
                   </p>
                   <p className="mt-2 text-sm text-ink">{d.reason}</p>
+                  {d.payment_reference ? (
+                    <p className="mt-1 text-xs text-muted">
+                      Payment reference: {d.payment_reference}
+                    </p>
+                  ) : null}
                   <p className="mt-1 text-xs text-muted">
                     {new Date(d.created_at).toLocaleString()}
                   </p>
+
+                  {d.runner_verification ? (
+                    <div className="mt-4 rounded-xl border border-cream-deep bg-cream/40 p-3 text-sm">
+                      <p className="font-medium text-green-deep">Runner identity</p>
+                      <p className="text-muted">
+                        Phone: {d.runner_verification.phone ?? "—"} · Email:{" "}
+                        {d.runner_verification.email ?? "—"}
+                      </p>
+                      <div className="mt-2 flex gap-3">
+                        {d.runner_verification.front_url ? (
+                          <a
+                            href={d.runner_verification.front_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-green-soft underline"
+                          >
+                            Ghana Card front
+                          </a>
+                        ) : null}
+                        {d.runner_verification.back_url ? (
+                          <a
+                            href={d.runner_verification.back_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-green-soft underline"
+                          >
+                            Ghana Card back
+                          </a>
+                        ) : null}
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {d.ledger.length > 0 ? (
+                    <div className="mt-3 rounded-xl border border-cream-deep bg-cream/40 p-3 text-sm">
+                      <p className="font-medium text-green-deep">Transaction ledger</p>
+                      <ul className="mt-1 space-y-1 text-muted">
+                        {d.ledger.map((entry, i) => (
+                          <li key={i} className="flex justify-between">
+                            <span>
+                              {entry.type} · {nameById.get(entry.user_id) ?? "Unknown"}
+                            </span>
+                            <span>GHS {Number(entry.amount).toFixed(2)}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
                   <div className="mt-4 flex gap-2">
                     <form action={adminResolveDispute.bind(null, d.id, "refund")}>
                       <button

@@ -47,6 +47,7 @@ export interface RunnerProfileRow {
   is_available: boolean;
   active_load: number;
   trust_score: number;
+  verified: boolean;
   status: "active" | "suspended" | "quarantined";
   capabilities: string[] | null;
   available_manual: boolean | null;

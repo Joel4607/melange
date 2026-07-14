@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft, MapPin, PackageCheck, Clock } from "lucide-react";
+import { ArrowLeft, MapPin, PackageCheck, Clock, ShieldAlert } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getServiceClient } from "@/lib/supabase/service";
 import { Logo } from "@/components/brand";
@@ -43,7 +43,7 @@ export default async function FeedPage() {
   const db = getServiceClient();
   const { data: profile } = await db
     .from("runner_profile")
-    .select("current_lat, current_lng, capabilities, available_manual, scheduled_hours")
+    .select("current_lat, current_lng, capabilities, available_manual, scheduled_hours, verified")
     .eq("user_id", user.id)
     .maybeSingle<{
       current_lat: number | null;
@@ -51,6 +51,7 @@ export default async function FeedPage() {
       capabilities: string[] | null;
       available_manual: boolean | null;
       scheduled_hours: { day: number; start: string; end: string }[] | null;
+      verified: boolean;
     }>();
 
   const available = profile ? isRunnerAvailable(profile.available_manual, profile.scheduled_hours) : false;
@@ -119,7 +120,19 @@ export default async function FeedPage() {
           Browse posted errands near you and claim one to start.
         </p>
 
-        {!available ? (
+        {!profile?.verified ? (
+          <div className="mt-6 flex items-start gap-3 rounded-2xl border border-orange/15 bg-orange/5 p-4 text-sm">
+            <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-orange-deep" aria-hidden />
+            <p className="text-orange-deep">
+              Identity verification is required before you can claim errands.
+              Submit your Ghana Card in{" "}
+              <Link href="/app/verify" className="underline">
+                verification
+              </Link>{" "}
+              and wait for admin approval.
+            </p>
+          </div>
+        ) : !available ? (
           <div className="mt-6 flex items-start gap-3 rounded-2xl border border-orange/15 bg-orange/5 p-4 text-sm">
             <Clock className="mt-0.5 h-5 w-5 shrink-0 text-orange-deep" aria-hidden />
             <p className="text-orange-deep">
@@ -172,7 +185,7 @@ export default async function FeedPage() {
                         </p>
                       ) : null}
                     </div>
-                    {capable && available ? (
+                    {capable && available && profile?.verified ? (
                       <form action={claimTask.bind(null, task.id)}>
                         <button
                           type="submit"
@@ -183,7 +196,11 @@ export default async function FeedPage() {
                       </form>
                     ) : (
                       <span className="rounded-full border border-cream-deep bg-cream/40 px-4 py-2 text-sm text-muted">
-                        {!available ? "Unavailable" : "Not in your capabilities"}
+                        {!profile?.verified
+                          ? "Verification required"
+                          : !available
+                            ? "Unavailable"
+                            : "Not in your capabilities"}
                       </span>
                     )}
                   </div>
