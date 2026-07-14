@@ -42,8 +42,8 @@ const services: { icon: LucideIcon; title: string; blurb: string }[] = [
 ];
 
 const steps: { icon: LucideIcon; title: string; blurb: string }[] = [
-  { icon: ClipboardList, title: "Post your errand", blurb: "Tell us what you need run, where, and your budget." },
-  { icon: UserCheck, title: "We match a runner", blurb: "A trusted, nearby runner is matched by distance, rating & availability." },
+  { icon: UserCheck, title: "Pick a runner", blurb: "Browse nearby runners by rating, category, and price — then choose the one you want." },
+  { icon: ClipboardList, title: "Post your errand", blurb: "Tell them what you need run, where, and your budget." },
   { icon: PackageCheck, title: "Track, get proof, pay", blurb: "Follow it live, get photo proof on delivery, then pay securely." },
 ];
 
@@ -143,10 +143,10 @@ export default function Home() {
               Log in
             </Link>
             <Link
-              href="/get-started"
+              href="/app/runners"
               className="rounded-full bg-orange px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-deep"
             >
-              Post an errand
+              Find a runner
             </Link>
           </div>
         </nav>
@@ -164,34 +164,33 @@ export default function Home() {
               Busy schedule? I&apos;m here to help.
             </span>
             <h1 className="font-display text-fluid-hero font-semibold tracking-tight text-green-deep">
-              Errands,{" "}
+              Pick your runner.{" "}
               <span className="relative inline-block italic text-orange">
-                run for you.
+                Run your errand.
                 <HandUnderline className="absolute -bottom-2 left-0 h-3 w-full text-orange" />
               </span>
             </h1>
             <p className="max-w-md text-lg text-muted">
-              You take care of life — we&apos;ll take care of the rest. Market
-              runs, groceries, pharmacy pickups, deliveries and anything in
-              between.
+              Browse trusted local runners by rating, category, and price,
+              then request the one you want. Market runs, groceries, pharmacy
+              pickups, deliveries — handled your way.
             </p>
 
-            {/* Intent input (visual entry point into onboarding) */}
-            <form action="/get-started" className="flex max-w-md flex-col gap-3 sm:flex-row">
-              <input
-                type="text"
-                placeholder="What do you need run today?"
-                aria-label="What do you need run today?"
-                className="w-full rounded-full border border-cream-deep bg-white px-5 py-3.5 text-ink shadow-sm outline-none placeholder:text-muted focus:border-green-soft"
-              />
-              <button
-                type="submit"
-                className="inline-flex items-center justify-center gap-2 rounded-full bg-green px-6 py-3.5 font-semibold text-cream transition hover:bg-green-deep"
+            <div className="flex max-w-md flex-col gap-3 sm:flex-row">
+              <Link
+                href="/app/runners"
+                className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-green px-6 py-3.5 font-semibold text-cream transition hover:bg-green-deep"
               >
-                Get started
+                Browse runners
                 <ArrowRight className="h-4 w-4" aria-hidden />
-              </button>
-            </form>
+              </Link>
+              <Link
+                href="/app/post"
+                className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-cream-deep bg-white px-6 py-3.5 font-semibold text-green-deep transition hover:bg-cream/60"
+              >
+                Quick match
+              </Link>
+            </div>
 
             <div className="flex items-center gap-3 text-sm text-muted">
               <span className="flex text-orange">
