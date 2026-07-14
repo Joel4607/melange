@@ -346,18 +346,23 @@ export async function markDelivered(taskId: string, formData: FormData) {
   const task = await assignedTask(taskId, runnerId);
   if (task.status !== "accepted" && task.status !== "in_progress") return;
 
-  const photoUrl = String(formData.get("photo_url") ?? "").trim();
+  const photo = assertImageFile(formData.get("photo"), "delivery");
   const gpsLat = Number(formData.get("gps_lat"));
   const gpsLng = Number(formData.get("gps_lng"));
 
-  if (!photoUrl) {
-    throw new Error("A delivery photo URL is required");
-  }
+  const photoPath = `${runnerId}/${randomUUID()}.${fileExtension(photo)}`;
+  const { error: uploadError } = await db.storage
+    .from("proofs")
+    .upload(photoPath, await photo.arrayBuffer(), {
+      contentType: photo.type,
+      upsert: false,
+    });
+  if (uploadError) throw new Error(uploadError.message);
 
   await db.from("proofs").insert({
     task_id: taskId,
     runner_id: runnerId,
-    photo_url: photoUrl,
+    photo_path: photoPath,
     gps_lat: Number.isNaN(gpsLat) ? null : gpsLat,
     gps_lng: Number.isNaN(gpsLng) ? null : gpsLng,
   });
@@ -640,8 +645,8 @@ function fileExtension(file: File): string {
 }
 
 function assertImageFile(value: FormDataEntryValue | null, label: string): File {
-  if (!(value instanceof File)) {
-    throw new Error(`Please upload the ${label} photo of your Ghana card`);
+  if (!(value instanceof File) || value.size === 0) {
+    throw new Error(`Please upload the ${label} photo`);
   }
   if (!value.type.startsWith("image/")) {
     throw new Error(`${label} photo must be an image file`);

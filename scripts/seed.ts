@@ -111,7 +111,7 @@ async function main() {
   await db.from("proofs").insert({
     task_id: task.id,
     runner_id: winner.runnerId,
-    photo_url: "https://example.com/proof.jpg",
+    photo_path: `${winner.runnerId}/seed-proof.jpg`,
     gps_lat: CENTER.lat,
     gps_lng: CENTER.lng,
   });

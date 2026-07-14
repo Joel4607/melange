@@ -5,7 +5,7 @@ import { LoaderCircle, MapPin, Navigation, Camera } from "lucide-react";
 import { markDelivered } from "./actions";
 
 export function MarkDeliveredForm({ taskId }: { taskId: string }) {
-  const [photoUrl, setPhotoUrl] = useState("");
+  const [photoName, setPhotoName] = useState<string | null>(null);
   const [coords, setCoords] = useState<{ lat: string; lng: string }>({
     lat: "",
     lng: "",
@@ -55,20 +55,23 @@ export function MarkDeliveredForm({ taskId }: { taskId: string }) {
 
       <label className="block">
         <span className="mb-1.5 block text-sm font-medium text-green-deep">
-          Delivery photo URL
+          Delivery photo
         </span>
-        <div className="flex items-center gap-2">
-          <Camera className="h-4 w-4 text-muted" aria-hidden />
+        <span className="flex cursor-pointer items-center gap-2 rounded-xl border border-cream-deep bg-white px-4 py-2.5 text-sm text-muted transition hover:border-green-soft">
+          <Camera className="h-4 w-4 shrink-0" aria-hidden />
+          <span className="truncate">
+            {photoName ?? "Take or choose a photo"}
+          </span>
           <input
-            name="photo_url"
-            type="url"
+            name="photo"
+            type="file"
+            accept="image/*"
+            capture="environment"
             required
-            value={photoUrl}
-            onChange={(e) => setPhotoUrl(e.target.value)}
-            placeholder="https://..."
-            className="w-full rounded-xl border border-cream-deep bg-white px-4 py-2 text-sm text-ink outline-none transition placeholder:text-muted focus:border-green-soft"
+            onChange={(e) => setPhotoName(e.target.files?.[0]?.name ?? null)}
+            className="sr-only"
           />
-        </div>
+        </span>
       </label>
 
       <button
@@ -97,7 +100,7 @@ export function MarkDeliveredForm({ taskId }: { taskId: string }) {
 
       <button
         type="submit"
-        disabled={pending || !photoUrl || !hasLocation}
+        disabled={pending || !photoName || !hasLocation}
         className="flex w-full items-center justify-center gap-2 rounded-full bg-green px-4 py-2.5 text-sm font-semibold text-cream transition hover:bg-green-deep disabled:opacity-60"
       >
         {pending ? (
