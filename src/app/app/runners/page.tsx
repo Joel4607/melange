@@ -19,6 +19,7 @@ interface RunnerListItem {
   current_lat: number | null;
   current_lng: number | null;
   trust_score: number;
+  verified: boolean;
   capabilities: string[] | null;
   profiles: { name: string | null; verified: boolean } | null;
   completed: number;
@@ -48,10 +49,11 @@ export default async function RunnersPage({
   let query = db
     .from("runner_profile")
     .select(
-      "user_id, current_lat, current_lng, trust_score, capabilities, profiles(name, verified)",
+      "user_id, current_lat, current_lng, trust_score, capabilities, verified, profiles(name, verified)",
     )
     .eq("is_available", true)
     .eq("status", "active")
+    .eq("verified", true)
     .neq("user_id", user.id);
 
   if (category) {
@@ -66,6 +68,7 @@ export default async function RunnersPage({
     current_lat: number | null;
     current_lng: number | null;
     trust_score: number;
+    verified: boolean;
     capabilities: string[] | null;
     profiles: { name: string | null; verified: boolean } | null;
   }[]>();

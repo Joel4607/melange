@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { LoaderCircle, MapPin, Navigation, Clock } from "lucide-react";
+import Link from "next/link";
+import { LoaderCircle, MapPin, Navigation, Clock, ShieldAlert } from "lucide-react";
 import { isRunnerAvailable, type TimeRange } from "@/lib/availability";
 import { setAvailability, clearAvailabilityOverride } from "./actions";
 
@@ -10,11 +11,13 @@ export function AvailabilityToggle({
   scheduledHours,
   lat,
   lng,
+  verified,
 }: {
   availableManual: boolean | null;
   scheduledHours: TimeRange[] | null;
   lat: number | null;
   lng: number | null;
+  verified: boolean;
 }) {
   const [coords, setCoords] = useState({
     lat: lat?.toString() ?? "",
@@ -113,6 +116,25 @@ export function AvailabilityToggle({
         </span>
       </div>
 
+      {!verified ? (
+        <div className="rounded-xl border border-orange/20 bg-orange/10 p-4 text-sm">
+          <p className="flex items-center gap-2 font-medium text-orange-deep">
+            <ShieldAlert className="h-4 w-4" aria-hidden />
+            Identity verification required
+          </p>
+          <p className="mt-1 text-muted">
+            You must be verified before you can go available. Submit your Ghana
+            Card and phone number to get approved.
+          </p>
+          <Link
+            href="/app/verify"
+            className="mt-2 inline-block font-semibold text-green-deep underline transition hover:text-green"
+          >
+            Start verification
+          </Link>
+        </div>
+      ) : null}
+
       <div className="grid gap-2 sm:grid-cols-2">
         <input
           aria-label="Latitude"
@@ -147,7 +169,7 @@ export function AvailabilityToggle({
           <button
             type="button"
             onClick={goAvailable}
-            disabled={pending || locating}
+            disabled={pending || locating || !verified}
             className="inline-flex items-center gap-2 rounded-full bg-green px-4 py-2 text-sm font-semibold text-cream transition hover:bg-green-deep disabled:opacity-60"
           >
             {pending || locating ? (
@@ -162,7 +184,7 @@ export function AvailabilityToggle({
         <button
           type="button"
           onClick={followSchedule}
-          disabled={pending || mode === "schedule"}
+          disabled={pending || mode === "schedule" || !verified}
           className="inline-flex items-center gap-2 rounded-full border border-cream-deep px-4 py-2 text-sm font-semibold text-green-deep transition hover:bg-cream/40 disabled:opacity-60"
         >
           <Clock className="h-4 w-4" aria-hidden />

@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useFormStatus } from "react-dom";
-import { LoaderCircle, MapPin, Navigation, Star, User } from "lucide-react";
+import Link from "next/link";
+import { LoaderCircle, MapPin, Navigation, Star, User, ShieldAlert } from "lucide-react";
 import type { Urgency } from "@/lib/algorithm";
 import { estimateErrandFee } from "@/lib/pricing";
 import { createErrand } from "../actions";
@@ -27,6 +28,7 @@ const URGENCIES: { value: string; label: string; hint: string }[] = [
 export function PostForm({
   preselectedRunner,
   defaultCategory,
+  verified,
 }: {
   preselectedRunner?: {
     id: string;
@@ -35,6 +37,7 @@ export function PostForm({
     capabilities: string[] | null;
   };
   defaultCategory?: string;
+  verified: boolean;
 }) {
   const [coords, setCoords] = useState<{ lat: string; lng: string }>({
     lat: "",
@@ -121,6 +124,25 @@ export function PostForm({
             </div>
           </div>
           <input type="hidden" name="runner_id" value={preselectedRunner.id} />
+        </div>
+      ) : null}
+
+      {!verified ? (
+        <div className="rounded-2xl border border-orange/15 bg-orange/5 p-5 text-sm">
+          <p className="flex items-center gap-2 font-medium text-orange-deep">
+            <ShieldAlert className="h-5 w-5" aria-hidden />
+            Identity verification required
+          </p>
+          <p className="mt-1 text-muted">
+            Complete identity verification to post errands and build trust with
+            runners.
+          </p>
+          <Link
+            href="/app/verify"
+            className="mt-2 inline-block font-semibold text-green-deep underline transition hover:text-green"
+          >
+            Verify now
+          </Link>
         </div>
       ) : null}
 
@@ -296,9 +318,10 @@ export function PostForm({
       </Field>
 
       <Submit
-        disabled={!hasLocation || priceNum <= fee}
+        disabled={!hasLocation || priceNum <= fee || !verified}
         preselectedRunner={preselectedRunner}
         canPay={priceNum > fee}
+        verified={verified}
       />
     </form>
   );
@@ -308,9 +331,11 @@ function Submit({
   disabled,
   preselectedRunner,
   canPay,
+  verified,
 }: {
   disabled: boolean;
   canPay: boolean;
+  verified: boolean;
   preselectedRunner?: { name: string | null };
 }) {
   const { pending } = useFormStatus();
@@ -325,6 +350,8 @@ function Submit({
         <>
           <LoaderCircle className="h-5 w-5 animate-spin" aria-hidden /> Sending request…
         </>
+      ) : !verified ? (
+        "Verify to post errands"
       ) : preselectedRunner ? (
         `Request ${runnerName}`
       ) : !canPay ? (

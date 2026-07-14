@@ -39,6 +39,33 @@ async function requireRunnerId(): Promise<string> {
   return requireUserId();
 }
 
+/**
+ * Identity verification is required for both sides of the marketplace. The
+ * admin must approve the user's Ghana Card submission before they can post
+ * errands (buyers) or go available/claim errands (runners).
+ */
+async function isUserVerified(userId: string): Promise<boolean> {
+  const db = getServiceClient();
+  const { data: profile } = await db
+    .from("profiles")
+    .select("verified")
+    .eq("id", userId)
+    .maybeSingle<{ verified: boolean }>();
+  return profile?.verified ?? false;
+}
+
+async function requireVerified(userId: string): Promise<void> {
+  if (!(await isUserVerified(userId))) {
+    redirect("/app/verify");
+  }
+}
+
+async function requireVerifiedRunner(): Promise<string> {
+  const runnerId = await requireRunnerId();
+  await requireVerified(runnerId);
+  return runnerId;
+}
+
 /** Load a task via service-role and assert the caller owns it. */
 async function ownedTask(taskId: string, userId: string) {
   const db = getServiceClient();
@@ -86,6 +113,7 @@ async function assignedTask(taskId: string, runnerId: string) {
  */
 export async function createErrand(formData: FormData) {
   const userId = await requireUserId();
+  await requireVerified(userId);
   await enforceRateLimit("post-errand", userId, 5, 300);
   const supabase = await createClient();
 
@@ -288,6 +316,7 @@ export async function setAvailability(
   lng: number | null,
 ) {
   const runnerId = await requireRunnerId();
+  if (available) await requireVerified(runnerId);
   if (!available) await clearRunnerPresence(runnerId);
   const db = getServiceClient();
   await db.from("runner_profile").upsert({
@@ -308,13 +337,16 @@ export async function setAvailability(
 export async function clearAvailabilityOverride() {
   const runnerId = await requireRunnerId();
   const db = getServiceClient();
-  const { data: profile } = await db
-    .from("runner_profile")
-    .select("scheduled_hours")
-    .eq("user_id", runnerId)
-    .maybeSingle<{ scheduled_hours: TimeRange[] | null }>();
+  const [runner, verified] = await Promise.all([
+    db
+      .from("runner_profile")
+      .select("scheduled_hours")
+      .eq("user_id", runnerId)
+      .maybeSingle<{ scheduled_hours: TimeRange[] | null }>(),
+    isUserVerified(runnerId),
+  ]);
 
-  const available = isRunnerAvailable(null, profile?.scheduled_hours ?? null);
+  const available = isRunnerAvailable(null, runner?.data?.scheduled_hours ?? null) && verified;
   await db
     .from("runner_profile")
     .update({
@@ -349,7 +381,8 @@ export async function updateScheduledHours(formData: FormData) {
     }
   }
 
-  const available = isRunnerAvailable(null, schedule);
+  const [verified] = await Promise.all([isUserVerified(runnerId)]);
+  const available = isRunnerAvailable(null, schedule) && verified;
   const db = getServiceClient();
   await db.from("runner_profile").upsert({
     user_id: runnerId,
@@ -364,7 +397,7 @@ export async function updateScheduledHours(formData: FormData) {
 }
 
 export async function acceptOffer(taskId: string) {
-  const runnerId = await requireRunnerId();
+  const runnerId = await requireVerifiedRunner();
   const db = getServiceClient();
   const task = await assignedTask(taskId, runnerId);
   if (task.status !== "matched") return;
@@ -403,7 +436,7 @@ export async function acceptOffer(taskId: string) {
 }
 
 export async function claimTask(taskId: string) {
-  const runnerId = await requireRunnerId();
+  const runnerId = await requireVerifiedRunner();
   const db = getServiceClient();
   const { data: task } = await db
     .from("tasks")

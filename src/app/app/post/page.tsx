@@ -21,14 +21,16 @@ export default async function PostErrandPage({
   const category = typeof params.category === "string" ? params.category : undefined;
 
   const supabase = await createClient();
+  const db = getServiceClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const preselectedRunner = runnerId
-    ? await loadRunner(runnerId)
-    : undefined;
+  const [preselectedRunner, buyer] = await Promise.all([
+    runnerId ? loadRunner(runnerId) : Promise.resolve(undefined),
+    db.from("profiles").select("verified").eq("id", user.id).maybeSingle<{ verified: boolean }>(),
+  ]);
 
   return (
     <div className="flex min-h-dvh flex-col bg-cream">
@@ -55,7 +57,11 @@ export default async function PostErrandPage({
         </p>
 
         <div className="mt-7 rounded-[1.75rem] border border-cream-deep bg-white p-6 shadow-sm sm:p-7">
-          <PostForm preselectedRunner={preselectedRunner} defaultCategory={category} />
+          <PostForm
+            preselectedRunner={preselectedRunner}
+            defaultCategory={category}
+            verified={buyer?.data?.verified ?? false}
+          />
         </div>
       </main>
     </div>
@@ -68,12 +74,12 @@ async function loadRunner(runnerId: string) {
     db.from("profiles").select("name, verified").eq("id", runnerId).maybeSingle<{ name: string | null; verified: boolean }>(),
     db
       .from("runner_profile")
-      .select("user_id, trust_score, capabilities, is_available, status")
+      .select("user_id, trust_score, verified, capabilities, is_available, status")
       .eq("user_id", runnerId)
-      .maybeSingle<{ user_id: string; trust_score: number; capabilities: string[] | null; is_available: boolean; status: string }>(),
+      .maybeSingle<{ user_id: string; trust_score: number; verified: boolean; capabilities: string[] | null; is_available: boolean; status: string }>(),
   ]);
 
-  if (!runner || runner.status !== "active" || !runner.is_available) {
+  if (!runner || runner.status !== "active" || !runner.is_available || !runner.verified) {
     return undefined;
   }
 

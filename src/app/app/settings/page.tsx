@@ -31,7 +31,7 @@ export default async function SettingsPage() {
 
   const { data: runnerProfile } = await getServiceClient()
     .from("runner_profile")
-    .select("is_available, available_manual, scheduled_hours, current_lat, current_lng, trust_score, capabilities")
+    .select("is_available, available_manual, scheduled_hours, current_lat, current_lng, trust_score, verified, capabilities")
     .eq("user_id", user.id)
     .maybeSingle<{
       is_available: boolean;
@@ -40,6 +40,7 @@ export default async function SettingsPage() {
       current_lat: number | null;
       current_lng: number | null;
       trust_score: number;
+      verified: boolean;
       capabilities: string[] | null;
     }>();
 
@@ -208,6 +209,7 @@ export default async function SettingsPage() {
                 scheduledHours={runnerProfile.scheduled_hours}
                 lat={runnerProfile.current_lat ?? null}
                 lng={runnerProfile.current_lng ?? null}
+                verified={runnerProfile.verified}
               />
               <ScheduleEditor initialSchedule={runnerProfile.scheduled_hours} />
               <CapabilitiesEditor capabilities={runnerProfile.capabilities ?? null} />
