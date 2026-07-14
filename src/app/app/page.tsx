@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getServiceClient } from "@/lib/supabase/service";
+import { isRunnerAvailable } from "@/lib/availability";
 import { NotificationSummary } from "@/lib/notification-text";
 import { Logo } from "@/components/brand";
 import { AvailabilityToggle } from "./availability-toggle";
@@ -47,6 +48,8 @@ interface ErrandSummary {
 
 interface RunnerProfileSummary {
   is_available: boolean;
+  available_manual: boolean | null;
+  scheduled_hours: { day: number; start: string; end: string }[] | null;
   current_lat: number | null;
   current_lng: number | null;
   active_load: number;
@@ -104,7 +107,7 @@ export default async function AppHome() {
       ? await db
           .from("runner_profile")
           .select(
-            "is_available, current_lat, current_lng, active_load, trust_score, status, capabilities",
+            "is_available, available_manual, scheduled_hours, current_lat, current_lng, active_load, trust_score, status, capabilities",
           )
           .eq("user_id", user.id)
           .maybeSingle<RunnerProfileSummary>()
@@ -410,12 +413,20 @@ function RunnerHome({
         </Section>
       ) : null}
 
-      <LiveLocationUpdater available={profile?.is_available ?? false} />
+      <LiveLocationUpdater
+        available={isRunnerAvailable(
+          profile?.available_manual ?? null,
+          profile?.scheduled_hours ?? null,
+        )}
+      />
     </div>
   );
 }
 
 function RunnerSidebar({ profile }: { profile: RunnerProfileSummary | null }) {
+  const currentlyAvailable = profile
+    ? isRunnerAvailable(profile.available_manual, profile.scheduled_hours)
+    : false;
   return (
     <div className="space-y-5">
       <div className="rounded-2xl border border-cream-deep bg-white p-5 shadow-sm">
@@ -423,9 +434,9 @@ function RunnerSidebar({ profile }: { profile: RunnerProfileSummary | null }) {
           <CircleCheck className="h-5 w-5 text-orange-deep" aria-hidden /> Availability
         </p>
         <p className="mt-1 text-sm text-muted">
-          {profile?.is_available
+          {currentlyAvailable
             ? `Available${
-                profile.current_lat != null && profile.current_lng != null
+                profile?.current_lat != null && profile?.current_lng != null
                   ? ` · ${profile.current_lat.toFixed(4)}, ${profile.current_lng.toFixed(4)}`
                   : ""
               }`
@@ -433,7 +444,8 @@ function RunnerSidebar({ profile }: { profile: RunnerProfileSummary | null }) {
         </p>
         <div className="mt-4">
           <AvailabilityToggle
-            available={profile?.is_available ?? false}
+            availableManual={profile?.available_manual ?? null}
+            scheduledHours={profile?.scheduled_hours ?? null}
             lat={profile?.current_lat ?? null}
             lng={profile?.current_lng ?? null}
           />

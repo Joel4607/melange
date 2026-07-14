@@ -48,6 +48,8 @@ export interface RunnerProfileRow {
   trust_score: number;
   status: "active" | "suspended" | "quarantined";
   capabilities: string[] | null;
+  available_manual: boolean | null;
+  scheduled_hours: { day: number; start: string; end: string }[] | null;
 }
 
 export interface TrustEventRow {

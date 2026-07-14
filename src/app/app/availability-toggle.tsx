@@ -1,15 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { LoaderCircle, MapPin, Navigation } from "lucide-react";
-import { setAvailability } from "./actions";
+import { LoaderCircle, MapPin, Navigation, Clock } from "lucide-react";
+import { isRunnerAvailable, type TimeRange } from "@/lib/availability";
+import { setAvailability, clearAvailabilityOverride } from "./actions";
 
 export function AvailabilityToggle({
-  available,
+  availableManual,
+  scheduledHours,
   lat,
   lng,
 }: {
-  available: boolean;
+  availableManual: boolean | null;
+  scheduledHours: TimeRange[] | null;
   lat: number | null;
   lng: number | null;
 }) {
@@ -22,6 +25,13 @@ export function AvailabilityToggle({
   const [error, setError] = useState<string | null>(null);
 
   const hasLocation = coords.lat !== "" && coords.lng !== "";
+  const current = isRunnerAvailable(availableManual, scheduledHours);
+  const mode =
+    availableManual === true
+      ? "manual-available"
+      : availableManual === false
+        ? "manual-unavailable"
+        : "schedule";
 
   async function goAvailable() {
     setError(null);
@@ -74,8 +84,35 @@ export function AvailabilityToggle({
     }
   }
 
+  async function followSchedule() {
+    setError(null);
+    setPending(true);
+    try {
+      await clearAvailabilityOverride();
+    } finally {
+      setPending(false);
+    }
+  }
+
   return (
     <div className="space-y-4">
+      <div className="flex items-center gap-2 text-sm">
+        <span
+          className={`inline-flex h-2.5 w-2.5 rounded-full ${current ? "bg-green" : "bg-cream-deep"}`}
+          aria-hidden
+        />
+        <span className="font-medium text-ink">
+          {current ? "Available" : "Unavailable"}
+        </span>
+        <span className="text-muted">
+          {mode === "schedule"
+            ? "· following schedule"
+            : mode === "manual-available"
+              ? "· manual override"
+              : "· manual override"}
+        </span>
+      </div>
+
       <div className="grid gap-2 sm:grid-cols-2">
         <input
           aria-label="Latitude"
@@ -96,36 +133,43 @@ export function AvailabilityToggle({
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          onClick={goAvailable}
-          disabled={pending || locating}
-          className="inline-flex items-center gap-2 rounded-full bg-green px-4 py-2 text-sm font-semibold text-cream transition hover:bg-green-deep disabled:opacity-60"
-        >
-          {pending || locating ? (
-            <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden />
-          ) : (
-            <Navigation className="h-4 w-4" aria-hidden />
-          )}
-          {available ? "Update location" : "Go available"}
-        </button>
+        {current ? (
+          <button
+            type="button"
+            onClick={goOffline}
+            disabled={pending}
+            className="inline-flex items-center gap-2 rounded-full border border-cream-deep px-4 py-2 text-sm font-semibold text-green-deep transition hover:bg-cream/40 disabled:opacity-60"
+          >
+            <MapPin className="h-4 w-4" aria-hidden />
+            Go offline
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={goAvailable}
+            disabled={pending || locating}
+            className="inline-flex items-center gap-2 rounded-full bg-green px-4 py-2 text-sm font-semibold text-cream transition hover:bg-green-deep disabled:opacity-60"
+          >
+            {pending || locating ? (
+              <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden />
+            ) : (
+              <Navigation className="h-4 w-4" aria-hidden />
+            )}
+            Go available
+          </button>
+        )}
 
         <button
           type="button"
-          onClick={goOffline}
-          disabled={pending}
+          onClick={followSchedule}
+          disabled={pending || mode === "schedule"}
           className="inline-flex items-center gap-2 rounded-full border border-cream-deep px-4 py-2 text-sm font-semibold text-green-deep transition hover:bg-cream/40 disabled:opacity-60"
         >
-          <MapPin className="h-4 w-4" aria-hidden />
-          Go offline
+          <Clock className="h-4 w-4" aria-hidden />
+          {mode === "schedule" ? "Following schedule" : "Follow schedule"}
         </button>
       </div>
 
-      <p className="text-sm text-muted">
-        {available
-          ? "You are available."
-          : "Offline. Turn on availability to receive offers."}
-      </p>
       {error ? <p className="text-sm text-orange-deep">{error}</p> : null}
     </div>
   );
