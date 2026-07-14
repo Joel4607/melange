@@ -99,7 +99,10 @@ export interface FraudFlagRow {
 export interface VerificationRequestRow {
   id: string;
   user_id: string;
-  id_photo_url: string;
+  front_photo_path: string;
+  back_photo_path: string | null;
+  phone: string | null;
+  email: string | null;
   status: VerificationStatus;
   reviewed_at: string | null;
   reviewed_by: string | null;
