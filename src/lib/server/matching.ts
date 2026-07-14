@@ -11,6 +11,7 @@ import {
   type TrustEvent,
   type TrustEventType,
 } from "@/lib/algorithm";
+import { isRunnerAvailable } from "@/lib/availability";
 import {
   countRecentCancellations,
   hasActiveFraudFlag,
@@ -57,9 +58,8 @@ export async function generateMatchRun(taskId: string): Promise<MatchResult[]> {
   const { data: runners, error: runnersError } = await db
     .from("runner_profile")
     .select(
-      "user_id, current_lat, current_lng, is_available, active_load, trust_score, status, capabilities",
+      "user_id, current_lat, current_lng, is_available, active_load, trust_score, status, capabilities, available_manual, scheduled_hours",
     )
-    .eq("is_available", true)
     .eq("status", "active")
     .returns<RunnerProfileRow[]>();
   if (runnersError) {
@@ -67,16 +67,19 @@ export async function generateMatchRun(taskId: string): Promise<MatchResult[]> {
   }
 
   // Prefer fresh Redis presence positions over the (periodically synced)
-  // Postgres coords; runners with neither are unmatchable.
+  // Postgres coords; runners with neither are unmatchable. Availability is
+  // computed from the manual toggle or the scheduled hours for the current time.
   const liveById = await liveRunnerLocations(
     (runners ?? []).map((r) => r.user_id),
   );
+  const nowDate = new Date(now);
   const located = (runners ?? [])
     .map((r) => {
       const live = liveById.get(r.user_id);
       return live ? { ...r, current_lat: live.lat, current_lng: live.lng } : r;
     })
-    .filter((r) => r.current_lat != null && r.current_lng != null);
+    .filter((r) => r.current_lat != null && r.current_lng != null)
+    .filter((r) => isRunnerAvailable(r.available_manual, r.scheduled_hours, nowDate));
 
   const runnerIds = located.map((r) => r.user_id);
   const [eventsByRunner, verifiedById, cancellationCounts, pairDisputeCounts, activeFraudFlags] =

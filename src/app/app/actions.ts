@@ -19,6 +19,7 @@ import {
   persistFraudFlags,
 } from "@/lib/server/fraud";
 import type { Urgency } from "@/lib/algorithm";
+import { isRunnerAvailable, type TimeRange } from "@/lib/availability";
 import type { ProofRow, TaskRow } from "@/lib/server/rows";
 import { randomUUID } from "node:crypto";
 
@@ -269,6 +270,7 @@ export async function setAvailability(
   await db.from("runner_profile").upsert({
     user_id: runnerId,
     is_available: available,
+    available_manual: available,
     current_lat: lat,
     current_lng: lng,
     status: "active",
@@ -276,6 +278,66 @@ export async function setAvailability(
   });
 
   revalidatePath("/app");
+  revalidatePath("/app/settings");
+}
+
+/** Clear a manual availability override and return to scheduled hours. */
+export async function clearAvailabilityOverride() {
+  const runnerId = await requireRunnerId();
+  const db = getServiceClient();
+  const { data: profile } = await db
+    .from("runner_profile")
+    .select("scheduled_hours")
+    .eq("user_id", runnerId)
+    .maybeSingle<{ scheduled_hours: TimeRange[] | null }>();
+
+  const available = isRunnerAvailable(null, profile?.scheduled_hours ?? null);
+  await db
+    .from("runner_profile")
+    .update({
+      available_manual: null,
+      is_available: available,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("user_id", runnerId);
+
+  revalidatePath("/app");
+  revalidatePath("/app/settings");
+}
+
+/** Save recurring working hours. Manual override is cleared so the schedule applies. */
+export async function updateScheduledHours(formData: FormData) {
+  const runnerId = await requireRunnerId();
+  const raw = String(formData.get("schedule") ?? "[]");
+  let schedule: TimeRange[];
+  try {
+    schedule = JSON.parse(raw);
+  } catch {
+    throw new Error("Invalid schedule");
+  }
+  if (!Array.isArray(schedule)) throw new Error("Invalid schedule");
+  for (const entry of schedule) {
+    if (
+      typeof entry.day !== "number" ||
+      typeof entry.start !== "string" ||
+      typeof entry.end !== "string"
+    ) {
+      throw new Error("Invalid schedule entry");
+    }
+  }
+
+  const available = isRunnerAvailable(null, schedule);
+  const db = getServiceClient();
+  await db.from("runner_profile").upsert({
+    user_id: runnerId,
+    scheduled_hours: schedule,
+    available_manual: null,
+    is_available: available,
+    updated_at: new Date().toISOString(),
+  });
+
+  revalidatePath("/app");
+  revalidatePath("/app/settings");
 }
 
 export async function acceptOffer(taskId: string) {

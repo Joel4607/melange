@@ -1,11 +1,12 @@
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft, MapPin, PackageCheck } from "lucide-react";
+import { ArrowLeft, MapPin, PackageCheck, Clock } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getServiceClient } from "@/lib/supabase/service";
 import { Logo } from "@/components/brand";
 import { haversineKm } from "@/lib/algorithm";
+import { isRunnerAvailable } from "@/lib/availability";
 import { claimTask } from "../actions";
 import { RealtimeStatus } from "../realtime-status";
 import { MapView, MapMarker } from "../map-view";
@@ -42,9 +43,17 @@ export default async function FeedPage() {
   const db = getServiceClient();
   const { data: profile } = await db
     .from("runner_profile")
-    .select("current_lat, current_lng, capabilities")
+    .select("current_lat, current_lng, capabilities, available_manual, scheduled_hours")
     .eq("user_id", user.id)
-    .maybeSingle<{ current_lat: number | null; current_lng: number | null; capabilities: string[] | null }>();
+    .maybeSingle<{
+      current_lat: number | null;
+      current_lng: number | null;
+      capabilities: string[] | null;
+      available_manual: boolean | null;
+      scheduled_hours: { day: number; start: string; end: string }[] | null;
+    }>();
+
+  const available = profile ? isRunnerAvailable(profile.available_manual, profile.scheduled_hours) : false;
 
   const { data: tasks } = await db
     .from("tasks")
@@ -110,6 +119,19 @@ export default async function FeedPage() {
           Browse posted errands near you and claim one to start.
         </p>
 
+        {!available ? (
+          <div className="mt-6 flex items-start gap-3 rounded-2xl border border-orange/15 bg-orange/5 p-4 text-sm">
+            <Clock className="mt-0.5 h-5 w-5 shrink-0 text-orange-deep" aria-hidden />
+            <p className="text-orange-deep">
+              You are currently unavailable. Set your availability in{" "}
+              <Link href="/app/settings" className="underline">
+                settings
+              </Link>{" "}
+              to claim errands.
+            </p>
+          </div>
+        ) : null}
+
         {tasksWithDistance.length > 0 && (
           <div className="mt-6">
             <MapView center={mapCenter} markers={mapMarkers} className="h-96" />
@@ -150,7 +172,7 @@ export default async function FeedPage() {
                         </p>
                       ) : null}
                     </div>
-                    {capable ? (
+                    {capable && available ? (
                       <form action={claimTask.bind(null, task.id)}>
                         <button
                           type="submit"
@@ -161,7 +183,7 @@ export default async function FeedPage() {
                       </form>
                     ) : (
                       <span className="rounded-full border border-cream-deep bg-cream/40 px-4 py-2 text-sm text-muted">
-                        Not in your capabilities
+                        {!available ? "Unavailable" : "Not in your capabilities"}
                       </span>
                     )}
                   </div>

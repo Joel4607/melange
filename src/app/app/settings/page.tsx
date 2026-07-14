@@ -8,6 +8,7 @@ import { Logo } from "@/components/brand";
 import { updateProfile } from "../actions";
 import { AvailabilityToggle } from "../availability-toggle";
 import { CapabilitiesEditor } from "../capabilities-editor";
+import { ScheduleEditor } from "../schedule-editor";
 
 export const metadata: Metadata = {
   title: "Settings — Mélange",
@@ -30,9 +31,16 @@ export default async function SettingsPage() {
 
   const { data: runnerProfile } = await getServiceClient()
     .from("runner_profile")
-    .select("is_available, current_lat, current_lng, capabilities")
+    .select("is_available, available_manual, scheduled_hours, current_lat, current_lng, capabilities")
     .eq("user_id", user.id)
-    .maybeSingle<{ is_available: boolean; current_lat: number | null; current_lng: number | null; capabilities: string[] | null }>();
+    .maybeSingle<{
+      is_available: boolean;
+      available_manual: boolean | null;
+      scheduled_hours: { day: number; start: string; end: string }[] | null;
+      current_lat: number | null;
+      current_lng: number | null;
+      capabilities: string[] | null;
+    }>();
 
   return (
     <div className="flex min-h-dvh flex-col bg-cream">
@@ -134,10 +142,12 @@ export default async function SettingsPage() {
             <p className="mt-1 text-sm text-muted">Set your availability and the errands you want to match for.</p>
             <div className="mt-4 space-y-5">
               <AvailabilityToggle
-                available={runnerProfile.is_available}
+                availableManual={runnerProfile.available_manual}
+                scheduledHours={runnerProfile.scheduled_hours}
                 lat={runnerProfile.current_lat ?? null}
                 lng={runnerProfile.current_lng ?? null}
               />
+              <ScheduleEditor initialSchedule={runnerProfile.scheduled_hours} />
               <CapabilitiesEditor capabilities={runnerProfile.capabilities ?? null} />
             </div>
           </section>
