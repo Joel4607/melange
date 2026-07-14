@@ -5,6 +5,7 @@ import {
   AlertTriangle,
   ArrowLeft,
   Bike,
+  Camera,
   CircleCheck,
   Clock,
   MapPin,
@@ -150,6 +151,26 @@ export default async function ErrandPage({
     if (rprofile?.current_lat != null && rprofile?.current_lng != null) {
       runnerLocation = { lat: rprofile.current_lat, lng: rprofile.current_lng };
     }
+  }
+
+  const { data: proof } = await db
+    .from("proofs")
+    .select("photo_path, gps_lat, gps_lng, captured_at")
+    .eq("task_id", task.id)
+    .order("captured_at", { ascending: false })
+    .limit(1)
+    .maybeSingle<{
+      photo_path: string;
+      gps_lat: number | null;
+      gps_lng: number | null;
+      captured_at: string;
+    }>();
+  let proofPhotoUrl: string | null = null;
+  if (proof) {
+    const { data: signed } = await db.storage
+      .from("proofs")
+      .createSignedUrl(proof.photo_path, 60 * 5);
+    proofPhotoUrl = signed?.signedUrl ?? null;
   }
 
   const { data: existingRating } = await db
@@ -348,6 +369,33 @@ export default async function ErrandPage({
             <MapView center={mapCenter} markers={mapMarkers} />
           </div>
         </section>
+
+        {/* Delivery proof */}
+        {proof ? (
+          <section className="mt-5 rounded-[1.5rem] border border-cream-deep bg-white p-6 shadow-sm">
+            <p className="flex items-center gap-2 font-medium text-green-deep">
+              <Camera className="h-5 w-5 text-orange-deep" aria-hidden /> Delivery proof
+            </p>
+            {proofPhotoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element -- short-lived signed URL; next/image can't optimize it
+              <img
+                src={proofPhotoUrl}
+                alt={`Delivery proof from ${runnerName}`}
+                className="mt-3 max-h-96 w-full rounded-xl border border-cream-deep object-contain"
+              />
+            ) : (
+              <p className="mt-2 text-sm text-muted">Photo unavailable.</p>
+            )}
+            <p className="mt-2 text-sm text-muted">
+              {proof.gps_lat != null && proof.gps_lng != null ? (
+                <>
+                  Tagged at {proof.gps_lat.toFixed(5)}, {proof.gps_lng.toFixed(5)} ·{" "}
+                </>
+              ) : null}
+              {new Date(proof.captured_at).toLocaleString()}
+            </p>
+          </section>
+        ) : null}
 
         {/* Action */}
         <div className="mt-6 space-y-4">
