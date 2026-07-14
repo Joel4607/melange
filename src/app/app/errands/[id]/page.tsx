@@ -79,7 +79,7 @@ export default async function ErrandPage({
   const { data: task } = await db
     .from("tasks")
     .select(
-      "id, buyer_id, title, description, category, urgency, price, fee, status, selected_runner_id, pickup_lat, pickup_lng, dropoff_lat, dropoff_lng, created_at, accepted_at, completed_at",
+      "id, buyer_id, title, description, category, urgency, price, fee, payment_reference, status, selected_runner_id, pickup_lat, pickup_lng, dropoff_lat, dropoff_lng, created_at, accepted_at, completed_at",
     )
     .eq("id", id)
     .maybeSingle<{
@@ -91,6 +91,7 @@ export default async function ErrandPage({
       urgency: string;
       price: string;
       fee: string;
+      payment_reference: string | null;
       status: TaskStatus;
       selected_runner_id: string | null;
       pickup_lat: number;
@@ -346,6 +347,12 @@ export default async function ErrandPage({
               <span className="text-muted">Runner payout</span>
               <span className="font-medium text-ink">GHS {runnerPayout}</span>
             </div>
+            {task.payment_reference ? (
+              <div className="mt-1 flex justify-between border-t border-cream-deep pt-1">
+                <span className="text-muted">Mobile money ref</span>
+                <span className="font-medium text-ink">{task.payment_reference}</span>
+              </div>
+            ) : null}
           </div>
         </section>
 

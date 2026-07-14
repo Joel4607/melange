@@ -33,6 +33,7 @@ export interface TaskRow {
   urgency: Urgency;
   price: string;
   fee: string;
+  payment_reference: string | null;
   status: TaskStatus;
   selected_runner_id: string | null;
   accepted_at: string | null;

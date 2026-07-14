@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useFormStatus } from "react-dom";
 import { LoaderCircle, MapPin, Navigation, Star, User } from "lucide-react";
+import type { Urgency } from "@/lib/algorithm";
+import { estimateErrandFee } from "@/lib/pricing";
 import { createErrand } from "../actions";
 
 export const CATEGORIES = [
@@ -21,10 +23,6 @@ const URGENCIES: { value: string; label: string; hint: string }[] = [
   { value: "normal", label: "Today", hint: "Standard" },
   { value: "express", label: "ASAP", hint: "Express" },
 ];
-
-function fromCents(cents: number): number {
-  return Math.max(0, cents) / 100;
-}
 
 export function PostForm({
   preselectedRunner,
@@ -55,9 +53,16 @@ export function PostForm({
   const hasDropoff = dropoffCoords.lat !== "" && dropoffCoords.lng !== "";
 
   const priceNum = Math.max(0, Number(price) || 0);
-  const priceCents = Math.round(priceNum * 100);
-  const feeCents = Math.round(priceCents * 0.1);
-  const runnerPayout = fromCents(priceCents - feeCents);
+  const pickup = hasLocation
+    ? { lat: Number(coords.lat), lng: Number(coords.lng) }
+    : null;
+  const dropoff = hasDropoff
+    ? { lat: Number(dropoffCoords.lat), lng: Number(dropoffCoords.lng) }
+    : null;
+  const { distanceKm, fee, runnerPayout } =
+    pickup && !Number.isNaN(pickup.lat) && !Number.isNaN(pickup.lng)
+      ? estimateErrandFee(priceNum, pickup, dropoff, urgency as Urgency)
+      : { distanceKm: 0, fee: 0, runnerPayout: priceNum };
 
   const categoryDefault =
     defaultCategory && CATEGORIES.includes(defaultCategory as (typeof CATEGORIES)[number])
@@ -160,10 +165,21 @@ export function PostForm({
             className={inputClass}
           />
           <p className="mt-2 text-sm text-muted">
-            Includes a 10% platform fee. Runner receives GHS {runnerPayout.toFixed(2)}.
+            Platform fee GHS {fee.toFixed(2)} ({distanceKm.toFixed(1)} km · {urgency}).
+            Runner receives GHS {runnerPayout.toFixed(2)}.
           </p>
         </Field>
       </div>
+
+      <Field label="Mobile money reference (optional)">
+        <input
+          name="payment_reference"
+          type="text"
+          placeholder="e.g. 1234567890"
+          maxLength={40}
+          className={inputClass}
+        />
+      </Field>
 
       <Field label="How soon?">
         <input type="hidden" name="urgency" value={urgency} />
@@ -279,7 +295,11 @@ export function PostForm({
         </div>
       </Field>
 
-      <Submit disabled={!hasLocation} preselectedRunner={preselectedRunner} />
+      <Submit
+        disabled={!hasLocation || priceNum <= fee}
+        preselectedRunner={preselectedRunner}
+        canPay={priceNum > fee}
+      />
     </form>
   );
 }
@@ -287,8 +307,10 @@ export function PostForm({
 function Submit({
   disabled,
   preselectedRunner,
+  canPay,
 }: {
   disabled: boolean;
+  canPay: boolean;
   preselectedRunner?: { name: string | null };
 }) {
   const { pending } = useFormStatus();
@@ -305,6 +327,8 @@ function Submit({
         </>
       ) : preselectedRunner ? (
         `Request ${runnerName}`
+      ) : !canPay ? (
+        "Budget must cover the fee"
       ) : (
         "Post errand & match a runner"
       )}

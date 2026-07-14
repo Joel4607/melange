@@ -20,6 +20,7 @@ import {
 } from "@/lib/server/fraud";
 import type { Urgency } from "@/lib/algorithm";
 import { isRunnerAvailable, type TimeRange } from "@/lib/availability";
+import { estimateErrandFee } from "@/lib/pricing";
 import type { ProofRow, TaskRow } from "@/lib/server/rows";
 import { randomUUID } from "node:crypto";
 
@@ -101,14 +102,25 @@ export async function createErrand(formData: FormData) {
   const dropoffLat = dropoffLatRaw ? Number(dropoffLatRaw) : Number.NaN;
   const dropoffLng = dropoffLngRaw ? Number(dropoffLngRaw) : Number.NaN;
   const runnerId = String(formData.get("runner_id") ?? "").trim();
+  const paymentReference = String(formData.get("payment_reference") ?? "").trim();
 
   if (!title || Number.isNaN(pickupLat) || Number.isNaN(pickupLng)) {
     throw new Error("Missing title or pickup location");
   }
 
-  const priceCents = Math.round(price * 100);
-  const feeCents = Math.round(priceCents * 0.1);
-  const fee = feeCents / 100;
+  const pickup = { lat: pickupLat, lng: pickupLng };
+  const dropoff =
+    !Number.isNaN(dropoffLat) && !Number.isNaN(dropoffLng)
+      ? { lat: dropoffLat, lng: dropoffLng }
+      : null;
+  const { fee, runnerPayout } = estimateErrandFee(price, pickup, dropoff, urgency);
+
+  if (price <= fee) {
+    throw new Error(`Budget must be greater than the platform fee of GHS ${fee.toFixed(2)}`);
+  }
+  if (runnerPayout <= 0) {
+    throw new Error("Budget is too low to pay the runner");
+  }
 
   // Manual pick: the buyer selected a runner from /app/runners. Create the task
   // already matched, hold funds, and send an offer to the runner.
@@ -116,12 +128,21 @@ export async function createErrand(formData: FormData) {
     const db = getServiceClient();
     const { data: runner, error: runnerError } = await db
       .from("runner_profile")
-      .select("user_id, is_available, status")
+      .select("user_id, status, available_manual, scheduled_hours")
       .eq("user_id", runnerId)
-      .eq("is_available", true)
       .eq("status", "active")
-      .maybeSingle<{ user_id: string }>();
-    if (runnerError || !runner) {
+      .maybeSingle<{
+        user_id: string;
+        status: string;
+        available_manual: boolean | null;
+        scheduled_hours: { day: number; start: string; end: string }[] | null;
+      }>();
+    if (
+      runnerError ||
+      !runner ||
+      runner.status !== "active" ||
+      !isRunnerAvailable(runner.available_manual, runner.scheduled_hours)
+    ) {
       throw new Error("Selected runner is not available");
     }
 
@@ -137,8 +158,9 @@ export async function createErrand(formData: FormData) {
         fee,
         pickup_lat: pickupLat,
         pickup_lng: pickupLng,
-        dropoff_lat: Number.isNaN(dropoffLat) ? null : dropoffLat,
-        dropoff_lng: Number.isNaN(dropoffLng) ? null : dropoffLng,
+        dropoff_lat: dropoff?.lat ?? null,
+        dropoff_lng: dropoff?.lng ?? null,
+        payment_reference: paymentReference || null,
         status: "matched",
         selected_runner_id: runnerId,
       })
@@ -178,8 +200,9 @@ export async function createErrand(formData: FormData) {
       fee,
       pickup_lat: pickupLat,
       pickup_lng: pickupLng,
-      dropoff_lat: Number.isNaN(dropoffLat) ? null : dropoffLat,
-      dropoff_lng: Number.isNaN(dropoffLng) ? null : dropoffLng,
+      dropoff_lat: dropoff?.lat ?? null,
+      dropoff_lng: dropoff?.lng ?? null,
+      payment_reference: paymentReference || null,
     })
     .select("id")
     .single<{ id: string }>();
