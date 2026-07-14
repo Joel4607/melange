@@ -229,15 +229,30 @@ function BuyerHome({ errands }: { errands: ErrandSummary[] }) {
   return (
     <div className="space-y-5">
       <Link
-        href="/app/post"
+        href="/app/runners"
         className="flex items-center justify-between rounded-2xl bg-green p-6 text-left text-cream shadow-sm transition hover:bg-green-deep"
       >
         <span>
           <span className="flex items-center gap-2 font-display text-xl font-semibold">
-            <Plus className="h-5 w-5" aria-hidden /> Post an errand
+            <Plus className="h-5 w-5" aria-hidden /> Browse runners
           </span>
           <span className="mt-1 block text-sm text-cream/80">
-            Matched to a trusted runner by distance, rating &amp; availability.
+            Pick a trusted runner first, then post the errand directed at them.
+          </span>
+        </span>
+        <ArrowRight className="h-5 w-5" aria-hidden />
+      </Link>
+
+      <Link
+        href="/app/post"
+        className="flex items-center justify-between rounded-2xl border border-cream-deep bg-white p-6 text-left text-green-deep shadow-sm transition hover:bg-cream/40"
+      >
+        <span>
+          <span className="flex items-center gap-2 font-display text-xl font-semibold">
+            <ArrowRight className="h-5 w-5" aria-hidden /> Quick match
+          </span>
+          <span className="mt-1 block text-sm text-muted">
+            Skip browsing — we’ll auto-match a trusted runner for you.
           </span>
         </span>
         <ArrowRight className="h-5 w-5" aria-hidden />

@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { useFormStatus } from "react-dom";
-import { LoaderCircle, MapPin, Navigation } from "lucide-react";
+import { LoaderCircle, MapPin, Navigation, Star, User } from "lucide-react";
 import { createErrand } from "../actions";
 
-const CATEGORIES = [
+export const CATEGORIES = [
   "Market Runs",
   "Grocery Shopping",
   "Pharmacy Pickup",
@@ -26,7 +26,18 @@ function fromCents(cents: number): number {
   return Math.max(0, cents) / 100;
 }
 
-export function PostForm() {
+export function PostForm({
+  preselectedRunner,
+  defaultCategory,
+}: {
+  preselectedRunner?: {
+    id: string;
+    name: string | null;
+    trustScore: number;
+    capabilities: string[] | null;
+  };
+  defaultCategory?: string;
+}) {
   const [coords, setCoords] = useState<{ lat: string; lng: string }>({
     lat: "",
     lng: "",
@@ -47,6 +58,11 @@ export function PostForm() {
   const priceCents = Math.round(priceNum * 100);
   const feeCents = Math.round(priceCents * 0.1);
   const runnerPayout = fromCents(priceCents - feeCents);
+
+  const categoryDefault =
+    defaultCategory && CATEGORIES.includes(defaultCategory as (typeof CATEGORIES)[number])
+      ? defaultCategory
+      : "Market Runs";
 
   function useMyLocation() {
     setLocError(null);
@@ -73,6 +89,36 @@ export function PostForm() {
 
   return (
     <form action={createErrand} className="space-y-6">
+      {preselectedRunner ? (
+        <div className="rounded-2xl border border-cream-deep bg-white p-5 shadow-sm">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted">
+            Requesting this runner
+          </p>
+          <div className="mt-2 flex items-center gap-3">
+            <span className="grid h-11 w-11 place-items-center rounded-full bg-green text-cream">
+              <User className="h-5 w-5" aria-hidden />
+            </span>
+            <div>
+              <p className="font-display text-lg font-semibold text-green-deep">
+                {preselectedRunner.name ?? "A trusted runner"}
+              </p>
+              <p className="flex items-center gap-2 text-sm text-muted">
+                <span className="inline-flex items-center gap-1 text-green-soft">
+                  <Star className="h-3.5 w-3.5 fill-current" aria-hidden />
+                  {(preselectedRunner.trustScore * 5).toFixed(1)}
+                </span>
+                {preselectedRunner.capabilities?.length ? (
+                  <span className="text-xs text-muted">
+                    · {preselectedRunner.capabilities.slice(0, 3).join(", ")}
+                  </span>
+                ) : null}
+              </p>
+            </div>
+          </div>
+          <input type="hidden" name="runner_id" value={preselectedRunner.id} />
+        </div>
+      ) : null}
+
       <Field label="What do you need run?">
         <input
           name="title"
@@ -93,7 +139,7 @@ export function PostForm() {
 
       <div className="grid gap-6 sm:grid-cols-2">
         <Field label="Category">
-          <select name="category" defaultValue="Market Runs" className={inputClass}>
+          <select name="category" defaultValue={categoryDefault} className={inputClass}>
             {CATEGORIES.map((c) => (
               <option key={c} value={c}>
                 {c}
@@ -233,13 +279,20 @@ export function PostForm() {
         </div>
       </Field>
 
-      <Submit disabled={!hasLocation} />
+      <Submit disabled={!hasLocation} preselectedRunner={preselectedRunner} />
     </form>
   );
 }
 
-function Submit({ disabled }: { disabled: boolean }) {
+function Submit({
+  disabled,
+  preselectedRunner,
+}: {
+  disabled: boolean;
+  preselectedRunner?: { name: string | null };
+}) {
   const { pending } = useFormStatus();
+  const runnerName = preselectedRunner?.name ?? "this runner";
   return (
     <button
       type="submit"
@@ -248,8 +301,10 @@ function Submit({ disabled }: { disabled: boolean }) {
     >
       {pending ? (
         <>
-          <LoaderCircle className="h-5 w-5 animate-spin" aria-hidden /> Finding a runner…
+          <LoaderCircle className="h-5 w-5 animate-spin" aria-hidden /> Sending request…
         </>
+      ) : preselectedRunner ? (
+        `Request ${runnerName}`
       ) : (
         "Post errand & match a runner"
       )}
