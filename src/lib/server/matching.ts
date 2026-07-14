@@ -11,6 +11,7 @@ import {
   type TrustEventType,
 } from "@/lib/algorithm";
 import { createNotification } from "./notifications";
+import { liveRunnerLocations } from "./presence";
 import type { RunnerProfileRow, TaskRow, TrustEventRow } from "./rows";
 
 const TRUST_EVENT_TYPES: ReadonlySet<string> = new Set<TrustEventType>([
@@ -60,9 +61,17 @@ export async function generateMatchRun(taskId: string): Promise<MatchResult[]> {
     throw new Error(`generateMatchRun: ${runnersError.message}`);
   }
 
-  const located = (runners ?? []).filter(
-    (r) => r.current_lat != null && r.current_lng != null,
+  // Prefer fresh Redis presence positions over the (periodically synced)
+  // Postgres coords; runners with neither are unmatchable.
+  const liveById = await liveRunnerLocations(
+    (runners ?? []).map((r) => r.user_id),
   );
+  const located = (runners ?? [])
+    .map((r) => {
+      const live = liveById.get(r.user_id);
+      return live ? { ...r, current_lat: live.lat, current_lng: live.lng } : r;
+    })
+    .filter((r) => r.current_lat != null && r.current_lng != null);
 
   const eventsByRunner = await loadTrustEvents(
     db,

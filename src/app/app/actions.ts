@@ -7,6 +7,11 @@ import { getServiceClient } from "@/lib/supabase/service";
 import { generateMatchRun, offerToTopCandidate, refreshTrustScore } from "@/lib/server/matching";
 import { hasLedgerEntry, holdFunds, releaseFunds, refund, topUp } from "@/lib/server/escrow";
 import { resolveDispute } from "@/lib/server/disputes";
+import {
+  clearRunnerPresence,
+  publishRunnerLocation,
+} from "@/lib/server/presence";
+import { enforceRateLimit, withinRateLimit } from "@/lib/server/rate-limit";
 import { createNotification } from "@/lib/server/notifications";
 import type { Urgency } from "@/lib/algorithm";
 import { randomUUID } from "node:crypto";
@@ -73,6 +78,7 @@ async function assignedTask(taskId: string, runnerId: string) {
  */
 export async function createErrand(formData: FormData) {
   const userId = await requireUserId();
+  await enforceRateLimit("post-errand", userId, 5, 300);
   const supabase = await createClient();
 
   const title = String(formData.get("title") ?? "").trim();
@@ -195,6 +201,7 @@ export async function setAvailability(
   lng: number | null,
 ) {
   const runnerId = await requireRunnerId();
+  if (!available) await clearRunnerPresence(runnerId);
   const db = getServiceClient();
   await db.from("runner_profile").upsert({
     user_id: runnerId,
@@ -600,9 +607,18 @@ export async function updateProfile(formData: FormData) {
   revalidatePath("/app/settings");
 }
 
-/** Update the runner's current latitude and longitude while available. */
+/**
+ * Update the runner's current position while available. High-frequency pings
+ * land in Redis presence; Postgres only gets a periodic durable sync (or every
+ * ping when Redis is unavailable). Over-limit pings are dropped silently.
+ */
 export async function updateLocation(lat: number, lng: number) {
   const runnerId = await requireRunnerId();
+  if (!(await withinRateLimit("location-ping", runnerId, 30, 60))) return;
+
+  const { syncToDb } = await publishRunnerLocation(runnerId, lat, lng);
+  if (!syncToDb) return;
+
   const db = getServiceClient();
   await db.from("runner_profile").upsert(
     {
