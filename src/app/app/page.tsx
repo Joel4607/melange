@@ -10,6 +10,7 @@ import {
   ArrowRight,
   Star,
   Settings,
+  Wallet,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getServiceClient } from "@/lib/supabase/service";
@@ -67,6 +68,8 @@ interface RunnerTaskSummary {
   category: string | null;
   pickup_lat: number;
   pickup_lng: number;
+  completed_at: string | null;
+  created_at: string;
 }
 
 export default async function AppHome() {
@@ -117,10 +120,19 @@ export default async function AppHome() {
     role === "runner"
       ? await db
           .from("tasks")
-          .select("id, title, status, price, fee, category, pickup_lat, pickup_lng")
+          .select("id, title, status, price, fee, category, pickup_lat, pickup_lng, completed_at, created_at")
           .eq("selected_runner_id", user.id)
           .order("created_at", { ascending: false })
           .returns<RunnerTaskSummary[]>()
+      : { data: null };
+
+  const { data: runnerRatings } =
+    role === "runner"
+      ? await db
+          .from("ratings")
+          .select("stars")
+          .eq("ratee_id", user.id)
+          .returns<{ stars: number }[]>()
       : { data: null };
 
   const { data: notifications } = await supabase
@@ -157,6 +169,14 @@ export default async function AppHome() {
                 className="rounded-full border border-cream-deep px-4 py-2 text-sm font-medium text-green-deep transition hover:bg-white"
               >
                 Admin
+              </Link>
+            ) : null}
+            {role === "runner" ? (
+              <Link
+                href="/app/earnings"
+                className="inline-flex items-center gap-2 rounded-full border border-cream-deep px-4 py-2 text-sm font-medium text-green-deep transition hover:bg-white"
+              >
+                <Wallet className="h-4 w-4" aria-hidden /> Earnings
               </Link>
             ) : null}
             <NotificationsPopover notifications={notifications ?? []} />
@@ -217,7 +237,15 @@ export default async function AppHome() {
                 request={verificationRequest ?? null}
               />
             ) : (
-              <RunnerSidebar profile={runnerProfile ?? null} />
+              <RunnerSidebar
+                profile={runnerProfile ?? null}
+                tasks={runnerTasks ?? []}
+                avgRating={
+                  runnerRatings && runnerRatings.length > 0
+                    ? runnerRatings.reduce((sum, r) => sum + r.stars, 0) / runnerRatings.length
+                    : 0
+                }
+              />
             )}
           </aside>
         </div>
@@ -423,10 +451,23 @@ function RunnerHome({
   );
 }
 
-function RunnerSidebar({ profile }: { profile: RunnerProfileSummary | null }) {
+function RunnerSidebar({
+  profile,
+  tasks,
+  avgRating,
+}: {
+  profile: RunnerProfileSummary | null;
+  tasks: RunnerTaskSummary[];
+  avgRating: number;
+}) {
   const currentlyAvailable = profile
     ? isRunnerAvailable(profile.available_manual, profile.scheduled_hours)
     : false;
+  const completed = tasks.filter((t) => t.status === "completed" || t.status === "resolved");
+  const totalEarned = completed.reduce(
+    (sum, t) => sum + Math.max(0, Number(t.price) - Number(t.fee)),
+    0,
+  );
   return (
     <div className="space-y-5">
       <div className="rounded-2xl border border-cream-deep bg-white p-5 shadow-sm">
@@ -466,6 +507,31 @@ function RunnerSidebar({ profile }: { profile: RunnerProfileSummary | null }) {
             "Go available to start building your trust score."
           )}
         </p>
+      </div>
+
+      <div className="rounded-2xl border border-cream-deep bg-white p-5 shadow-sm">
+        <p className="flex items-center gap-2 font-display font-semibold text-green-deep">
+          <Wallet className="h-5 w-5 text-orange-deep" aria-hidden /> Earnings
+        </p>
+        <p className="mt-1 text-sm text-muted">
+          {completed.length > 0 ? (
+            <>
+              <span className="block font-medium text-ink">GHS {totalEarned.toFixed(2)} earned</span>
+              <span className="block">
+                {completed.length} completed ·{" "}
+                {avgRating > 0 ? `${avgRating.toFixed(1)}★ avg` : "no ratings yet"}
+              </span>
+            </>
+          ) : (
+            "Complete errands to start earning."
+          )}
+        </p>
+        <Link
+          href="/app/earnings"
+          className="mt-4 inline-block text-sm font-medium text-green-deep underline transition hover:text-green"
+        >
+          View full history
+        </Link>
       </div>
 
       <div className="rounded-2xl border border-cream-deep bg-white p-5 shadow-sm">
