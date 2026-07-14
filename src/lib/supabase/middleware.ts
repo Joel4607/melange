@@ -44,8 +44,8 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Signed-in users have no reason to see the auth screens.
-  if (user && (path === "/login" || path === "/signup" || path === "/get-started")) {
+  // New users have no reason to see the pre-auth role selector once authenticated.
+  if (user && path === "/get-started") {
     const url = request.nextUrl.clone();
     url.pathname = "/app";
     url.search = "";
