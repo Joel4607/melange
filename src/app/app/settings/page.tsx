@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft, User, ShieldCheck, Shield, Bike, PackageCheck } from "lucide-react";
+import { ArrowLeft, User, ShieldCheck, Shield, Bike, PackageCheck, Star, Wallet } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getServiceClient } from "@/lib/supabase/service";
 import { Logo } from "@/components/brand";
@@ -31,7 +31,7 @@ export default async function SettingsPage() {
 
   const { data: runnerProfile } = await getServiceClient()
     .from("runner_profile")
-    .select("is_available, available_manual, scheduled_hours, current_lat, current_lng, capabilities")
+    .select("is_available, available_manual, scheduled_hours, current_lat, current_lng, trust_score, capabilities")
     .eq("user_id", user.id)
     .maybeSingle<{
       is_available: boolean;
@@ -39,8 +39,28 @@ export default async function SettingsPage() {
       scheduled_hours: { day: number; start: string; end: string }[] | null;
       current_lat: number | null;
       current_lng: number | null;
+      trust_score: number;
       capabilities: string[] | null;
     }>();
+
+  const [{ data: runnerRatings }, { data: completedTasks }] = await Promise.all([
+    getServiceClient().from("ratings").select("stars").eq("ratee_id", user.id).returns<{ stars: number }[]>(),
+    getServiceClient()
+      .from("tasks")
+      .select("id, price, fee")
+      .eq("selected_runner_id", user.id)
+      .in("status", ["completed", "resolved"])
+      .returns<{ id: string; price: string; fee: string }[]>(),
+  ]);
+
+  const averageRating =
+    runnerRatings && runnerRatings.length > 0
+      ? runnerRatings.reduce((sum, r) => sum + r.stars, 0) / runnerRatings.length
+      : 0;
+  const totalEarned = (completedTasks ?? []).reduce(
+    (sum, t) => sum + Math.max(0, Number(t.price) - Number(t.fee)),
+    0,
+  );
 
   return (
     <div className="flex min-h-dvh flex-col bg-cream">
@@ -135,6 +155,48 @@ export default async function SettingsPage() {
             ) : null}
           </div>
         </section>
+
+        {role === "runner" && runnerProfile ? (
+          <section className="mt-5 rounded-2xl border border-cream-deep bg-white p-6 shadow-sm">
+            <p className="font-display text-lg font-semibold text-green-deep">My public profile</p>
+            <div className="mt-4 space-y-3 text-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-muted">Trust score</span>
+                <span className="inline-flex items-center gap-1 font-medium text-ink">
+                  <Star className="h-4 w-4 fill-orange text-orange" aria-hidden />
+                  {(runnerProfile.trust_score * 5).toFixed(1)} / 5
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-muted">Buyer rating</span>
+                <span className="font-medium text-ink">
+                  {averageRating > 0 ? `${averageRating.toFixed(1)} / 5` : "No ratings yet"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-muted">Total earned</span>
+                <span className="inline-flex items-center gap-1 font-medium text-ink">
+                  <Wallet className="h-4 w-4" aria-hidden />
+                  GHS {totalEarned.toFixed(2)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-muted">Capabilities</span>
+                <span className="font-medium text-ink">
+                  {runnerProfile.capabilities?.length
+                    ? runnerProfile.capabilities.join(", ")
+                    : "Any Other Errand"}
+                </span>
+              </div>
+            </div>
+            <Link
+              href="/app/earnings"
+              className="mt-4 inline-block text-sm font-medium text-green-deep underline transition hover:text-green"
+            >
+              View earnings history
+            </Link>
+          </section>
+        ) : null}
 
         {role === "runner" && runnerProfile ? (
           <section className="mt-5 rounded-2xl border border-cream-deep bg-white p-6 shadow-sm">
