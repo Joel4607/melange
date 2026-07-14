@@ -1,5 +1,6 @@
 import { getServiceClient } from "@/lib/supabase/service";
 import { releaseFunds, refund } from "./escrow";
+import { evaluateTaskFraud, hasActiveFraudFlag, persistFraudFlags } from "./fraud";
 import { refreshTrustScore } from "./matching";
 import { createNotification } from "./notifications";
 import {
@@ -42,11 +43,18 @@ export async function resolveDispute(disputeId: string): Promise<ArbitrationResu
     .maybeSingle<ProofRow>();
   if (proof.error) throw new Error(`resolveDispute: ${proof.error.message}`);
 
+  const fraud = await evaluateTaskFraud(db, task, proof.data, Date.now());
+  if (task.selected_runner_id) {
+    await persistFraudFlags(db, task.selected_runner_id, task.id, fraud);
+  }
+
   const ctx: DisputeContext = {
     proofProvided: proof.data != null,
     gpsMatch: gpsMatch(proof.data, task),
     buyerClaim: classifyClaim(dispute.reason),
-    fraudFlagged: await hasHardFraudFlag(db, task.selected_runner_id),
+    fraudFlagged: task.selected_runner_id
+      ? await hasActiveFraudFlag(db, task.selected_runner_id)
+      : false,
   };
 
   const result = arbitrate(ctx);
@@ -176,15 +184,4 @@ function classifyClaim(reason: string): DisputeClaim {
   return "other";
 }
 
-async function hasHardFraudFlag(db: Db, runnerId: string | null): Promise<boolean> {
-  if (!runnerId) return false;
-  const { data, error } = await db
-    .from("fraud_flags")
-    .select("id")
-    .eq("runner_id", runnerId)
-    .in("status", ["active", "confirmed"])
-    .limit(1)
-    .maybeSingle<{ id: string }>();
-  if (error) throw new Error(`resolveDispute: ${error.message}`);
-  return data != null;
-}
+

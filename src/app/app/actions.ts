@@ -13,7 +13,13 @@ import {
 } from "@/lib/server/presence";
 import { enforceRateLimit, withinRateLimit } from "@/lib/server/rate-limit";
 import { createNotification } from "@/lib/server/notifications";
+import {
+  evaluateCancellationFraud,
+  evaluateTaskFraud,
+  persistFraudFlags,
+} from "@/lib/server/fraud";
 import type { Urgency } from "@/lib/algorithm";
+import type { ProofRow, TaskRow } from "@/lib/server/rows";
 import { randomUUID } from "node:crypto";
 
 const URGENCIES: readonly Urgency[] = ["low", "normal", "express"];
@@ -374,6 +380,27 @@ export async function markDelivered(taskId: string, formData: FormData) {
       completed_at: new Date().toISOString(),
     })
     .eq("id", taskId);
+
+  // Run fraud detection on the delivery proof before the completed event is
+  // folded into the runner's trust score.
+  const { data: fullTask } = await db
+    .from("tasks")
+    .select(
+      "id, buyer_id, category, pickup_lat, pickup_lng, dropoff_lat, dropoff_lng, urgency, price, fee, status, selected_runner_id, accepted_at, completed_at",
+    )
+    .eq("id", taskId)
+    .single<TaskRow>();
+  if (fullTask) {
+    const proof: ProofRow = {
+      gps_lat: Number.isNaN(gpsLat) ? null : gpsLat,
+      gps_lng: Number.isNaN(gpsLng) ? null : gpsLng,
+    };
+    const fraud = await evaluateTaskFraud(db, fullTask, proof, Date.now());
+    if (fullTask.selected_runner_id) {
+      await persistFraudFlags(db, fullTask.selected_runner_id, taskId, fraud);
+    }
+  }
+
   await db.from("trust_events").insert({
     runner_id: runnerId,
     type: "completed",
@@ -481,6 +508,10 @@ export async function cancelRunnerErrand(taskId: string) {
     type: "cancelled",
     value: 1,
   });
+
+  const cancelFraud = await evaluateCancellationFraud(db, runnerId, task.buyer_id, Date.now());
+  await persistFraudFlags(db, runnerId, taskId, cancelFraud);
+
   await refreshTrustScore(runnerId);
   await createNotification(task.buyer_id, "runner_cancelled", {
     task_id: taskId,

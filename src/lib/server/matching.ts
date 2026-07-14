@@ -3,6 +3,7 @@ import {
   computeTrust,
   evaluateFraud,
   rankRunners,
+  type FraudContext,
   type FraudResult,
   type MatchResult,
   type RunnerCandidate,
@@ -10,6 +11,13 @@ import {
   type TrustEvent,
   type TrustEventType,
 } from "@/lib/algorithm";
+import {
+  countRecentCancellations,
+  hasActiveFraudFlag,
+  loadActiveFraudFlags,
+  loadCancellationCounts,
+  loadPairDisputeCounts,
+} from "./fraud";
 import { createNotification } from "./notifications";
 import { liveRunnerLocations } from "./presence";
 import type { RunnerProfileRow, TaskRow, TrustEventRow } from "./rows";
@@ -21,9 +29,6 @@ const TRUST_EVENT_TYPES: ReadonlySet<string> = new Set<TrustEventType>([
   "responsiveness",
   "dispute_lost",
 ]);
-
-/** Cancellations within this window feed the rapid-cancellation fraud rule. */
-const CANCELLATION_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 /**
  * Run the matcher for a task and persist the ranking snapshot.
@@ -73,26 +78,30 @@ export async function generateMatchRun(taskId: string): Promise<MatchResult[]> {
     })
     .filter((r) => r.current_lat != null && r.current_lng != null);
 
-  const eventsByRunner = await loadTrustEvents(
-    db,
-    located.map((r) => r.user_id),
-  );
-
-  // For each runner: fraud first (drop hard-flagged), then a fraud-aware trust
-  // score, then assemble the candidate the matcher consumes.
-  const verifiedById = await loadVerified(
-    db,
-    located.map((r) => r.user_id),
-  );
+  const runnerIds = located.map((r) => r.user_id);
+  const [eventsByRunner, verifiedById, cancellationCounts, pairDisputeCounts, activeFraudFlags] =
+    await Promise.all([
+      loadTrustEvents(db, runnerIds),
+      loadVerified(db, runnerIds),
+      loadCancellationCounts(db, runnerIds, now),
+      loadPairDisputeCounts(db, runnerIds, task.buyer_id),
+      loadActiveFraudFlags(db, runnerIds),
+    ]);
 
   const candidates: RunnerCandidate[] = [];
   const trustScores: { user_id: string; trust_score: number; updated_at: string }[] = [];
   for (const r of located) {
     const events = eventsByRunner.get(r.user_id) ?? [];
+    const fraudContext: FraudContext = {
+      recentCancellations: cancellationCounts.get(r.user_id) ?? 0,
+      disputesWithSameCounterparty: pairDisputeCounts.get(r.user_id) ?? 0,
+    };
     const { trust, action } = runnerTrustSnapshot(
       events,
       verifiedById.get(r.user_id) ?? false,
       now,
+      fraudContext,
+      activeFraudFlags.has(r.user_id),
     );
 
     trustScores.push({
@@ -172,13 +181,24 @@ export async function refreshTrustScore(runnerId: string): Promise<void> {
   const db = getServiceClient();
   const now = Date.now();
 
-  const eventsByRunner = await loadTrustEvents(db, [runnerId]);
-  const verifiedById = await loadVerified(db, [runnerId]);
+  const [eventsByRunner, verifiedById, recentCancellations, hasActiveFlag] = await Promise.all([
+    loadTrustEvents(db, [runnerId]),
+    loadVerified(db, [runnerId]),
+    countRecentCancellations(db, runnerId, now),
+    hasActiveFraudFlag(db, runnerId),
+  ]);
+
+  const fraudContext: FraudContext = {
+    recentCancellations,
+    disputesWithSameCounterparty: 0,
+  };
 
   const { trust } = runnerTrustSnapshot(
     eventsByRunner.get(runnerId) ?? [],
     verifiedById.get(runnerId) ?? false,
     now,
+    fraudContext,
+    hasActiveFlag,
   );
 
   const { error } = await db
@@ -194,20 +214,20 @@ function runnerTrustSnapshot(
   events: TrustEvent[],
   verified: boolean,
   now: number,
+  fraudContext: FraudContext,
+  hasActiveFlag: boolean,
 ): { trust: number; action: FraudResult["action"] } {
-  const recentCancellations = events.filter(
-    (e) => e.type === "cancelled" && now - e.at <= CANCELLATION_WINDOW_MS,
-  ).length;
-
-  const fraud = evaluateFraud({ recentCancellations });
+  const fraud = evaluateFraud(fraudContext);
+  const fraudRisk = hasActiveFlag ? 1 : fraud.risk;
+  const action = hasActiveFlag ? "exclude" : fraud.action;
   const { trust } = computeTrust({
     events,
     verified,
-    fraudRisk: fraud.risk,
+    fraudRisk,
     now,
   });
 
-  return { trust, action: fraud.action };
+  return { trust, action };
 }
 
 export async function offerToTopCandidate(taskId: string): Promise<string | null> {
