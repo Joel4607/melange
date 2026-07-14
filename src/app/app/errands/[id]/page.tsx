@@ -16,6 +16,7 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import { getServiceClient } from "@/lib/supabase/service";
 import { hasLedgerEntry } from "@/lib/server/escrow";
+import { haversineKm } from "@/lib/algorithm";
 import { Logo } from "@/components/brand";
 import { RealtimeStatus } from "../../realtime-status";
 import { MapView, MapMarker } from "../../map-view";
@@ -138,18 +139,22 @@ export default async function ErrandPage({
   const runnerId = task.selected_runner_id ?? candidate?.runner_id ?? null;
   let runnerName = "A trusted runner";
   let runnerLocation: { lat: number; lng: number } | null = null;
+  let runnerTrust = candidate?.trust ?? 0;
   if (runnerId) {
     const [{ data: rp }, { data: rprofile }] = await Promise.all([
       db.from("profiles").select("name").eq("id", runnerId).maybeSingle<{ name: string | null }>(),
       db
         .from("runner_profile")
-        .select("current_lat, current_lng")
+        .select("current_lat, current_lng, trust_score")
         .eq("user_id", runnerId)
-        .maybeSingle<{ current_lat: number | null; current_lng: number | null }>(),
+        .maybeSingle<{ current_lat: number | null; current_lng: number | null; trust_score: number }>(),
     ]);
     if (rp?.name) runnerName = rp.name;
     if (rprofile?.current_lat != null && rprofile?.current_lng != null) {
       runnerLocation = { lat: rprofile.current_lat, lng: rprofile.current_lng };
+    }
+    if (rprofile?.trust_score != null) {
+      runnerTrust = rprofile.trust_score;
     }
   }
 
@@ -190,7 +195,12 @@ export default async function ErrandPage({
   const price = Number(task.price).toFixed(2);
   const fee = Number(task.fee).toFixed(2);
   const runnerPayout = Number(Number(task.price) - Number(task.fee)).toFixed(2);
-  const trustStars = candidate ? (candidate.trust * 5).toFixed(1) : null;
+  const trustStars = runnerId ? (runnerTrust * 5).toFixed(1) : null;
+  const runnerDistanceKm =
+    candidate?.distance_km ??
+    (runnerLocation
+      ? haversineKm({ lat: task.pickup_lat, lng: task.pickup_lng }, runnerLocation)
+      : null);
 
   const mapCenter = { lat: task.pickup_lat, lng: task.pickup_lng };
   const mapMarkers: MapMarker[] = [
@@ -272,10 +282,10 @@ export default async function ErrandPage({
                         {trustStars}
                       </span>
                     ) : null}
-                    {candidate ? (
+                    {runnerDistanceKm != null ? (
                       <span className="inline-flex items-center gap-1">
                         <MapPin className="h-3.5 w-3.5" aria-hidden />
-                        {candidate.distance_km.toFixed(1)} km away
+                        {runnerDistanceKm.toFixed(1)} km away
                       </span>
                     ) : null}
                   </p>

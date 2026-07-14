@@ -99,6 +99,7 @@ export async function createErrand(formData: FormData) {
   const dropoffLngRaw = String(formData.get("dropoff_lng") ?? "").trim();
   const dropoffLat = dropoffLatRaw ? Number(dropoffLatRaw) : Number.NaN;
   const dropoffLng = dropoffLngRaw ? Number(dropoffLngRaw) : Number.NaN;
+  const runnerId = String(formData.get("runner_id") ?? "").trim();
 
   if (!title || Number.isNaN(pickupLat) || Number.isNaN(pickupLng)) {
     throw new Error("Missing title or pickup location");
@@ -108,6 +109,62 @@ export async function createErrand(formData: FormData) {
   const feeCents = Math.round(priceCents * 0.1);
   const fee = feeCents / 100;
 
+  // Manual pick: the buyer selected a runner from /app/runners. Create the task
+  // already matched, hold funds, and send an offer to the runner.
+  if (runnerId) {
+    const db = getServiceClient();
+    const { data: runner, error: runnerError } = await db
+      .from("runner_profile")
+      .select("user_id, is_available, status")
+      .eq("user_id", runnerId)
+      .eq("is_available", true)
+      .eq("status", "active")
+      .maybeSingle<{ user_id: string }>();
+    if (runnerError || !runner) {
+      throw new Error("Selected runner is not available");
+    }
+
+    const { data: task, error } = await supabase
+      .from("tasks")
+      .insert({
+        buyer_id: userId,
+        title,
+        description: description || null,
+        category: category || null,
+        urgency,
+        price,
+        fee,
+        pickup_lat: pickupLat,
+        pickup_lng: pickupLng,
+        dropoff_lat: Number.isNaN(dropoffLat) ? null : dropoffLat,
+        dropoff_lng: Number.isNaN(dropoffLng) ? null : dropoffLng,
+        status: "matched",
+        selected_runner_id: runnerId,
+      })
+      .select("id")
+      .single<{ id: string }>();
+    if (error || !task) {
+      throw new Error(error?.message ?? "Could not create errand");
+    }
+
+    const { data: wallet } = await db
+      .from("wallets")
+      .select("balance")
+      .eq("user_id", userId)
+      .maybeSingle<{ balance: string }>();
+    const balance = wallet ? Number(wallet.balance) : 0;
+    if (balance < price) {
+      await topUp(userId, price - balance);
+    }
+    await holdFunds(task.id);
+    await createNotification(runnerId, "offer", { task_id: task.id, task_title: title });
+
+    revalidatePath("/app");
+    revalidatePath(`/app/errands/${task.id}`);
+    redirect(`/app/errands/${task.id}`);
+  }
+
+  // Auto-match: create a posted errand and run the matcher.
   const { data: task, error } = await supabase
     .from("tasks")
     .insert({
