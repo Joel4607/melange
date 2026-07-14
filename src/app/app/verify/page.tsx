@@ -9,6 +9,19 @@ export const metadata: Metadata = {
   title: "Verify your account — Mélange",
 };
 
+async function signedImageUrl(
+  client: Awaited<ReturnType<typeof createClient>>,
+  path: string | null,
+): Promise<string | null> {
+  if (!path) return null;
+  if (path.startsWith("http")) return path;
+  const { data, error } = await client.storage
+    .from("verification")
+    .createSignedUrl(path, 60 * 5);
+  if (error || !data) return null;
+  return data.signedUrl;
+}
+
 export default async function VerifyPage() {
   const supabase = await createClient();
   const {
@@ -24,11 +37,25 @@ export default async function VerifyPage() {
 
   const { data: request } = await supabase
     .from("verification_requests")
-    .select("status, created_at")
+    .select(
+      "status, created_at, front_photo_path, back_photo_path, phone, email",
+    )
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
     .limit(1)
-    .maybeSingle<{ status: "pending" | "approved" | "rejected"; created_at: string }>();
+    .maybeSingle<{
+      status: "pending" | "approved" | "rejected";
+      created_at: string;
+      front_photo_path: string | null;
+      back_photo_path: string | null;
+      phone: string | null;
+      email: string | null;
+    }>();
+
+  const [frontUrl, backUrl] = await Promise.all([
+    signedImageUrl(supabase, request?.front_photo_path ?? null),
+    signedImageUrl(supabase, request?.back_photo_path ?? null),
+  ]);
 
   return (
     <div className="flex min-h-dvh flex-col bg-cream">
@@ -46,7 +73,7 @@ export default async function VerifyPage() {
           Verify your account
         </h1>
         <p className="mt-2 text-muted">
-          Upload a link to a clear photo of your ID. An admin will review it.
+          Upload the front and back of your Ghana card. An admin will review it.
         </p>
 
         {profile?.verified ? (
@@ -68,6 +95,28 @@ export default async function VerifyPage() {
               Submitted {new Date(request.created_at).toLocaleDateString()}. We&apos;ll notify you when
               it&apos;s reviewed.
             </p>
+            <div className="mt-4 flex flex-col items-center gap-2 text-sm">
+              {frontUrl ? (
+                <a
+                  href={frontUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-green-soft underline"
+                >
+                  View Ghana card front
+                </a>
+              ) : null}
+              {backUrl ? (
+                <a
+                  href={backUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-green-soft underline"
+                >
+                  View Ghana card back
+                </a>
+              ) : null}
+            </div>
           </div>
         ) : request?.status === "rejected" ? (
           <div className="mt-8 space-y-6">
@@ -75,8 +124,30 @@ export default async function VerifyPage() {
               <XCircle className="mx-auto h-8 w-8 text-orange-deep" aria-hidden />
               <p className="mt-3 font-medium text-green-deep">Verification rejected</p>
               <p className="mt-1 text-sm text-muted">
-                You can submit a new, clearer ID photo.
+                You can submit clearer photos and contact details again.
               </p>
+              <div className="mt-4 flex flex-col items-center gap-2 text-sm">
+                {frontUrl ? (
+                  <a
+                    href={frontUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-green-soft underline"
+                  >
+                    View previous Ghana card front
+                  </a>
+                ) : null}
+                {backUrl ? (
+                  <a
+                    href={backUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-green-soft underline"
+                  >
+                    View previous Ghana card back
+                  </a>
+                ) : null}
+              </div>
             </div>
             <VerifyForm />
           </div>

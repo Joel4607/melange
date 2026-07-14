@@ -9,6 +9,7 @@ import { hasLedgerEntry, holdFunds, releaseFunds, refund, topUp } from "@/lib/se
 import { resolveDispute } from "@/lib/server/disputes";
 import { createNotification } from "@/lib/server/notifications";
 import type { Urgency } from "@/lib/algorithm";
+import { randomUUID } from "node:crypto";
 
 const URGENCIES: readonly Urgency[] = ["low", "normal", "express"];
 
@@ -614,14 +615,37 @@ export async function updateLocation(lat: number, lng: number) {
   );
 }
 
+function fileExtension(file: File): string {
+  const type = file.type.toLowerCase();
+  if (type === "image/jpeg") return "jpg";
+  if (type === "image/png") return "png";
+  if (type === "image/webp") return "webp";
+  return "jpg";
+}
+
+function assertImageFile(value: FormDataEntryValue | null, label: string): File {
+  if (!(value instanceof File)) {
+    throw new Error(`Please upload the ${label} photo of your Ghana card`);
+  }
+  if (!value.type.startsWith("image/")) {
+    throw new Error(`${label} photo must be an image file`);
+  }
+  return value;
+}
+
 /** Submit an ID verification request for the signed-in user. */
 export async function submitVerification(formData: FormData) {
   const userId = await requireUserId();
   const supabase = await createClient();
-  const idPhotoUrl = String(formData.get("id_photo_url") ?? "").trim();
+  const db = getServiceClient();
 
-  if (!idPhotoUrl) {
-    throw new Error("Please provide a photo URL");
+  const front = assertImageFile(formData.get("front"), "front");
+  const back = assertImageFile(formData.get("back"), "back");
+  const phone = String(formData.get("phone") ?? "").trim();
+  const email = String(formData.get("email") ?? "").trim() || null;
+
+  if (!phone) {
+    throw new Error("Please provide a phone number");
   }
 
   const { data: existing } = await supabase
@@ -634,9 +658,31 @@ export async function submitVerification(formData: FormData) {
     throw new Error("You already have a pending or approved verification request");
   }
 
+  const frontPath = `${userId}/${randomUUID()}.${fileExtension(front)}`;
+  const backPath = `${userId}/${randomUUID()}.${fileExtension(back)}`;
+
+  const { error: frontError } = await db.storage
+    .from("verification")
+    .upload(frontPath, await front.arrayBuffer(), {
+      contentType: front.type,
+      upsert: false,
+    });
+  if (frontError) throw new Error(frontError.message);
+
+  const { error: backError } = await db.storage
+    .from("verification")
+    .upload(backPath, await back.arrayBuffer(), {
+      contentType: back.type,
+      upsert: false,
+    });
+  if (backError) throw new Error(backError.message);
+
   const { error } = await supabase.from("verification_requests").insert({
     user_id: userId,
-    id_photo_url: idPhotoUrl,
+    front_photo_path: frontPath,
+    back_photo_path: backPath,
+    phone,
+    email,
   });
   if (error) {
     throw new Error(error.message);

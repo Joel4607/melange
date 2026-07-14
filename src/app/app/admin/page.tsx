@@ -12,6 +12,19 @@ import {
 } from "./actions";
 import type { DisputeRow, FraudFlagRow, VerificationRequestRow } from "@/lib/server/rows";
 
+async function signedUrl(
+  db: ReturnType<typeof getServiceClient>,
+  path: string | null,
+): Promise<string | null> {
+  if (!path) return null;
+  if (path.startsWith("http")) return path;
+  const { data, error } = await db.storage
+    .from("verification")
+    .createSignedUrl(path, 60 * 5);
+  if (error || !data) return null;
+  return data.signedUrl;
+}
+
 export const metadata: Metadata = {
   title: "Admin — Mélange",
 };
@@ -29,6 +42,8 @@ interface FraudFlagWithNames extends FraudFlagRow {
 
 interface VerificationRequestWithNames extends VerificationRequestRow {
   user_name: string | null;
+  front_url: string | null;
+  back_url: string | null;
 }
 
 export default async function AdminPage() {
@@ -86,7 +101,9 @@ export default async function AdminPage() {
 
   const { data: verificationRequests } = await db
     .from("verification_requests")
-    .select("id, user_id, id_photo_url, status, created_at")
+    .select(
+      "id, user_id, front_photo_path, back_photo_path, phone, email, status, created_at",
+    )
     .eq("status", "pending")
     .order("created_at", { ascending: false })
     .returns<VerificationRequestRow[]>();
@@ -115,10 +132,14 @@ export default async function AdminPage() {
     task_title: f.task_id ? taskTitleById.get(f.task_id) ?? null : null,
   }));
 
-  const verificationRequestsWithNames: VerificationRequestWithNames[] = (verificationRequests ?? []).map((v) => ({
-    ...v,
-    user_name: nameById.get(v.user_id) ?? null,
-  }));
+  const verificationRequestsWithNames: VerificationRequestWithNames[] = await Promise.all(
+    (verificationRequests ?? []).map(async (v) => ({
+      ...v,
+      user_name: nameById.get(v.user_id) ?? null,
+      front_url: await signedUrl(db, v.front_photo_path),
+      back_url: await signedUrl(db, v.back_photo_path),
+    })),
+  );
 
   return (
     <div className="flex min-h-dvh flex-col bg-cream">
@@ -260,14 +281,34 @@ export default async function AdminPage() {
                   <p className="mt-1 text-xs text-muted">
                     {new Date(v.created_at).toLocaleString()}
                   </p>
-                  <a
-                    href={v.id_photo_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-2 inline-block text-sm text-green-soft underline"
-                  >
-                    View ID photo
-                  </a>
+                  {v.phone ? (
+                    <p className="mt-1 text-sm text-ink">Phone: {v.phone}</p>
+                  ) : null}
+                  {v.email ? (
+                    <p className="mt-1 text-sm text-ink">Email: {v.email}</p>
+                  ) : null}
+                  <div className="mt-2 flex gap-3">
+                    {v.front_url ? (
+                      <a
+                        href={v.front_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-green-soft underline"
+                      >
+                        View front
+                      </a>
+                    ) : null}
+                    {v.back_url ? (
+                      <a
+                        href={v.back_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-green-soft underline"
+                      >
+                        View back
+                      </a>
+                    ) : null}
+                  </div>
                   <div className="mt-4 flex gap-2">
                     <form action={approveVerification.bind(null, v.id)}>
                       <button
