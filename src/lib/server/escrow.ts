@@ -1,5 +1,5 @@
 import { getServiceClient } from "@/lib/supabase/service";
-import type { TaskRow, WalletRow } from "./rows";
+import type { WalletRow } from "./rows";
 
 /**
  * Simulated escrow. Every wallet/ledger mutation goes through this server-only
@@ -7,14 +7,11 @@ import type { TaskRow, WalletRow } from "./rows";
  * money. The `ledger_entries` table is the append-only audit trail behind every
  * `wallets` balance change.
  *
- * Money is handled in integer cents internally to avoid floating-point drift,
- * then written back as a decimal. These are read-modify-write updates without
- * row locking, which is acceptable for this single-writer simulated ledger.
+ * Mutations are performed inside PostgreSQL functions so the wallet update and
+ * ledger insert share a single transaction and are not subject to read-modify-write
+ * races.
  */
 type Db = ReturnType<typeof getServiceClient>;
-
-const toCents = (v: string | number): number => Math.round(Number(v) * 100);
-const fromCents = (cents: number): number => cents / 100;
 
 export async function hasLedgerEntry(
   db: Db,
@@ -30,24 +27,6 @@ export async function hasLedgerEntry(
     .maybeSingle<{ id: string }>();
   if (error) throw new Error(`escrow: ${error.message}`);
   return data != null;
-}
-
-async function loadTask(db: Db, taskId: string): Promise<TaskRow> {
-  const { data, error } = await db
-    .from("tasks")
-    .select(
-      "id, buyer_id, category, pickup_lat, pickup_lng, urgency, price, fee, status, selected_runner_id, accepted_at, completed_at",
-    )
-    .eq("id", taskId)
-    .single<TaskRow>();
-  if (error || !data) throw new Error(`escrow: task ${taskId} not found`);
-  return data;
-}
-
-function runnerPayoutCents(task: TaskRow): number {
-  const total = toCents(task.price);
-  const fee = toCents(task.fee);
-  return Math.max(0, total - fee);
 }
 
 async function loadWallet(db: Db, userId: string): Promise<WalletRow> {
@@ -77,19 +56,17 @@ async function loadWallet(db: Db, userId: string): Promise<WalletRow> {
  */
 export async function topUp(userId: string, amount: number): Promise<number> {
   const db = getServiceClient();
-  const cents = toCents(amount);
+  const cents = Math.round(Number(amount) * 100);
   if (cents <= 0) throw new Error("escrow: top-up amount must be positive");
 
-  const wallet = await loadWallet(db, userId);
-  const balance = toCents(wallet.balance) + cents;
-
-  await db.from("wallets").update({ balance: fromCents(balance) }).eq("user_id", userId);
-  await db.from("ledger_entries").insert({
-    user_id: userId,
-    type: "topup",
-    amount: fromCents(cents),
+  const { error } = await db.rpc("top_up_wallet", {
+    p_user_id: userId,
+    p_amount_cents: cents,
   });
-  return fromCents(balance);
+  if (error) throw new Error(`escrow: ${error.message}`);
+
+  const wallet = await loadWallet(db, userId);
+  return Number(wallet.balance);
 }
 
 /**
@@ -98,31 +75,8 @@ export async function topUp(userId: string, amount: number): Promise<number> {
  */
 export async function holdFunds(taskId: string): Promise<void> {
   const db = getServiceClient();
-  const task = await loadTask(db, taskId);
-  const amount = toCents(task.price);
-
-  if (await hasLedgerEntry(db, taskId, ["hold"])) return;
-
-  const wallet = await loadWallet(db, task.buyer_id);
-  const balance = toCents(wallet.balance);
-  if (balance < amount) {
-    throw new Error(`escrow: buyer ${task.buyer_id} has insufficient funds`);
-  }
-
-  await db
-    .from("wallets")
-    .update({
-      balance: fromCents(balance - amount),
-      held: fromCents(toCents(wallet.held) + amount),
-    })
-    .eq("user_id", task.buyer_id);
-
-  await db.from("ledger_entries").insert({
-    task_id: task.id,
-    user_id: task.buyer_id,
-    type: "hold",
-    amount: fromCents(amount),
-  });
+  const { error } = await db.rpc("hold_funds", { p_task_id: taskId });
+  if (error) throw new Error(`escrow: ${error.message}`);
 }
 
 /**
@@ -132,35 +86,8 @@ export async function holdFunds(taskId: string): Promise<void> {
  */
 export async function releaseFunds(taskId: string): Promise<void> {
   const db = getServiceClient();
-  const task = await loadTask(db, taskId);
-  if (!task.selected_runner_id) {
-    throw new Error(`escrow: task ${taskId} has no selected runner`);
-  }
-  const amount = toCents(task.price);
-  const payout = runnerPayoutCents(task);
-
-  if (!await hasLedgerEntry(db, taskId, ["hold"])) return;
-  if (await hasLedgerEntry(db, taskId, ["release", "payout"])) return;
-  if (await hasLedgerEntry(db, taskId, ["refund"])) {
-    throw new Error(`escrow: task ${taskId} has already been refunded`);
-  }
-
-  const buyer = await loadWallet(db, task.buyer_id);
-  const runner = await loadWallet(db, task.selected_runner_id);
-
-  await db
-    .from("wallets")
-    .update({ held: fromCents(Math.max(0, toCents(buyer.held) - amount)) })
-    .eq("user_id", task.buyer_id);
-  await db
-    .from("wallets")
-    .update({ balance: fromCents(toCents(runner.balance) + payout) })
-    .eq("user_id", task.selected_runner_id);
-
-  await db.from("ledger_entries").insert([
-    { task_id: task.id, user_id: task.buyer_id, type: "release", amount: fromCents(-amount) },
-    { task_id: task.id, user_id: task.selected_runner_id, type: "payout", amount: fromCents(payout) },
-  ]);
+  const { error } = await db.rpc("release_funds", { p_task_id: taskId });
+  if (error) throw new Error(`escrow: ${error.message}`);
 }
 
 /**
@@ -169,28 +96,6 @@ export async function releaseFunds(taskId: string): Promise<void> {
  */
 export async function refund(taskId: string): Promise<void> {
   const db = getServiceClient();
-  const task = await loadTask(db, taskId);
-  const amount = toCents(task.price);
-
-  if (!await hasLedgerEntry(db, taskId, ["hold"])) return;
-  if (await hasLedgerEntry(db, taskId, ["refund"])) return;
-  if (await hasLedgerEntry(db, taskId, ["release", "payout"])) {
-    throw new Error(`escrow: task ${taskId} has already been released`);
-  }
-
-  const buyer = await loadWallet(db, task.buyer_id);
-  await db
-    .from("wallets")
-    .update({
-      balance: fromCents(toCents(buyer.balance) + amount),
-      held: fromCents(Math.max(0, toCents(buyer.held) - amount)),
-    })
-    .eq("user_id", task.buyer_id);
-
-  await db.from("ledger_entries").insert({
-    task_id: task.id,
-    user_id: task.buyer_id,
-    type: "refund",
-    amount: fromCents(amount),
-  });
+  const { error } = await db.rpc("refund_funds", { p_task_id: taskId });
+  if (error) throw new Error(`escrow: ${error.message}`);
 }

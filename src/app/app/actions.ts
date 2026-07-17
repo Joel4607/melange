@@ -603,10 +603,11 @@ export async function markDelivered(taskId: string, formData: FormData) {
 }
 
 /** Buyer rates the runner after delivery; releases escrow and feeds trust. */
-export async function rateRunner(taskId: string, stars: number) {
+export async function rateRunner(taskId: string, stars: number, formData: FormData) {
   if (!Number.isInteger(stars) || stars < 1 || stars > 5) {
     throw new Error("Rating must be an integer between 1 and 5 stars");
   }
+  const comment = (formData.get("comment")?.toString().trim() ?? null) || null;
   const userId = await requireUserId();
   const task = await ownedTask(taskId, userId);
   if (!task.selected_runner_id) return;
@@ -631,6 +632,7 @@ export async function rateRunner(taskId: string, stars: number) {
     rater_id: userId,
     ratee_id: task.selected_runner_id,
     stars,
+    comment,
   });
   await db.from("trust_events").insert({
     runner_id: task.selected_runner_id,
