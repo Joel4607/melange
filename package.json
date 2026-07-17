@@ -10,6 +10,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "seed": "node --env-file=.env.local --import tsx scripts/seed.ts",
+    "seed:admin": "node --env-file=.env.local --import tsx scripts/seed-admin.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

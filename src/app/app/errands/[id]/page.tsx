@@ -475,19 +475,27 @@ export default async function ErrandPage({
                 </p>
               )}
               {!existingRating && (
-                <div className="mt-3 flex justify-center gap-2">
-                  {[1, 2, 3, 4, 5].map((n) => (
-                    <form key={n} action={rateRunner.bind(null, task.id, n)}>
+                <form className="mt-3 space-y-3">
+                  <div className="flex justify-center gap-2">
+                    {[1, 2, 3, 4, 5].map((n) => (
                       <button
+                        key={n}
                         type="submit"
+                        formAction={rateRunner.bind(null, task.id, n)}
                         aria-label={`Rate ${n} stars`}
                         className="grid h-10 w-10 place-items-center rounded-full border border-cream-deep text-orange-deep transition hover:bg-orange/10"
                       >
                         <Star className="h-5 w-5" aria-hidden />
                       </button>
-                    </form>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                  <textarea
+                    name="comment"
+                    placeholder="Add a comment (optional)"
+                    rows={2}
+                    className="mx-auto w-full max-w-xs rounded-xl border border-cream-deep bg-white px-4 py-2 text-sm text-ink outline-none transition placeholder:text-muted focus:border-green-soft"
+                  />
+                </form>
               )}
               {!existingRating && !released && (
                 <form action={raiseDispute.bind(null, task.id)} className="mt-4">
@@ -532,19 +540,27 @@ export default async function ErrandPage({
                   <p className="mt-1 text-sm text-muted">
                     How did {runnerName} do?
                   </p>
-                  <div className="mt-3 flex justify-center gap-2">
-                    {[1, 2, 3, 4, 5].map((n) => (
-                      <form key={n} action={rateRunner.bind(null, task.id, n)}>
+                  <form className="mt-3 space-y-3">
+                    <div className="flex justify-center gap-2">
+                      {[1, 2, 3, 4, 5].map((n) => (
                         <button
+                          key={n}
                           type="submit"
+                          formAction={rateRunner.bind(null, task.id, n)}
                           aria-label={`Rate ${n} stars`}
                           className="grid h-10 w-10 place-items-center rounded-full border border-cream-deep text-orange-deep transition hover:bg-orange/10"
                         >
                           <Star className="h-5 w-5" aria-hidden />
                         </button>
-                      </form>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                    <textarea
+                      name="comment"
+                      placeholder="Add a comment (optional)"
+                      rows={2}
+                      className="mx-auto w-full max-w-xs rounded-xl border border-cream-deep bg-white px-4 py-2 text-sm text-ink outline-none transition placeholder:text-muted focus:border-green-soft"
+                    />
+                  </form>
                 </>
               ) : null}
             </div>

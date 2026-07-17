@@ -52,10 +52,11 @@ export function MapView({
 }
 
 function markerIcon(kind: "pickup" | "dropoff" | "runner") {
-  const color = kind === "pickup" ? "bg-orange-deep" : kind === "dropoff" ? "bg-green-deep" : "bg-blue-600";
+  const color =
+    kind === "pickup" ? "#d9641c" : kind === "dropoff" ? "#133c21" : "#2563eb";
   return L.divIcon({
     className: "border-0",
-    html: `<div class="h-6 w-6 rounded-full border-2 border-white ${color} shadow" aria-hidden="true"></div>`,
+    html: `<div style="height:24px;width:24px;border-radius:50%;border:2px solid #fff;background-color:${color};box-shadow:0 1px 3px rgba(0,0,0,0.3)" aria-hidden="true"></div>`,
     iconSize: [24, 24],
     iconAnchor: [12, 12],
   });
