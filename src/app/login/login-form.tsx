@@ -2,13 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { ArrowRight, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { AuthShell, Field } from "@/components/auth-shell";
 
 export function LoginForm() {
-  const router = useRouter();
   const params = useSearchParams();
   const next = params.get("next") ?? "/app";
 
@@ -31,8 +30,9 @@ export function LoginForm() {
       return;
     }
 
-    router.push(next.startsWith("/") ? next : "/app");
-    router.refresh();
+    // Full page navigation so the new session cookies are sent and the
+    // Router Cache is cleared, preventing a stale dashboard on account switch.
+    window.location.href = next.startsWith("/") ? next : "/app";
   }
 
   return (

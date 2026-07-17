@@ -56,7 +56,7 @@ export async function updateFraudFlag(
     .from("fraud_flags")
     .select("id, runner_id")
     .eq("id", flagId)
-    .single<{ id: string; runner_id: string }>();
+    .maybeSingle<{ id: string; runner_id: string }>();
   if (!flag) return;
 
   await db.from("fraud_flags").update({ status }).eq("id", flagId);
@@ -85,7 +85,7 @@ export async function approveVerification(requestId: string) {
     .from("verification_requests")
     .select("user_id, status")
     .eq("id", requestId)
-    .single<{ user_id: string; status: string }>();
+    .maybeSingle<{ user_id: string; status: string }>();
   if (!request || request.status !== "pending") return;
   const now = new Date().toISOString();
   await db
@@ -110,7 +110,7 @@ export async function rejectVerification(requestId: string) {
     .from("verification_requests")
     .select("user_id, status")
     .eq("id", requestId)
-    .single<{ user_id: string; status: string }>();
+    .maybeSingle<{ user_id: string; status: string }>();
   if (!request || request.status !== "pending") return;
   const now = new Date().toISOString();
   await db

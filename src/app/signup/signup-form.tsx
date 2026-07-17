@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { ArrowRight, Loader2, MailCheck } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { AuthShell, Field } from "@/components/auth-shell";
@@ -14,7 +14,6 @@ function roleFrom(value: string | null): Role {
 }
 
 export function SignupForm() {
-  const router = useRouter();
   const params = useSearchParams();
   const role = roleFrom(params.get("role"));
 
@@ -49,8 +48,9 @@ export function SignupForm() {
 
     // Email-confirmation off → session is live immediately; on → confirm first.
     if (data.session) {
-      router.push("/app");
-      router.refresh();
+      // Hard navigation so the new session cookies are sent and any stale
+      // cached pages are bypassed.
+      window.location.href = "/app";
     } else {
       setSent(true);
       setLoading(false);
