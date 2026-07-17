@@ -604,6 +604,9 @@ export async function markDelivered(taskId: string, formData: FormData) {
 
 /** Buyer rates the runner after delivery; releases escrow and feeds trust. */
 export async function rateRunner(taskId: string, stars: number) {
+  if (!Number.isInteger(stars) || stars < 1 || stars > 5) {
+    throw new Error("Rating must be an integer between 1 and 5 stars");
+  }
   const userId = await requireUserId();
   const task = await ownedTask(taskId, userId);
   if (!task.selected_runner_id) return;
@@ -765,6 +768,7 @@ export async function updateCapabilities(formData: FormData) {
   );
 
   revalidatePath("/app");
+  revalidatePath("/app/settings");
 }
 
 /** Top up the signed-in user's simulated wallet. */
