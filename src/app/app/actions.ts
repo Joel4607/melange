@@ -930,4 +930,5 @@ export async function markNotificationRead(notificationId: string) {
     .eq("recipient_id", userId);
 
   revalidatePath("/app");
+  revalidatePath("/app/notifications");
 }
