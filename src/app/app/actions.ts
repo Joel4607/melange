@@ -765,6 +765,7 @@ export async function updateCapabilities(formData: FormData) {
   );
 
   revalidatePath("/app");
+  revalidatePath("/app/settings");
 }
 
 /** Top up the signed-in user's simulated wallet. */

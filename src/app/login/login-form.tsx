@@ -7,9 +7,22 @@ import { ArrowRight, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { AuthShell, Field } from "@/components/auth-shell";
 
+function getSafeNextUrl(next: string | null): string {
+  if (!next) return "/app";
+  try {
+    const url = new URL(next, window.location.origin);
+    if (url.origin === window.location.origin) {
+      return url.pathname + url.search + url.hash;
+    }
+  } catch {
+    // fall through to default
+  }
+  return "/app";
+}
+
 export function LoginForm() {
   const params = useSearchParams();
-  const next = params.get("next") ?? "/app";
+  const next = getSafeNextUrl(params.get("next"));
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -32,7 +45,7 @@ export function LoginForm() {
 
     // Full page navigation so the new session cookies are sent and the
     // Router Cache is cleared, preventing a stale dashboard on account switch.
-    window.location.href = next.startsWith("/") ? next : "/app";
+    window.location.href = next;
   }
 
   return (
