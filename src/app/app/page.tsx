@@ -59,7 +59,7 @@ export default async function AppHome() {
     .from("profiles")
     .select("name, phone, verified, is_admin")
     .eq("id", user.id)
-    .single();
+    .maybeSingle<{ name: string | null; phone: string | null; verified: boolean; is_admin: boolean }>();
 
   const metaPhone = (user.user_metadata?.phone as string | undefined) ?? "";
   if (profile && !profile.phone && metaPhone) {

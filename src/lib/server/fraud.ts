@@ -208,7 +208,10 @@ export async function persistFraudFlags(
   }));
 
   const { error } = await db.from("fraud_flags").insert(rows);
-  if (error) throw new Error(`persistFraudFlags: ${error.message}`);
+  if (error) {
+    if (error.code === "23505") return;
+    throw new Error(`persistFraudFlags: ${error.message}`);
+  }
 
   // ponytail: a hard-threshold result immediately quarantines the runner so they
   // cannot be matched while the flag is active. Admin review can clear it.

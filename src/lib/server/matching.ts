@@ -50,9 +50,12 @@ export async function generateMatchRun(taskId: string): Promise<MatchResult[]> {
       "id, buyer_id, category, pickup_lat, pickup_lng, dropoff_lat, dropoff_lng, urgency, price, fee, status, selected_runner_id, accepted_at, completed_at",
     )
     .eq("id", taskId)
-    .single<TaskRow>();
+    .maybeSingle<TaskRow>();
   if (taskError || !task) {
     throw new Error(`generateMatchRun: task ${taskId} not found`);
+  }
+  if (task.status !== "posted") {
+    return [];
   }
 
   const { data: runners, error: runnersError } = await db
@@ -170,8 +173,15 @@ export async function generateMatchRun(taskId: string): Promise<MatchResult[]> {
     }
   }
 
-  if (task.status === "posted") {
-    await db.from("tasks").update({ status: "matched" }).eq("id", task.id);
+  const { data: updated } = await db
+    .from("tasks")
+    .update({ status: "matched" })
+    .eq("id", task.id)
+    .eq("status", "posted")
+    .select("id")
+    .maybeSingle<{ id: string }>();
+  if (!updated) {
+    return [];
   }
 
   return results;
@@ -241,7 +251,7 @@ export async function offerToTopCandidate(taskId: string): Promise<string | null
     .from("tasks")
     .select("id, title, declined_runner_ids")
     .eq("id", taskId)
-    .single<{ id: string; title: string; declined_runner_ids: string[] }>();
+    .maybeSingle<{ id: string; title: string; declined_runner_ids: string[] }>();
   if (taskError || !task) {
     throw new Error(`offerToTopCandidate: task ${taskId} not found`);
   }
@@ -273,10 +283,17 @@ export async function offerToTopCandidate(taskId: string): Promise<string | null
     runnerId = (candidates ?? []).find((candidate) => !declined.has(candidate.runner_id))?.runner_id ?? null;
   }
 
-  await db
+  const { data: updated } = await db
     .from("tasks")
     .update({ selected_runner_id: runnerId })
-    .eq("id", taskId);
+    .eq("id", taskId)
+    .eq("status", "matched")
+    .is("selected_runner_id", null)
+    .select("id")
+    .maybeSingle<{ id: string }>();
+  if (!updated) {
+    return null;
+  }
 
   if (runnerId) {
     await createNotification(runnerId, "offer", {

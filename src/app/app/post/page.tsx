@@ -7,6 +7,10 @@ import { getServiceClient } from "@/lib/supabase/service";
 import { Logo } from "@/components/brand";
 import { PostForm } from "./post-form";
 
+function isUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+}
+
 export const metadata: Metadata = {
   title: "Post an errand — Mélange",
 };
@@ -17,7 +21,8 @@ export default async function PostErrandPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const params = await searchParams;
-  const runnerId = typeof params.runner === "string" ? params.runner : undefined;
+  const rawRunnerId = typeof params.runner === "string" ? params.runner : undefined;
+  const runnerId = rawRunnerId && isUuid(rawRunnerId) ? rawRunnerId : undefined;
   const category = typeof params.category === "string" ? params.category : undefined;
 
   const supabase = await createClient();

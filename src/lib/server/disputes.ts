@@ -60,7 +60,7 @@ export async function resolveDispute(disputeId: string): Promise<ArbitrationResu
   const result = arbitrate(ctx);
 
   if (result.escalate) {
-    await db
+    const { data: escalated } = await db
       .from("disputes")
       .update({
         status: "escalated",
@@ -68,8 +68,17 @@ export async function resolveDispute(disputeId: string): Promise<ArbitrationResu
         rule_matched: result.ruleMatched,
         confidence: result.confidence,
       })
-      .eq("id", dispute.id);
-    await db.from("tasks").update({ status: "disputed" }).eq("id", task.id);
+      .eq("id", dispute.id)
+      .eq("status", "open")
+      .select("id")
+      .maybeSingle<{ id: string }>();
+    if (escalated) {
+      await db
+        .from("tasks")
+        .update({ status: "disputed" })
+        .eq("id", task.id)
+        .in("status", ["completed", "disputed"]);
+    }
     return result;
   }
 
@@ -139,7 +148,7 @@ async function settleDispute(
     }
   }
 
-  await db
+  const { data: resolvedDispute } = await db
     .from("disputes")
     .update({
       status,
@@ -149,8 +158,20 @@ async function settleDispute(
       confidence: metadata?.confidence ?? null,
       resolved_at: new Date().toISOString(),
     })
-    .eq("id", dispute.id);
-  await db.from("tasks").update({ status: "resolved" }).eq("id", task.id);
+    .eq("id", dispute.id)
+    .in("status", ["open", "escalated"])
+    .select("id")
+    .maybeSingle<{ id: string }>();
+  if (!resolvedDispute) return;
+
+  const { data: resolvedTask } = await db
+    .from("tasks")
+    .update({ status: "resolved" })
+    .eq("id", task.id)
+    .in("status", ["completed", "disputed", "resolved"])
+    .select("id")
+    .maybeSingle<{ id: string }>();
+  if (!resolvedTask) return;
 
   const payload = {
     task_id: task.id,
