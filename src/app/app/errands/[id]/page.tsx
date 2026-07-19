@@ -19,7 +19,7 @@ import { hasLedgerEntry } from "@/lib/server/escrow";
 import { haversineKm } from "@/lib/algorithm";
 import { Logo } from "@/components/brand";
 import { RealtimeStatus } from "../../realtime-status";
-import { MapView, MapMarker } from "../../map-view";
+import { MapView, MapMarker, type LiveRunner } from "../../map-view";
 import {
   cancelErrand,
   payIntoEscrow,
@@ -229,6 +229,17 @@ export default async function ErrandPage({
     });
   }
 
+  const liveRunner: LiveRunner | null =
+    runnerId && (task.status === "accepted" || task.status === "in_progress")
+      ? {
+          id: runnerId,
+          name: runnerName,
+          taskId: task.id,
+          lat: runnerLocation?.lat ?? null,
+          lng: runnerLocation?.lng ?? null,
+        }
+      : null;
+
   return (
     <div className="flex min-h-dvh flex-col bg-cream">
       <header className="border-b border-cream-deep/70 bg-cream/85 backdrop-blur">
@@ -388,7 +399,7 @@ export default async function ErrandPage({
             <MapPin className="h-5 w-5 text-orange-deep" aria-hidden /> Map
           </p>
           <div className="mt-3">
-            <MapView center={mapCenter} markers={mapMarkers} />
+            <MapView center={mapCenter} markers={mapMarkers} liveRunner={liveRunner} />
           </div>
         </section>
 
