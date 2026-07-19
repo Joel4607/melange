@@ -56,7 +56,10 @@ async function loadWallet(db: Db, userId: string): Promise<WalletRow> {
  */
 export async function topUp(userId: string, amount: number): Promise<number> {
   const db = getServiceClient();
-  const cents = Math.round(Number(amount) * 100);
+  if (!Number.isFinite(amount) || amount <= 0) {
+    throw new Error("escrow: top-up amount must be a positive number");
+  }
+  const cents = Math.round(amount * 100);
   if (cents <= 0) throw new Error("escrow: top-up amount must be positive");
 
   const { error } = await db.rpc("top_up_wallet", {

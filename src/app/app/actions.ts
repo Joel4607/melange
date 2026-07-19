@@ -26,6 +26,33 @@ import { randomUUID } from "node:crypto";
 
 const URGENCIES: readonly Urgency[] = ["low", "normal", "express"];
 
+const ALLOWED_IMAGE_TYPES = new Map([
+  ["image/jpeg", "jpg"],
+  ["image/png", "png"],
+  ["image/webp", "webp"],
+]);
+const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
+
+function isUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+}
+
+function parseNumber(raw: FormDataEntryValue | null): number {
+  const v = typeof raw === "string" ? raw.trim() : "";
+  return v === "" ? Number.NaN : Number(v);
+}
+
+function isFiniteCoordinate(lat: number, lng: number): boolean {
+  return (
+    Number.isFinite(lat) &&
+    Number.isFinite(lng) &&
+    lat >= -90 &&
+    lat <= 90 &&
+    lng >= -180 &&
+    lng <= 180
+  );
+}
+
 async function requireUserId(): Promise<string> {
   const supabase = await createClient();
   const {
@@ -122,27 +149,38 @@ export async function createErrand(formData: FormData) {
   const category = String(formData.get("category") ?? "").trim();
   const urgencyRaw = String(formData.get("urgency") ?? "normal") as Urgency;
   const urgency: Urgency = URGENCIES.includes(urgencyRaw) ? urgencyRaw : "normal";
-  const price = Math.max(0, Number(formData.get("price") ?? 0));
-  const pickupLat = Number(formData.get("pickup_lat"));
-  const pickupLng = Number(formData.get("pickup_lng"));
+  const priceRaw = parseNumber(formData.get("price"));
+  const pickupLat = parseNumber(formData.get("pickup_lat"));
+  const pickupLng = parseNumber(formData.get("pickup_lng"));
   const dropoffLatRaw = String(formData.get("dropoff_lat") ?? "").trim();
   const dropoffLngRaw = String(formData.get("dropoff_lng") ?? "").trim();
-  const dropoffLat = dropoffLatRaw ? Number(dropoffLatRaw) : Number.NaN;
-  const dropoffLng = dropoffLngRaw ? Number(dropoffLngRaw) : Number.NaN;
+  const dropoffLat = dropoffLatRaw ? parseNumber(formData.get("dropoff_lat")) : Number.NaN;
+  const dropoffLng = dropoffLngRaw ? parseNumber(formData.get("dropoff_lng")) : Number.NaN;
   const runnerId = String(formData.get("runner_id") ?? "").trim();
   const paymentReference = String(formData.get("payment_reference") ?? "").trim();
 
-  if (!title || Number.isNaN(pickupLat) || Number.isNaN(pickupLng)) {
-    throw new Error("Missing title or pickup location");
+  if (!title || !isFiniteCoordinate(pickupLat, pickupLng)) {
+    throw new Error("Missing title or valid pickup location");
+  }
+
+  if (!Number.isFinite(priceRaw) || priceRaw <= 0) {
+    throw new Error("Budget must be a positive number");
   }
 
   const pickup = { lat: pickupLat, lng: pickupLng };
   const dropoff =
-    !Number.isNaN(dropoffLat) && !Number.isNaN(dropoffLng)
+    dropoffLatRaw &&
+    dropoffLngRaw &&
+    isFiniteCoordinate(dropoffLat, dropoffLng)
       ? { lat: dropoffLat, lng: dropoffLng }
       : null;
-  const { fee, runnerPayout } = estimateErrandFee(price, pickup, dropoff, urgency);
+  if ((dropoffLatRaw || dropoffLngRaw) && !dropoff) {
+    throw new Error("Dropoff location is invalid");
+  }
 
+  const { fee, runnerPayout } = estimateErrandFee(priceRaw, pickup, dropoff, urgency);
+
+  const price = priceRaw;
   if (price <= fee) {
     throw new Error(`Budget must be greater than the platform fee of GHS ${fee.toFixed(2)}`);
   }
@@ -153,6 +191,9 @@ export async function createErrand(formData: FormData) {
   // Manual pick: the buyer selected a runner from /app/runners. Create the task
   // already matched, hold funds, and send an offer to the runner.
   if (runnerId) {
+    if (!isUuid(runnerId)) {
+      throw new Error("Selected runner is not available");
+    }
     const db = getServiceClient();
     const { data: runner, error: runnerError } = await db
       .from("runner_profile")
@@ -302,7 +343,16 @@ export async function payIntoEscrow(taskId: string) {
     await topUp(userId, price - balance);
   }
 
-  await db.from("tasks").update({ status: "matched" }).eq("id", taskId);
+  const { data: updated } = await db
+    .from("tasks")
+    .update({ status: "matched" })
+    .eq("id", taskId)
+    .in("status", ["posted", "matched"])
+    .is("selected_runner_id", null)
+    .select("id")
+    .maybeSingle<{ id: string }>();
+  if (!updated) return;
+
   await holdFunds(taskId);
   await offerToTopCandidate(taskId);
 
@@ -316,7 +366,21 @@ export async function setAvailability(
   lng: number | null,
 ) {
   const runnerId = await requireRunnerId();
-  if (available) await requireVerified(runnerId);
+  if (available) {
+    await requireVerified(runnerId);
+    if (
+      lat == null ||
+      lng == null ||
+      !Number.isFinite(lat) ||
+      !Number.isFinite(lng) ||
+      lat < -90 ||
+      lat > 90 ||
+      lng < -180 ||
+      lng > 180
+    ) {
+      throw new Error("A valid location is required to go available");
+    }
+  }
   if (!available) await clearRunnerPresence(runnerId);
   const db = getServiceClient();
   await db.from("runner_profile").upsert({
@@ -402,13 +466,18 @@ export async function acceptOffer(taskId: string) {
   const task = await assignedTask(taskId, runnerId);
   if (task.status !== "matched") return;
 
-  await db
+  const { data: updated } = await db
     .from("tasks")
     .update({
       status: "accepted",
       accepted_at: new Date().toISOString(),
     })
-    .eq("id", taskId);
+    .eq("id", taskId)
+    .eq("status", "matched")
+    .eq("selected_runner_id", runnerId)
+    .select("id")
+    .maybeSingle<{ id: string }>();
+  if (!updated) return;
   await db.from("trust_events").insert({
     runner_id: runnerId,
     type: "responsiveness",
@@ -463,10 +532,16 @@ export async function claimTask(taskId: string) {
     await topUp(task.buyer_id, price - balance);
   }
 
-  await db
+  const { data: updated } = await db
     .from("tasks")
     .update({ status: "matched", selected_runner_id: runnerId })
-    .eq("id", taskId);
+    .eq("id", taskId)
+    .eq("status", "posted")
+    .is("selected_runner_id", null)
+    .select("id")
+    .maybeSingle<{ id: string }>();
+  if (!updated) return;
+
   await holdFunds(taskId);
   await acceptOffer(taskId);
 
@@ -481,14 +556,22 @@ export async function declineOffer(taskId: string) {
   const task = await assignedTask(taskId, runnerId);
   if (task.status !== "matched") return;
 
-  await db
+  const declined = Array.from(
+    new Set([...(task.declined_runner_ids ?? []), runnerId]),
+  );
+  const { data: updated } = await db
     .from("tasks")
     .update({
-      declined_runner_ids: Array.from(
-        new Set([...(task.declined_runner_ids ?? []), runnerId]),
-      ),
+      declined_runner_ids: declined,
+      selected_runner_id: null,
     })
-    .eq("id", taskId);
+    .eq("id", taskId)
+    .eq("status", "matched")
+    .eq("selected_runner_id", runnerId)
+    .select("id")
+    .maybeSingle<{ id: string }>();
+  if (!updated) return;
+
   await db.from("trust_events").insert({
     runner_id: runnerId,
     type: "responsiveness",
@@ -508,10 +591,16 @@ export async function markPickedUp(taskId: string) {
   const task = await assignedTask(taskId, runnerId);
   if (task.status !== "accepted") return;
 
-  await db
+  const { data: updated } = await db
     .from("tasks")
     .update({ status: "in_progress" })
-    .eq("id", taskId);
+    .eq("id", taskId)
+    .eq("status", "accepted")
+    .eq("selected_runner_id", runnerId)
+    .select("id")
+    .maybeSingle<{ id: string }>();
+  if (!updated) return;
+
   await createNotification(task.buyer_id, "picked_up", {
     task_id: taskId,
     task_title: task.title,
@@ -528,8 +617,22 @@ export async function markDelivered(taskId: string, formData: FormData) {
   if (task.status !== "accepted" && task.status !== "in_progress") return;
 
   const photo = assertImageFile(formData.get("photo"), "delivery");
-  const gpsLat = Number(formData.get("gps_lat"));
-  const gpsLng = Number(formData.get("gps_lng"));
+  const gpsLatRaw = formData.get("gps_lat");
+  const gpsLngRaw = formData.get("gps_lng");
+  const gpsLat =
+    typeof gpsLatRaw === "string" && gpsLatRaw.trim() !== ""
+      ? Number(gpsLatRaw.trim())
+      : Number.NaN;
+  const gpsLng =
+    typeof gpsLngRaw === "string" && gpsLngRaw.trim() !== ""
+      ? Number(gpsLngRaw.trim())
+      : Number.NaN;
+  const gps =
+    Number.isFinite(gpsLat) &&
+    Number.isFinite(gpsLng) &&
+    isFiniteCoordinate(gpsLat, gpsLng)
+      ? { lat: gpsLat, lng: gpsLng }
+      : null;
 
   const photoPath = `${runnerId}/${randomUUID()}.${fileExtension(photo)}`;
   const { error: uploadError } = await db.storage
@@ -544,17 +647,22 @@ export async function markDelivered(taskId: string, formData: FormData) {
     task_id: taskId,
     runner_id: runnerId,
     photo_path: photoPath,
-    gps_lat: Number.isNaN(gpsLat) ? null : gpsLat,
-    gps_lng: Number.isNaN(gpsLng) ? null : gpsLng,
+    gps_lat: gps?.lat ?? null,
+    gps_lng: gps?.lng ?? null,
   });
 
-  await db
+  const { data: updated } = await db
     .from("tasks")
     .update({
       status: "completed",
       completed_at: new Date().toISOString(),
     })
-    .eq("id", taskId);
+    .eq("id", taskId)
+    .in("status", ["accepted", "in_progress"])
+    .eq("selected_runner_id", runnerId)
+    .select("id")
+    .maybeSingle<{ id: string }>();
+  if (!updated) return;
 
   // Run fraud detection on the delivery proof before the completed event is
   // folded into the runner's trust score.
@@ -567,8 +675,8 @@ export async function markDelivered(taskId: string, formData: FormData) {
     .single<TaskRow>();
   if (fullTask) {
     const proof: ProofRow = {
-      gps_lat: Number.isNaN(gpsLat) ? null : gpsLat,
-      gps_lng: Number.isNaN(gpsLng) ? null : gpsLng,
+      gps_lat: gps?.lat ?? null,
+      gps_lng: gps?.lng ?? null,
     };
     const fraud = await evaluateTaskFraud(db, fullTask, proof, Date.now());
     if (fullTask.selected_runner_id) {
@@ -615,25 +723,25 @@ export async function rateRunner(taskId: string, stars: number, formData: FormDa
 
   const db = getServiceClient();
 
-  const { data: existingRating } = await db
-    .from("ratings")
-    .select("id")
-    .eq("task_id", taskId)
-    .eq("rater_id", userId)
-    .maybeSingle<{ id: string }>();
-  if (existingRating) return;
-
   if (task.status === "completed") {
     await releaseFunds(taskId);
   }
 
-  await db.from("ratings").insert({
-    task_id: taskId,
-    rater_id: userId,
-    ratee_id: task.selected_runner_id,
-    stars,
-    comment,
-  });
+  const { data: inserted, error: insertError } = await db
+    .from("ratings")
+    .insert({
+      task_id: taskId,
+      rater_id: userId,
+      ratee_id: task.selected_runner_id,
+      stars,
+      comment,
+    })
+    .select("id");
+  if (insertError) {
+    if (insertError.code === "23505") return;
+    throw new Error(insertError.message);
+  }
+  if (!inserted?.length) return;
   await db.from("trust_events").insert({
     runner_id: task.selected_runner_id,
     type: "rating",
@@ -656,12 +764,16 @@ export async function cancelErrand(taskId: string) {
 
   await refund(taskId);
   const db = getServiceClient();
-  await db
+  const { data: updated } = await db
     .from("tasks")
     .update({ status: "cancelled" })
-    .eq("id", taskId);
-  if (task.selected_runner_id) {
-    await createNotification(task.selected_runner_id, "buyer_cancelled", {
+    .eq("id", taskId)
+    .in("status", ["posted", "matched"])
+    .select("id, selected_runner_id")
+    .maybeSingle<{ id: string; selected_runner_id: string | null }>();
+  if (!updated) return;
+  if (updated.selected_runner_id) {
+    await createNotification(updated.selected_runner_id, "buyer_cancelled", {
       task_id: taskId,
       task_title: task.title,
     });
@@ -679,23 +791,28 @@ export async function cancelRunnerErrand(taskId: string) {
   if (task.status !== "accepted" && task.status !== "in_progress") return;
 
   await refund(taskId);
-  await db
+  const { data: updated } = await db
     .from("tasks")
     .update({ status: "cancelled" })
-    .eq("id", taskId);
+    .eq("id", taskId)
+    .in("status", ["accepted", "in_progress"])
+    .eq("selected_runner_id", runnerId)
+    .select("id, buyer_id, title")
+    .maybeSingle<{ id: string; buyer_id: string; title: string }>();
+  if (!updated) return;
   await db.from("trust_events").insert({
     runner_id: runnerId,
     type: "cancelled",
     value: 1,
   });
 
-  const cancelFraud = await evaluateCancellationFraud(db, runnerId, task.buyer_id, Date.now());
+  const cancelFraud = await evaluateCancellationFraud(db, runnerId, updated.buyer_id, Date.now());
   await persistFraudFlags(db, runnerId, taskId, cancelFraud);
 
   await refreshTrustScore(runnerId);
-  await createNotification(task.buyer_id, "runner_cancelled", {
+  await createNotification(updated.buyer_id, "runner_cancelled", {
     task_id: taskId,
-    task_title: task.title,
+    task_title: updated.title,
   });
 
   const { data: profile } = await db
@@ -726,24 +843,17 @@ export async function raiseDispute(taskId: string, formData: FormData) {
 
   if (await hasLedgerEntry(db, taskId, ["release", "payout", "refund"])) return;
 
-  const { data: existingDispute } = await db
-    .from("disputes")
-    .select("id")
-    .eq("task_id", taskId)
-    .limit(1)
-    .maybeSingle<{ id: string }>();
-  if (existingDispute) return;
-
-  const { data: dispute, error } = await db
+  const { data: inserted, error: insertError } = await db
     .from("disputes")
     .insert({ task_id: taskId, raised_by: userId, reason })
-    .select("id")
-    .single<{ id: string }>();
-  if (error || !dispute) {
-    throw new Error(error?.message ?? "Could not raise dispute");
+    .select("id");
+  if (insertError) {
+    if (insertError.code === "23505") return;
+    throw new Error(insertError.message);
   }
+  if (!inserted?.length) return;
 
-  await resolveDispute(dispute.id);
+  await resolveDispute(inserted[0].id);
 
   if (task.selected_runner_id) {
     await createNotification(task.selected_runner_id, "dispute_raised", {
@@ -776,9 +886,10 @@ export async function updateCapabilities(formData: FormData) {
 /** Top up the signed-in user's simulated wallet. */
 export async function topUpWallet(formData: FormData) {
   const userId = await requireUserId();
-  const amount = Math.max(0, Number(formData.get("amount") ?? 0));
-  if (amount <= 0) {
-    throw new Error("Amount must be greater than 0");
+  const amountRaw = parseNumber(formData.get("amount"));
+  const amount = Number.isFinite(amountRaw) ? Math.max(0, amountRaw) : Number.NaN;
+  if (!Number.isFinite(amount) || amount <= 0) {
+    throw new Error("Amount must be a positive number");
   }
   await topUp(userId, amount);
   revalidatePath("/app");
@@ -810,7 +921,7 @@ export async function updateProfile(formData: FormData) {
     .from("profiles")
     .select("name")
     .eq("id", userId)
-    .single();
+    .maybeSingle<{ name: string | null }>();
 
   await db
     .from("profiles")
@@ -831,6 +942,16 @@ export async function updateProfile(formData: FormData) {
  */
 export async function updateLocation(lat: number, lng: number) {
   const runnerId = await requireRunnerId();
+  if (
+    !Number.isFinite(lat) ||
+    !Number.isFinite(lng) ||
+    lat < -90 ||
+    lat > 90 ||
+    lng < -180 ||
+    lng > 180
+  ) {
+    throw new Error("Invalid location");
+  }
   if (!(await withinRateLimit("location-ping", runnerId, 30, 60))) return;
 
   const { syncToDb } = await publishRunnerLocation(runnerId, lat, lng);
@@ -849,19 +970,20 @@ export async function updateLocation(lat: number, lng: number) {
 }
 
 function fileExtension(file: File): string {
-  const type = file.type.toLowerCase();
-  if (type === "image/jpeg") return "jpg";
-  if (type === "image/png") return "png";
-  if (type === "image/webp") return "webp";
-  return "jpg";
+  const ext = ALLOWED_IMAGE_TYPES.get(file.type.toLowerCase());
+  if (!ext) throw new Error(`Unsupported image type: ${file.type}`);
+  return ext;
 }
 
 function assertImageFile(value: FormDataEntryValue | null, label: string): File {
   if (!(value instanceof File) || value.size === 0) {
     throw new Error(`Please upload the ${label} photo`);
   }
-  if (!value.type.startsWith("image/")) {
-    throw new Error(`${label} photo must be an image file`);
+  if (value.size > MAX_IMAGE_SIZE) {
+    throw new Error(`${label} photo is too large (max ${MAX_IMAGE_SIZE / 1024 / 1024} MB)`);
+  }
+  if (!ALLOWED_IMAGE_TYPES.has(value.type.toLowerCase())) {
+    throw new Error(`${label} photo must be a JPEG, PNG, or WebP image`);
   }
   return value;
 }
@@ -893,10 +1015,12 @@ export async function submitVerification(formData: FormData) {
 
   const frontPath = `${userId}/${randomUUID()}.${fileExtension(front)}`;
   const backPath = `${userId}/${randomUUID()}.${fileExtension(back)}`;
+  const frontBuffer = await front.arrayBuffer();
+  const backBuffer = await back.arrayBuffer();
 
   const { error: frontError } = await db.storage
     .from("verification")
-    .upload(frontPath, await front.arrayBuffer(), {
+    .upload(frontPath, frontBuffer, {
       contentType: front.type,
       upsert: false,
     });
@@ -904,11 +1028,14 @@ export async function submitVerification(formData: FormData) {
 
   const { error: backError } = await db.storage
     .from("verification")
-    .upload(backPath, await back.arrayBuffer(), {
+    .upload(backPath, backBuffer, {
       contentType: back.type,
       upsert: false,
     });
-  if (backError) throw new Error(backError.message);
+  if (backError) {
+    await db.storage.from("verification").remove([frontPath]);
+    throw new Error(backError.message);
+  }
 
   const { error } = await supabase.from("verification_requests").insert({
     user_id: userId,
@@ -918,6 +1045,10 @@ export async function submitVerification(formData: FormData) {
     email,
   });
   if (error) {
+    await Promise.all([
+      db.storage.from("verification").remove([frontPath]),
+      db.storage.from("verification").remove([backPath]),
+    ]);
     throw new Error(error.message);
   }
 

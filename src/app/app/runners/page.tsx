@@ -41,10 +41,14 @@ export default async function RunnersPage({
   const db = getServiceClient();
 
   const category = typeof params.category === "string" ? params.category : undefined;
-  const minTrust = Number(params.minTrust);
+  const minTrustRaw =
+    typeof params.minTrust === "string" ? Number(params.minTrust) : Number.NaN;
+  const minTrust = Number.isFinite(minTrustRaw) ? minTrustRaw : Number.NaN;
   const sort = typeof params.sort === "string" ? params.sort : "trust";
-  const lat = Number(params.lat);
-  const lng = Number(params.lng);
+  const latRaw = typeof params.lat === "string" ? Number(params.lat) : Number.NaN;
+  const lngRaw = typeof params.lng === "string" ? Number(params.lng) : Number.NaN;
+  const lat = Number.isFinite(latRaw) ? latRaw : Number.NaN;
+  const lng = Number.isFinite(lngRaw) ? lngRaw : Number.NaN;
 
   let query = db
     .from("runner_profile")

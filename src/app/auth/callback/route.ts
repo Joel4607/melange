@@ -6,11 +6,24 @@ import { createClient } from "@/lib/supabase/server";
  * with a one-time `code`, which we exchange for a session before sending the
  * user on to their destination.
  */
+function getSafeNextUrl(origin: string, next: string | null): string {
+  if (!next) return "/app";
+  try {
+    const url = new URL(next, origin);
+    if (url.origin === origin) {
+      return url.pathname + url.search + url.hash;
+    }
+  } catch {
+    // fall through to default
+  }
+  return "/app";
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = request.nextUrl;
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/app";
-  const dest = next.startsWith("/") ? next : "/app";
+  const next = searchParams.get("next");
+  const dest = getSafeNextUrl(origin, next);
 
   if (code) {
     const supabase = await createClient();

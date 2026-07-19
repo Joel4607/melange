@@ -28,6 +28,10 @@ import {
   rematch,
 } from "../../actions";
 
+function isUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+}
+
 export const metadata: Metadata = {
   title: "Track your errand — Mélange",
 };
@@ -68,6 +72,7 @@ export default async function ErrandPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  if (!isUuid(id)) notFound();
 
   const supabase = await createClient();
   const {

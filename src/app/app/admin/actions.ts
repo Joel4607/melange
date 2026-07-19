@@ -59,7 +59,14 @@ export async function updateFraudFlag(
     .maybeSingle<{ id: string; runner_id: string }>();
   if (!flag) return;
 
-  await db.from("fraud_flags").update({ status }).eq("id", flagId);
+  const { data: updatedFlag } = await db
+    .from("fraud_flags")
+    .update({ status })
+    .eq("id", flagId)
+    .eq("status", "active")
+    .select("id")
+    .maybeSingle<{ id: string }>();
+  if (!updatedFlag) return;
 
   const { count } = await db
     .from("fraud_flags")
@@ -88,15 +95,19 @@ export async function approveVerification(requestId: string) {
     .maybeSingle<{ user_id: string; status: string }>();
   if (!request || request.status !== "pending") return;
   const now = new Date().toISOString();
-  await db
+  const { data: updated } = await db
     .from("verification_requests")
     .update({ status: "approved", reviewed_at: now, reviewed_by: adminId })
-    .eq("id", requestId);
-  await db.from("profiles").update({ verified: true }).eq("id", request.user_id);
+    .eq("id", requestId)
+    .eq("status", "pending")
+    .select("user_id")
+    .maybeSingle<{ user_id: string }>();
+  if (!updated) return;
+  await db.from("profiles").update({ verified: true }).eq("id", updated.user_id);
   await db
     .from("runner_profile")
     .update({ verified: true, updated_at: now })
-    .eq("user_id", request.user_id);
+    .eq("user_id", updated.user_id);
 
   revalidatePath("/app/admin");
   revalidatePath("/app");
@@ -113,15 +124,19 @@ export async function rejectVerification(requestId: string) {
     .maybeSingle<{ user_id: string; status: string }>();
   if (!request || request.status !== "pending") return;
   const now = new Date().toISOString();
-  await db
+  const { data: updated } = await db
     .from("verification_requests")
     .update({ status: "rejected", reviewed_at: now, reviewed_by: adminId })
-    .eq("id", requestId);
-  await db.from("profiles").update({ verified: false }).eq("id", request.user_id);
+    .eq("id", requestId)
+    .eq("status", "pending")
+    .select("user_id")
+    .maybeSingle<{ user_id: string }>();
+  if (!updated) return;
+  await db.from("profiles").update({ verified: false }).eq("id", updated.user_id);
   await db
     .from("runner_profile")
     .update({ verified: false, updated_at: now })
-    .eq("user_id", request.user_id);
+    .eq("user_id", updated.user_id);
 
   revalidatePath("/app/admin");
   revalidatePath("/app");
