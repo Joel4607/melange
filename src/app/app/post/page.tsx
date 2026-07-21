@@ -26,15 +26,14 @@ export default async function PostErrandPage({
   const category = typeof params.category === "string" ? params.category : undefined;
 
   const supabase = await createClient();
-  const db = getServiceClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [preselectedRunner, buyer] = await Promise.all([
+  const [preselectedRunner, { data: buyer }] = await Promise.all([
     runnerId ? loadRunner(runnerId) : Promise.resolve(undefined),
-    db.from("profiles").select("verified").eq("id", user.id).maybeSingle<{ verified: boolean }>(),
+    supabase.from("profiles").select("verified").eq("id", user.id).maybeSingle<{ verified: boolean }>(),
   ]);
 
   return (
@@ -65,7 +64,7 @@ export default async function PostErrandPage({
           <PostForm
             preselectedRunner={preselectedRunner}
             defaultCategory={category}
-            verified={buyer?.data?.verified ?? false}
+            verified={buyer?.verified ?? false}
           />
         </div>
       </main>
