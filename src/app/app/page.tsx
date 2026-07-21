@@ -48,7 +48,6 @@ interface RunnerTaskSummary {
 
 export default async function AppHome() {
   const supabase = await createClient();
-  const db = getServiceClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -79,35 +78,32 @@ export default async function AppHome() {
           .returns<ErrandSummary[]>()
       : { data: null };
 
-  const { data: runnerProfile } =
-    role === "runner"
-      ? await db
-          .from("runner_profile")
-          .select(
-            "is_available, available_manual, scheduled_hours, current_lat, current_lng, active_load, trust_score, verified, status, capabilities",
-          )
-          .eq("user_id", user.id)
-          .maybeSingle<RunnerProfileSummary>()
-      : { data: null };
+  let runnerProfile: RunnerProfileSummary | null = null;
+  let runnerTasks: RunnerTaskSummary[] | null = null;
+  let runnerRatings: { stars: number }[] | null = null;
 
-  const { data: runnerTasks } =
-    role === "runner"
-      ? await db
-          .from("tasks")
-          .select("id, title, status, price, fee, category, completed_at, created_at")
-          .eq("selected_runner_id", user.id)
-          .order("created_at", { ascending: false })
-          .returns<RunnerTaskSummary[]>()
-      : { data: null };
-
-  const { data: runnerRatings } =
-    role === "runner"
-      ? await db
-          .from("ratings")
-          .select("stars")
-          .eq("ratee_id", user.id)
-          .returns<{ stars: number }[]>()
-      : { data: null };
+  if (role === "runner") {
+    const db = getServiceClient();
+    const [{ data: rp }, { data: rt }, { data: rr }] = await Promise.all([
+      db
+        .from("runner_profile")
+        .select(
+          "is_available, available_manual, scheduled_hours, current_lat, current_lng, active_load, trust_score, verified, status, capabilities",
+        )
+        .eq("user_id", user.id)
+        .maybeSingle<RunnerProfileSummary>(),
+      db
+        .from("tasks")
+        .select("id, title, status, price, fee, category, completed_at, created_at")
+        .eq("selected_runner_id", user.id)
+        .order("created_at", { ascending: false })
+        .returns<RunnerTaskSummary[]>(),
+      db.from("ratings").select("stars").eq("ratee_id", user.id).returns<{ stars: number }[]>(),
+    ]);
+    runnerProfile = rp ?? null;
+    runnerTasks = rt ?? null;
+    runnerRatings = rr ?? null;
+  }
 
   const { data: notifications } = await supabase
     .from("notifications")

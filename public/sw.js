@@ -1,9 +1,8 @@
-const CACHE_NAME = "melange-v2";
+const CACHE_NAME = "melange-v3";
 const OFFLINE_URL = "/offline.html";
 
 const PRECACHE = [
   "/",
-  "/app",
   "/offline.html",
   "/manifest.json",
   "/icon-192x192.png",
