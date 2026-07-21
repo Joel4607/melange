@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Fraunces } from "next/font/google";
 import "./globals.css";
 import { ServiceWorkerRegister } from "./service-worker-register";
 import { InstallPrompt } from "./install-prompt";
+import { PushNotifications } from "./push-notifications";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -69,6 +70,7 @@ export default function RootLayout({
         {children}
         <ServiceWorkerRegister />
         <InstallPrompt />
+        <PushNotifications />
       </body>
     </html>
   );

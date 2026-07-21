@@ -112,3 +112,36 @@ self.addEventListener("fetch", (event) => {
   // Everything else (icons, offline page, etc.): stale-while-revalidate.
   event.respondWith(staleWhileRevalidate(request));
 });
+
+self.addEventListener("push", (event) => {
+  let payload;
+  try {
+    payload = event.data?.json() ?? {};
+  } catch {
+    payload = {};
+  }
+
+  const {
+    title = "Mélange",
+    body = "You have a new notification.",
+    icon = "/icon-192x192.png",
+    badge = "/icon-192x192.png",
+    data = {},
+  } = payload;
+
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body,
+      icon,
+      badge,
+      data,
+      requireInteraction: false,
+    }),
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url = event.notification.data?.url ?? "/app";
+  event.waitUntil(self.clients.openWindow(url));
+});
