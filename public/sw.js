@@ -1,11 +1,15 @@
-const CACHE_NAME = "melange-v1";
+const CACHE_NAME = "melange-v2";
 const OFFLINE_URL = "/offline.html";
+
 const PRECACHE = [
   "/",
   "/app",
   "/offline.html",
   "/manifest.json",
+  "/icon-192x192.png",
   "/icon-512x512.png",
+  "/maskable-icon.png",
+  "/apple-touch-icon.png",
 ];
 
 self.addEventListener("install", (event) => {
@@ -21,23 +25,58 @@ self.addEventListener("activate", (event) => {
       .keys()
       .then((keys) =>
         Promise.all(
-          keys
-            .filter((key) => key !== CACHE_NAME)
-            .map((key) => caches.delete(key)),
+          keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key)),
         ),
       ),
   );
   self.clients.claim();
 });
 
+function isApiOrDataRequest(url) {
+  return (
+    url.pathname.startsWith("/api/") ||
+    url.pathname.startsWith("/_next/data/") ||
+    url.pathname.startsWith("/_next/webpack-hmr") ||
+    url.pathname.startsWith("/auth/callback")
+  );
+}
+
+function isStaticAsset(url) {
+  return url.pathname.startsWith("/_next/static/") || url.pathname.startsWith("/_next/image/");
+}
+
+async function staleWhileRevalidate(request) {
+  const cache = await caches.open(CACHE_NAME);
+  const cached = await cache.match(request);
+
+  const network = fetch(request)
+    .then((response) => {
+      if (response.ok && response.status === 200) {
+        const clone = response.clone();
+        cache.put(request, clone);
+      }
+      return response;
+    })
+    .catch(() => cached);
+
+  return cached || network;
+}
+
 self.addEventListener("fetch", (event) => {
   const { request } = event;
 
-  // Skip non-GET requests and cross-origin requests.
   if (request.method !== "GET" || !request.url.startsWith(self.location.origin)) {
     return;
   }
 
+  const url = new URL(request.url);
+
+  // Never cache API routes, auth callbacks, Webpack HMR, or Next data payloads.
+  if (isApiOrDataRequest(url)) {
+    return;
+  }
+
+  // Navigation / page requests: network first, then cache, then fallback.
   const accept = request.headers.get("accept");
   const isNavigation = request.mode === "navigate" || accept?.includes("text/html");
 
@@ -45,30 +84,31 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(
       fetch(request)
         .then((response) => {
-          // Cache the fresh page for future offline use.
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+          if (response.ok && response.status === 200) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+          }
           return response;
         })
-        .catch(() => {
-          return caches.match(request).then((cached) => {
-            if (cached) return cached;
-            return caches.match(OFFLINE_URL);
-          });
-        }),
+        .catch(() =>
+          caches
+            .match(request)
+            .then(
+              (cached) =>
+                cached ||
+                caches.match("/app").then((app) => app || caches.match(OFFLINE_URL)),
+            ),
+        ),
     );
     return;
   }
 
-  // For static assets, serve from cache and fall back to network.
-  event.respondWith(
-    caches.match(request).then((cached) => {
-      if (cached) return cached;
-      return fetch(request).then((response) => {
-        const clone = response.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-        return response;
-      });
-    }),
-  );
+  // Static Next.js assets and optimized images: serve cache first and refresh.
+  if (isStaticAsset(url)) {
+    event.respondWith(staleWhileRevalidate(request));
+    return;
+  }
+
+  // Everything else (icons, offline page, etc.): stale-while-revalidate.
+  event.respondWith(staleWhileRevalidate(request));
 });

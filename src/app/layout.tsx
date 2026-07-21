@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Fraunces } from "next/font/google";
 import "./globals.css";
 import { ServiceWorkerRegister } from "./service-worker-register";
+import { InstallPrompt } from "./install-prompt";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -24,11 +25,19 @@ export const metadata: Metadata = {
   title: "Mélange — Errands, run for you",
   description:
     "You take care of life — we'll take care of the rest. Mélange runs your errands: market runs, groceries, pharmacy pickups, deliveries and more.",
+  applicationName: "Mélange",
   manifest: "/manifest.json",
-  icons: "/icon-512x512.png",
+  icons: {
+    icon: [
+      { url: "/icon-192x192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512x512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    shortcut: "/icon-192x192.png",
+  },
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
+    statusBarStyle: "black-translucent",
     title: "Mélange",
   },
 };
@@ -50,9 +59,16 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} ${fraunces.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-cream text-ink">
+      <body
+        className="min-h-full flex flex-col bg-cream text-ink"
+        style={{
+          paddingTop: "env(safe-area-inset-top)",
+          paddingBottom: "env(safe-area-inset-bottom)",
+        }}
+      >
         {children}
         <ServiceWorkerRegister />
+        <InstallPrompt />
       </body>
     </html>
   );
