@@ -74,13 +74,13 @@ export async function updateFraudFlag(
     .eq("runner_id", flag.runner_id)
     .in("status", ["active", "confirmed"]);
 
-  await db
-    .from("runner_profile")
-    .update({
-      status: count && count > 0 ? "quarantined" : "active",
-      updated_at: new Date().toISOString(),
-    })
-    .eq("user_id", flag.runner_id);
+  const runnerStatus = count && count > 0 ? "quarantined" : "active";
+  const update: { status: string; updated_at: string; is_available?: boolean } = {
+    status: runnerStatus,
+    updated_at: new Date().toISOString(),
+  };
+  if (runnerStatus === "quarantined") update.is_available = false;
+  await db.from("runner_profile").update(update).eq("user_id", flag.runner_id);
 
   revalidatePath("/app/admin");
 }

@@ -93,6 +93,18 @@ async function requireVerifiedRunner(): Promise<string> {
   return runnerId;
 }
 
+async function requireActiveRunner(runnerId: string): Promise<void> {
+  const supabase = await createClient();
+  const { data: profile } = await supabase
+    .from("runner_profile")
+    .select("status")
+    .eq("user_id", runnerId)
+    .maybeSingle<{ status: string | null }>();
+  if (profile?.status && profile.status !== "active") {
+    throw new Error("Runner account is not active");
+  }
+}
+
 /** Load a task via service-role and assert the caller owns it. */
 async function ownedTask(taskId: string, userId: string) {
   const db = getServiceClient();
@@ -135,14 +147,14 @@ async function assignedTask(taskId: string, runnerId: string) {
 }
 
 /**
- * Create an errand for the signed-in buyer (inserted under their own RLS), then
+ * Create an errand for the signed-in buyer (inserted by validated service code), then
  * run the matcher so a ranked runner is ready when they open the tracking page.
  */
 export async function createErrand(formData: FormData) {
   const userId = await requireUserId();
   await requireVerified(userId);
   await enforceRateLimit("post-errand", userId, 5, 300);
-  const supabase = await createClient();
+  const db = getServiceClient();
 
   const title = String(formData.get("title") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
@@ -194,7 +206,6 @@ export async function createErrand(formData: FormData) {
     if (!isUuid(runnerId)) {
       throw new Error("Selected runner is not available");
     }
-    const db = getServiceClient();
     const { data: runner, error: runnerError } = await db
       .from("runner_profile")
       .select("user_id, status, available_manual, scheduled_hours")
@@ -215,7 +226,7 @@ export async function createErrand(formData: FormData) {
       throw new Error("Selected runner is not available");
     }
 
-    const { data: task, error } = await supabase
+    const { data: task, error } = await db
       .from("tasks")
       .insert({
         buyer_id: userId,
@@ -257,7 +268,7 @@ export async function createErrand(formData: FormData) {
   }
 
   // Auto-match: create a posted errand and run the matcher.
-  const { data: task, error } = await supabase
+  const { data: task, error } = await db
     .from("tasks")
     .insert({
       buyer_id: userId,
@@ -381,15 +392,15 @@ export async function setAvailability(
       throw new Error("A valid location is required to go available");
     }
   }
+  await requireActiveRunner(runnerId);
   if (!available) await clearRunnerPresence(runnerId);
-  const db = getServiceClient();
-  await db.from("runner_profile").upsert({
+  const supabase = await createClient();
+  await supabase.from("runner_profile").upsert({
     user_id: runnerId,
     is_available: available,
     available_manual: available,
     current_lat: lat,
     current_lng: lng,
-    status: "active",
     updated_at: new Date().toISOString(),
   });
 
@@ -400,9 +411,10 @@ export async function setAvailability(
 /** Clear a manual availability override and return to scheduled hours. */
 export async function clearAvailabilityOverride() {
   const runnerId = await requireRunnerId();
-  const db = getServiceClient();
+  await requireActiveRunner(runnerId);
+  const supabase = await createClient();
   const [runner, verified] = await Promise.all([
-    db
+    supabase
       .from("runner_profile")
       .select("scheduled_hours")
       .eq("user_id", runnerId)
@@ -411,7 +423,7 @@ export async function clearAvailabilityOverride() {
   ]);
 
   const available = isRunnerAvailable(null, runner?.data?.scheduled_hours ?? null) && verified;
-  await db
+  await supabase
     .from("runner_profile")
     .update({
       available_manual: null,
@@ -445,10 +457,11 @@ export async function updateScheduledHours(formData: FormData) {
     }
   }
 
+  await requireActiveRunner(runnerId);
   const [verified] = await Promise.all([isUserVerified(runnerId)]);
   const available = isRunnerAvailable(null, schedule) && verified;
-  const db = getServiceClient();
-  await db.from("runner_profile").upsert({
+  const supabase = await createClient();
+  await supabase.from("runner_profile").upsert({
     user_id: runnerId,
     scheduled_hours: schedule,
     available_manual: null,
@@ -462,6 +475,7 @@ export async function updateScheduledHours(formData: FormData) {
 
 export async function acceptOffer(taskId: string) {
   const runnerId = await requireVerifiedRunner();
+  await requireActiveRunner(runnerId);
   const db = getServiceClient();
   const task = await assignedTask(taskId, runnerId);
   if (task.status !== "matched") return;
@@ -506,6 +520,7 @@ export async function acceptOffer(taskId: string) {
 
 export async function claimTask(taskId: string) {
   const runnerId = await requireVerifiedRunner();
+  await requireActiveRunner(runnerId);
   const db = getServiceClient();
   const { data: task } = await db
     .from("tasks")
@@ -869,8 +884,8 @@ export async function raiseDispute(taskId: string, formData: FormData) {
 export async function updateCapabilities(formData: FormData) {
   const runnerId = await requireRunnerId();
   const capabilities = formData.getAll("capabilities").map(String);
-  const db = getServiceClient();
-  await db.from("runner_profile").upsert(
+  const supabase = await createClient();
+  await supabase.from("runner_profile").upsert(
     {
       user_id: runnerId,
       capabilities,

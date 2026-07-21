@@ -217,7 +217,7 @@ export async function persistFraudFlags(
   // cannot be matched while the flag is active. Admin review can clear it.
   const { error: statusErr } = await db
     .from("runner_profile")
-    .update({ status: "quarantined", updated_at: new Date().toISOString() })
+    .update({ status: "quarantined", is_available: false, updated_at: new Date().toISOString() })
     .eq("user_id", runnerId);
   if (statusErr) throw new Error(`persistFraudFlags: ${statusErr.message}`);
 }
