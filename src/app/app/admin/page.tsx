@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { AlertTriangle, Shield, ShieldCheck } from "lucide-react";
+import { AlertTriangle, Shield, ShieldCheck, Store, PackageCheck } from "lucide-react";
 import { getServiceClient } from "@/lib/supabase/service";
 import { Logo } from "@/components/brand";
 import {
@@ -10,7 +10,8 @@ import {
   approveVerification,
   rejectVerification,
 } from "./actions";
-import type { DisputeRow, FraudFlagRow, VerificationRequestRow } from "@/lib/server/rows";
+import { adminResolveMarketplaceDispute, adminSetListingStatus } from "../marketplace/actions";
+import type { DisputeRow, FraudFlagRow, VerificationRequestRow, ListingOrderRow } from "@/lib/server/rows";
 
 async function signedUrl(
   db: ReturnType<typeof getServiceClient>,
@@ -63,6 +64,7 @@ export default async function AdminPage() {
     .from("disputes")
     .select("id, task_id, reason, status, created_at")
     .eq("status", "escalated")
+    .not("task_id", "is", null)
     .order("created_at", { ascending: false })
     .returns<DisputeRow[]>();
 
@@ -72,7 +74,7 @@ export default async function AdminPage() {
   const disputesWithTasks: DisputeWithTask[] = [];
   if (disputes) {
     for (const d of disputes) {
-      taskIds.add(d.task_id);
+      if (d.task_id) taskIds.add(d.task_id);
     }
     const { data: tasks } = await db
       .from("tasks")
@@ -81,6 +83,7 @@ export default async function AdminPage() {
       .returns<{ id: string; title: string; buyer_id: string; selected_runner_id: string | null; payment_reference: string | null }[]>();
     const taskById = new Map(tasks?.map((t) => [t.id, t]) ?? []);
     for (const d of disputes) {
+      if (!d.task_id) continue;
       const t = taskById.get(d.task_id);
       if (t?.buyer_id) userIds.add(t.buyer_id);
       if (t?.selected_runner_id) userIds.add(t.selected_runner_id);
@@ -193,7 +196,7 @@ export default async function AdminPage() {
         email: v.email,
       };
     }
-    d.ledger = ledgerByTask.get(d.task_id) ?? [];
+    d.ledger = d.task_id ? (ledgerByTask.get(d.task_id) ?? []) : [];
   }
 
   const { data: tasks } = await db
@@ -217,6 +220,75 @@ export default async function AdminPage() {
       back_url: await signedUrl(db, v.back_photo_path),
     })),
   );
+
+  const { data: marketplaceDisputes } = await db
+    .from("disputes")
+    .select("id, listing_order_id, raised_by, reason, status, created_at")
+    .eq("status", "escalated")
+    .not("listing_order_id", "is", null)
+    .order("created_at", { ascending: false })
+    .returns<DisputeRow[]>();
+
+  const marketOrderIds = new Set(
+    (marketplaceDisputes ?? []).map((d) => d.listing_order_id).filter((id): id is string => id != null),
+  );
+
+  const { data: marketOrders } = await db
+    .from("listing_orders")
+    .select("*")
+    .in("id", Array.from(marketOrderIds))
+    .returns<ListingOrderRow[]>();
+
+  const marketListingIds = new Set((marketOrders ?? []).map((o) => o.listing_id));
+  const marketUserIds = new Set<string>();
+  for (const o of marketOrders ?? []) {
+    marketUserIds.add(o.buyer_id);
+    marketUserIds.add(o.seller_id);
+  }
+  for (const d of marketplaceDisputes ?? []) {
+    if (d.raised_by) marketUserIds.add(d.raised_by);
+  }
+
+  const [{ data: marketListings }, { data: marketProfiles }, { data: marketEvents }] = await Promise.all([
+    db
+      .from("listings")
+      .select("id, title")
+      .in("id", Array.from(marketListingIds))
+      .returns<{ id: string; title: string }[]>(),
+    db
+      .from("profiles")
+      .select("id, name")
+      .in("id", Array.from(marketUserIds))
+      .returns<{ id: string; name: string | null }[]>(),
+    db
+      .from("listing_order_events")
+      .select("*")
+      .in("listing_order_id", Array.from(marketOrderIds))
+      .order("created_at", { ascending: false })
+      .returns<{ id: string; listing_order_id: string; actor_id: string; event_type: string; payload: Record<string, unknown>; created_at: string }[]>(),
+  ]);
+
+  const marketListingById = new Map(marketListings?.map((l) => [l.id, l.title]) ?? []);
+  const marketNameById = new Map(marketProfiles?.map((p) => [p.id, p.name]) ?? []);
+  const marketOrderById = new Map(marketOrders?.map((o) => [o.id, o]) ?? []);
+  const marketEventsByOrder = new Map<string, { actor_id: string; event_type: string; payload: Record<string, unknown>; created_at: string }[]>();
+  for (const e of marketEvents ?? []) {
+    const list = marketEventsByOrder.get(e.listing_order_id) ?? [];
+    list.push(e);
+    marketEventsByOrder.set(e.listing_order_id, list);
+  }
+
+  const { data: moderatedListings } = await db
+    .from("listings")
+    .select("id, seller_id, title, status, created_at")
+    .neq("status", "active")
+    .order("updated_at", { ascending: false })
+    .limit(20)
+    .returns<{ id: string; seller_id: string; title: string; status: string; created_at: string }[]>();
+
+  for (const l of moderatedListings ?? []) {
+    marketUserIds.add(l.seller_id);
+  }
 
   return (
     <div className="flex min-h-dvh flex-col bg-cream">
@@ -456,6 +528,116 @@ export default async function AdminPage() {
                         Reject
                       </button>
                     </form>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        <section className="mt-10">
+          <h2 className="flex items-center gap-2 font-display text-lg font-semibold text-green-deep">
+            <Store className="h-5 w-5 text-orange-deep" aria-hidden />
+            Marketplace disputes
+          </h2>
+          {(marketplaceDisputes ?? []).length === 0 ? (
+            <p className="mt-3 text-sm text-muted">No marketplace disputes.</p>
+          ) : (
+            <ul className="mt-4 space-y-3">
+              {(marketplaceDisputes ?? []).map((d) => {
+                const order = d.listing_order_id ? marketOrderById.get(d.listing_order_id) : undefined;
+                const events = order?.id ? (marketEventsByOrder.get(order.id) ?? []) : [];
+                return (
+                  <li
+                    key={d.id}
+                    className="rounded-[1.25rem] border border-cream-deep bg-white p-5 shadow-sm"
+                  >
+                    <p className="font-medium text-ink">
+                      {order ? marketListingById.get(order.listing_id) ?? "Listing" : "Unknown listing"}
+                    </p>
+                    <p className="mt-1 text-sm text-muted">
+                      Buyer: {order ? marketNameById.get(order.buyer_id) ?? "Unknown" : "Unknown"} · Seller:{" "}
+                      {order ? marketNameById.get(order.seller_id) ?? "Unknown" : "Unknown"}
+                    </p>
+                    <p className="mt-2 text-sm text-ink">{d.reason}</p>
+                    <p className="mt-1 text-xs text-muted">{new Date(d.created_at).toLocaleString()}</p>
+                    {events.length > 0 ? (
+                      <div className="mt-4 rounded-xl border border-cream-deep bg-cream/40 p-3 text-sm">
+                        <p className="font-medium text-green-deep">Order log</p>
+                        <ul className="mt-1 space-y-1 text-muted">
+                          {events.slice(0, 8).map((e, i) => (
+                            <li key={i} className="flex justify-between text-xs">
+                              <span>{e.event_type}</span>
+                              <span>{new Date(e.created_at).toLocaleString()}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : null}
+                    <div className="mt-4 flex gap-2">
+                      <form action={adminResolveMarketplaceDispute.bind(null, d.id, "refund")}>
+                        <button
+                          type="submit"
+                          className="rounded-full bg-orange px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-deep"
+                        >
+                          Refund buyer
+                        </button>
+                      </form>
+                      <form action={adminResolveMarketplaceDispute.bind(null, d.id, "release")}>
+                        <button
+                          type="submit"
+                          className="rounded-full bg-green px-4 py-2 text-sm font-semibold text-cream transition hover:bg-green-deep"
+                        >
+                          Release to seller
+                        </button>
+                      </form>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </section>
+
+        <section className="mt-10">
+          <h2 className="flex items-center gap-2 font-display text-lg font-semibold text-green-deep">
+            <PackageCheck className="h-5 w-5 text-orange-deep" aria-hidden />
+            Moderated listings
+          </h2>
+          {(moderatedListings ?? []).length === 0 ? (
+            <p className="mt-3 text-sm text-muted">No moderated listings.</p>
+          ) : (
+            <ul className="mt-4 space-y-3">
+              {(moderatedListings ?? []).map((l) => (
+                <li
+                  key={l.id}
+                  className="rounded-[1.25rem] border border-cream-deep bg-white p-5 shadow-sm"
+                >
+                  <p className="font-medium text-ink">{l.title}</p>
+                  <p className="mt-1 text-sm text-muted">
+                    Seller: {marketNameById.get(l.seller_id) ?? "Unknown"} · Status: {l.status}
+                  </p>
+                  <p className="mt-1 text-xs text-muted">{new Date(l.created_at).toLocaleString()}</p>
+                  <div className="mt-4 flex gap-2">
+                    {l.status === "suspended" ? (
+                      <form action={adminSetListingStatus.bind(null, l.id, "active")}>
+                        <button
+                          type="submit"
+                          className="rounded-full bg-green px-4 py-2 text-sm font-semibold text-cream transition hover:bg-green-deep"
+                        >
+                          Reactivate
+                        </button>
+                      </form>
+                    ) : (
+                      <form action={adminSetListingStatus.bind(null, l.id, "suspended")}>
+                        <button
+                          type="submit"
+                          className="rounded-full bg-orange px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-deep"
+                        >
+                          Suspend
+                        </button>
+                      </form>
+                    )}
                   </div>
                 </li>
               ))}
