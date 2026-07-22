@@ -5,16 +5,18 @@ import { redirect } from "next/navigation";
 import { randomUUID } from "node:crypto";
 import { createClient } from "@/lib/supabase/server";
 import { getServiceClient } from "@/lib/supabase/service";
-import { topUp } from "@/lib/server/escrow";
+import { topUp, refund as refundTaskFunds } from "@/lib/server/escrow";
 import { createNotification } from "@/lib/server/notifications";
 import {
-  computeMarketplaceFees,
   generatePickupCode,
   marketHoldFunds,
   marketReleaseFunds,
   marketRefundFunds,
   recordOrderEvent,
 } from "@/lib/server/marketplace";
+import { computeMarketplaceFees } from "@/lib/marketplace-fees";
+import { estimateFee } from "@/lib/pricing";
+import { haversineKm } from "@/lib/algorithm";
 import type { ListingRow, ListingOrderRow, DeliveryOption } from "@/lib/server/rows";
 import { requireAdmin } from "../admin/actions";
 import { MARKETPLACE_CATEGORIES } from "@/lib/marketplace-categories";
@@ -27,7 +29,7 @@ const ALLOWED_IMAGE_TYPES = new Map([
 const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
 
 const CONDITIONS = ["new", "used_like_new", "used_good", "used_fair"] as const;
-const DELIVERY_OPTIONS = ["pickup", "seller_delivery"] as const;
+const DELIVERY_OPTIONS = ["pickup", "seller_delivery", "runner_delivery"] as const;
 const VALID_ORDER_STATUS_TRANSITIONS: Record<string, string[]> = {
   pending_payment: ["paid", "cancelled"],
   paid: ["ready_for_pickup", "in_delivery", "delivered", "cancelled", "disputed"],
@@ -346,7 +348,7 @@ export async function createOrder(listingId: string, formData: FormData) {
   let deliveryLat: number | null = null;
   let deliveryLng: number | null = null;
 
-  if (deliveryOption === "seller_delivery") {
+  if (deliveryOption === "seller_delivery" || deliveryOption === "runner_delivery") {
     deliveryLat = parseNumber(formData.get("delivery_lat"));
     deliveryLng = parseNumber(formData.get("delivery_lng"));
     if (!isFiniteCoordinate(deliveryLat, deliveryLng)) {
@@ -356,14 +358,16 @@ export async function createOrder(listingId: string, formData: FormData) {
 
   const sellerLocation = { lat: listing.location_lat, lng: listing.location_lng };
   const buyerLocation = deliveryLat != null && deliveryLng != null ? { lat: deliveryLat, lng: deliveryLng } : null;
-  const fees = computeMarketplaceFees(
-    Number(listing.price),
-    Number(listing.seller_delivery_fee),
-    deliveryOption,
-    sellerLocation,
-    buyerLocation,
-    "normal",
-  );
+
+  let deliveryFee = 0;
+  if (deliveryOption === "runner_delivery" && buyerLocation) {
+    const distanceKm = haversineKm(sellerLocation, buyerLocation);
+    deliveryFee = estimateFee(distanceKm, "normal");
+  } else if (deliveryOption === "seller_delivery") {
+    deliveryFee = Math.max(0, Number(listing.seller_delivery_fee));
+  }
+
+  const fees = computeMarketplaceFees(Number(listing.price), deliveryFee, deliveryOption);
 
   // Decrement stock first to prevent overselling.
   const { data: stockUpdate, error: stockError } = await db
@@ -440,6 +444,38 @@ export async function createOrder(listingId: string, formData: FormData) {
     throw new Error(`marketplace: ${paidError.message}`);
   }
 
+  // For runner delivery, post a delivery task that a runner can claim.
+  if (deliveryOption === "runner_delivery" && buyerLocation) {
+    const { data: deliveryTask, error: taskError } = await db
+      .from("tasks")
+      .insert({
+        buyer_id: buyerId,
+        title: `Deliver ${listing.title}`,
+        description: `Marketplace delivery for order ${orderId}`,
+        category: "Marketplace delivery",
+        urgency: "normal",
+        price: fees.deliveryFee,
+        fee: 0,
+        pickup_lat: listing.location_lat,
+        pickup_lng: listing.location_lng,
+        dropoff_lat: deliveryLat,
+        dropoff_lng: deliveryLng,
+        status: "posted",
+      })
+      .select("id")
+      .single<{ id: string }>();
+    if (taskError || !deliveryTask) {
+      await marketRefundFunds(orderId);
+      await rollbackOrder();
+      throw new Error(taskError?.message ?? "Failed to create delivery task");
+    }
+
+    await db
+      .from("listing_orders")
+      .update({ delivery_task_id: deliveryTask.id })
+      .eq("id", orderId);
+  }
+
   await recordOrderEvent(orderId, buyerId, "paid", { total: fees.total });
   await createNotification(listing.seller_id, "listing_sold", {
     listing_order_id: orderId,
@@ -459,6 +495,7 @@ export async function createOrder(listingId: string, formData: FormData) {
 export async function markReadyForPickup(orderId: string) {
   const order = await requireMarketplaceOrderParticipant(orderId);
   if (order.seller_id !== (await requireUserId())) throw new Error("Only the seller can mark ready");
+  if (order.delivery_option !== "pickup") throw new Error("This action is only for pickup orders");
   if (!VALID_ORDER_STATUS_TRANSITIONS[order.status].includes("ready_for_pickup")) {
     throw new Error("Order cannot be marked ready");
   }
@@ -484,6 +521,7 @@ export async function markReadyForPickup(orderId: string) {
 export async function markInDelivery(orderId: string) {
   const order = await requireMarketplaceOrderParticipant(orderId);
   if (order.seller_id !== (await requireUserId())) throw new Error("Only the seller can mark in delivery");
+  if (order.delivery_option !== "seller_delivery") throw new Error("This action is only for seller delivery orders");
   if (!VALID_ORDER_STATUS_TRANSITIONS[order.status].includes("in_delivery")) {
     throw new Error("Order cannot be marked in delivery");
   }
@@ -537,6 +575,7 @@ export async function confirmPickup(orderId: string, formData: FormData) {
 export async function markDelivered(orderId: string, formData: FormData) {
   const order = await requireMarketplaceOrderParticipant(orderId);
   if (order.seller_id !== (await requireUserId())) throw new Error("Only the seller can mark delivered");
+  if (order.delivery_option !== "seller_delivery") throw new Error("This action is only for seller delivery orders");
   if (!VALID_ORDER_STATUS_TRANSITIONS[order.status].includes("delivered")) {
     throw new Error("Order cannot be marked delivered");
   }
@@ -663,6 +702,20 @@ export async function cancelMarketplaceOrder(orderId: string) {
 
   if (["paid", "ready_for_pickup", "in_delivery"].includes(order.status)) {
     await marketRefundFunds(orderId);
+  }
+
+  if (order.delivery_task_id) {
+    const { data: task } = await db
+      .from("tasks")
+      .select("id, status")
+      .eq("id", order.delivery_task_id)
+      .maybeSingle<{ id: string; status: string }>();
+    if (task && !["completed", "cancelled"].includes(task.status)) {
+      if (["matched", "accepted", "in_progress"].includes(task.status)) {
+        await refundTaskFunds(task.id);
+      }
+      await db.from("tasks").update({ status: "cancelled" }).eq("id", task.id);
+    }
   }
 
   const { error } = await db

@@ -13,6 +13,9 @@ const csp = [
 ].join(" ");
 
 const nextConfig: NextConfig = {
+  images: {
+    unoptimized: true,
+  },
   async headers() {
     const headers = [
       { key: "X-Frame-Options", value: "DENY" },
