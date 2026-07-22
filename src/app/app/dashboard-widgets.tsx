@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { PackageCheck, Plus, Users, ArrowRight, Clock, CircleCheck, type LucideIcon } from "lucide-react";
+import { PackageCheck, Plus, Users, ArrowRight, Clock, CircleCheck, Store, ShoppingBag, type LucideIcon } from "lucide-react";
 import { acceptOffer, declineOffer, markPickedUp, cancelRunnerErrand } from "./actions";
 import { MarkDeliveredForm } from "./mark-delivered-form";
 
@@ -116,6 +116,30 @@ export function QuickActions({ role }: { role: "buyer" | "runner" }) {
             <Plus className="h-5 w-5" aria-hidden /> Quick match
           </span>
           <span className="mt-1 block text-sm text-muted">We’ll auto-match a runner for you.</span>
+        </span>
+        <ArrowRight className="h-5 w-5" aria-hidden />
+      </Link>
+      <Link
+        href="/app/marketplace"
+        className="flex items-center justify-between rounded-2xl bg-orange p-5 text-cream shadow-sm transition hover:bg-orange-deep"
+      >
+        <span>
+          <span className="flex items-center gap-2 font-display text-lg font-semibold">
+            <Store className="h-5 w-5" aria-hidden /> Marketplace
+          </span>
+          <span className="mt-1 block text-sm text-cream/80">Buy, sell, or give away items.</span>
+        </span>
+        <ArrowRight className="h-5 w-5" aria-hidden />
+      </Link>
+      <Link
+        href="/app/marketplace/orders"
+        className="flex items-center justify-between rounded-2xl border border-cream-deep bg-white p-5 text-green-deep shadow-sm transition hover:bg-cream/40"
+      >
+        <span>
+          <span className="flex items-center gap-2 font-display text-lg font-semibold">
+            <ShoppingBag className="h-5 w-5" aria-hidden /> Marketplace orders
+          </span>
+          <span className="mt-1 block text-sm text-muted">Track your sales and purchases.</span>
         </span>
         <ArrowRight className="h-5 w-5" aria-hidden />
       </Link>

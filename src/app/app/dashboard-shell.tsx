@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, LayoutDashboard, Users, PlusCircle, Wallet, ShieldCheck, Settings, LogOut, Bike, PackageCheck } from "lucide-react";
+import { Menu, X, LayoutDashboard, Users, PlusCircle, Wallet, ShieldCheck, Settings, LogOut, Bike, PackageCheck, Store } from "lucide-react";
 import { Logo } from "@/components/brand";
 import { NotificationsPopover } from "./notifications-popover";
 import { RealtimeStatus } from "./realtime-status";
@@ -31,6 +31,7 @@ function navItems(role: Role): NavItem[] {
     { href: "/app", label: "Dashboard", icon: <LayoutDashboard className="h-5 w-5" /> },
     { href: "/app/runners", label: "Browse runners", icon: <Users className="h-5 w-5" /> },
     { href: "/app/post", label: "Post errand", icon: <PlusCircle className="h-5 w-5" /> },
+    { href: "/app/marketplace", label: "Marketplace", icon: <Store className="h-5 w-5" /> },
     { href: "/app/wallet", label: "Wallet", icon: <Wallet className="h-5 w-5" /> },
     { href: "/app/verify", label: "Verify", icon: <ShieldCheck className="h-5 w-5" /> },
     { href: "/app/settings", label: "Settings", icon: <Settings className="h-5 w-5" /> },
