@@ -157,7 +157,7 @@ export default async function SettingsPage() {
           </div>
         </section>
 
-        {role === "runner" && runnerProfile ? (
+        {role === "runner" ? (
           <section className="mt-5 rounded-2xl border border-cream-deep bg-white p-6 shadow-sm">
             <p className="font-display text-lg font-semibold text-green-deep">My public profile</p>
             <div className="mt-4 space-y-3 text-sm">
@@ -165,7 +165,7 @@ export default async function SettingsPage() {
                 <span className="text-muted">Trust score</span>
                 <span className="inline-flex items-center gap-1 font-medium text-ink">
                   <Star className="h-4 w-4 fill-orange text-orange" aria-hidden />
-                  {(runnerProfile.trust_score * 5).toFixed(1)} / 5
+                  {((runnerProfile?.trust_score ?? 0.5) * 5).toFixed(1)} / 5
                 </span>
               </div>
               <div className="flex items-center justify-between">
@@ -184,7 +184,7 @@ export default async function SettingsPage() {
               <div className="flex items-center justify-between">
                 <span className="text-muted">Capabilities</span>
                 <span className="font-medium text-ink">
-                  {runnerProfile.capabilities?.length
+                  {runnerProfile?.capabilities?.length
                     ? runnerProfile.capabilities.join(", ")
                     : "Any Other Errand"}
                 </span>
@@ -199,20 +199,20 @@ export default async function SettingsPage() {
           </section>
         ) : null}
 
-        {role === "runner" && runnerProfile ? (
+        {role === "runner" ? (
           <section className="mt-5 rounded-2xl border border-cream-deep bg-white p-6 shadow-sm">
             <p className="font-display text-lg font-semibold text-green-deep">Runner settings</p>
             <p className="mt-1 text-sm text-muted">Set your availability and the errands you want to match for.</p>
             <div className="mt-4 space-y-5">
               <AvailabilityToggle
-                availableManual={runnerProfile.available_manual}
-                scheduledHours={runnerProfile.scheduled_hours}
-                lat={runnerProfile.current_lat ?? null}
-                lng={runnerProfile.current_lng ?? null}
-                verified={runnerProfile.verified}
+                availableManual={runnerProfile?.available_manual ?? null}
+                scheduledHours={runnerProfile?.scheduled_hours ?? null}
+                lat={runnerProfile?.current_lat ?? null}
+                lng={runnerProfile?.current_lng ?? null}
+                verified={runnerProfile?.verified ?? profile?.verified ?? false}
               />
-              <ScheduleEditor initialSchedule={runnerProfile.scheduled_hours} />
-              <CapabilitiesEditor capabilities={runnerProfile.capabilities ?? null} />
+              <ScheduleEditor initialSchedule={runnerProfile?.scheduled_hours ?? null} />
+              <CapabilitiesEditor capabilities={runnerProfile?.capabilities ?? null} />
             </div>
           </section>
         ) : null}
