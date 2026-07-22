@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { Search, Plus, Store } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
@@ -139,12 +140,14 @@ export default async function MarketplacePage({
                     href={`/app/marketplace/${l.id}`}
                     className="group block overflow-hidden rounded-[1.5rem] border border-cream-deep bg-white shadow-sm transition hover:shadow-md"
                   >
-                    <div className="aspect-[4/3] bg-cream-deep">
+                    <div className="relative aspect-[4/3] bg-cream-deep">
                       {l.photoUrls[0] ? (
-                        <img
+                        <Image
                           src={l.photoUrls[0]}
                           alt={l.title}
-                          className="h-full w-full object-cover transition group-hover:opacity-95"
+                          fill
+                          sizes="(max-width: 768px) 50vw, 33vw"
+                          className="object-cover transition group-hover:opacity-95"
                         />
                       ) : (
                         <div className="flex h-full w-full items-center justify-center text-sm text-muted">

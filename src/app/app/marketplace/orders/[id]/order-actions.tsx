@@ -102,6 +102,9 @@ export function OrderActions({
               </button>
             </form>
           ) : null}
+          {order.delivery_option === "runner_delivery" ? (
+            <p className="text-sm text-muted">Waiting for a runner to claim the delivery.</p>
+          ) : null}
         </div>
       ) : null}
 
@@ -125,20 +128,24 @@ export function OrderActions({
       ) : null}
 
       {isSeller && order.status === "in_delivery" ? (
-        <form action={markDelivered.bind(null, order.id)} className="space-y-3">
-          <textarea
-            name="notes"
-            rows={2}
-            placeholder="Delivery notes (optional)"
-            className="w-full rounded-2xl border border-cream-deep bg-white px-4 py-2.5 text-sm outline-none focus:border-green"
-          />
-          <button
-            type="submit"
-            className="rounded-2xl bg-green px-5 py-2.5 text-sm font-semibold text-cream transition hover:bg-green-deep"
-          >
-            Mark delivered
-          </button>
-        </form>
+        order.delivery_option === "runner_delivery" ? (
+          <p className="text-sm text-muted">A runner is delivering this item.</p>
+        ) : (
+          <form action={markDelivered.bind(null, order.id)} className="space-y-3">
+            <textarea
+              name="notes"
+              rows={2}
+              placeholder="Delivery notes (optional)"
+              className="w-full rounded-2xl border border-cream-deep bg-white px-4 py-2.5 text-sm outline-none focus:border-green"
+            />
+            <button
+              type="submit"
+              className="rounded-2xl bg-green px-5 py-2.5 text-sm font-semibold text-cream transition hover:bg-green-deep"
+            >
+              Mark delivered
+            </button>
+          </form>
+        )
       ) : null}
 
       {isBuyer && order.status === "delivered" ? (
