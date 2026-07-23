@@ -116,39 +116,6 @@ export function RealtimeStatus({
       refresh,
     );
 
-    channel.on(
-      "postgres_changes",
-      {
-        event: "*",
-        schema: "public",
-        table: "listing_orders",
-        filter: `buyer_id=eq.${userId}`,
-      },
-      refresh,
-    );
-
-    channel.on(
-      "postgres_changes",
-      {
-        event: "*",
-        schema: "public",
-        table: "listing_orders",
-        filter: `seller_id=eq.${userId}`,
-      },
-      refresh,
-    );
-
-    channel.on(
-      "postgres_changes",
-      {
-        event: "*",
-        schema: "public",
-        table: "listings",
-        filter: `seller_id=eq.${userId}`,
-      },
-      refresh,
-    );
-
     channel.subscribe();
 
     return () => {

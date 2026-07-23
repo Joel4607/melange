@@ -31,7 +31,6 @@ export async function resolveDispute(disputeId: string): Promise<ArbitrationResu
     .eq("id", disputeId)
     .single<DisputeRow>();
   if (dErr || !dispute) throw new Error(`resolveDispute: dispute ${disputeId} not found`);
-  if (!dispute.task_id) throw new Error(`resolveDispute: dispute ${disputeId} is not tied to a task`);
 
   const task = await loadTask(db, dispute.task_id);
 
@@ -107,7 +106,6 @@ export async function resolveDisputeAdmin(
     .single<DisputeRow>();
   if (dErr || !dispute) throw new Error(`resolveDisputeAdmin: dispute ${disputeId} not found`);
   if (dispute.status !== "escalated") return;
-  if (!dispute.task_id) throw new Error(`resolveDisputeAdmin: dispute ${disputeId} is not tied to a task`);
 
   const task = await loadTask(db, dispute.task_id);
   const effectiveResolution = resolution === "partial" ? "release" : resolution;

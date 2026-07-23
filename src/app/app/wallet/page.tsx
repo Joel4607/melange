@@ -18,11 +18,6 @@ const LABELS: Record<string, string> = {
   release: "Escrow released",
   payout: "Payout",
   refund: "Refund",
-  market_hold: "Marketplace held",
-  market_release: "Marketplace released",
-  market_payout: "Marketplace payout",
-  market_delivery_payout: "Marketplace delivery payout",
-  market_refund: "Marketplace refund",
 };
 
 export default async function WalletPage() {
@@ -40,7 +35,7 @@ export default async function WalletPage() {
 
   const { data: ledger } = await supabase
     .from("ledger_entries")
-    .select("id, task_id, listing_order_id, type, amount, created_at")
+    .select("id, task_id, type, amount, created_at")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
     .returns<LedgerRow[]>();
@@ -50,37 +45,13 @@ export default async function WalletPage() {
       .map((e) => e.task_id)
       .filter((id): id is string => id != null),
   );
-  const listingOrderIds = new Set(
-    (ledger ?? [])
-      .map((e) => e.listing_order_id)
-      .filter((id): id is string => id != null),
-  );
 
   const { data: tasks } = await supabase
     .from("tasks")
     .select("id, title")
     .in("id", Array.from(taskIds))
     .returns<{ id: string; title: string }[]>();
-
-  const { data: orderRows } = await supabase
-    .from("listing_orders")
-    .select("id, listing_id")
-    .in("id", Array.from(listingOrderIds))
-    .returns<{ id: string; listing_id: string }[]>();
-  const listingIdsFromOrders = new Set(orderRows?.map((o) => o.listing_id) ?? []);
-  const { data: listings } = await supabase
-    .from("listings")
-    .select("id, title")
-    .in("id", Array.from(listingIdsFromOrders))
-    .returns<{ id: string; title: string }[]>();
-  const listingTitleById = new Map(listings?.map((l) => [l.id, l.title]) as [string, string][]);
-  const orderTitles =
-    orderRows?.map((o) => [o.id, listingTitleById.get(o.listing_id) ?? "Marketplace order"]) as [string, string][];
-
-  const titleById = new Map([
-    ...(tasks?.map((t) => [t.id, t.title]) ?? []),
-    ...orderTitles,
-  ] as [string, string][]);
+  const titleById = new Map(tasks?.map((t) => [t.id, t.title]) ?? []);
 
   const balance = Number(wallet?.balance ?? 0).toFixed(2);
   const held = Number(wallet?.held ?? 0).toFixed(2);
@@ -134,9 +105,6 @@ export default async function WalletPage() {
                       <p className="font-medium text-ink">{LABELS[entry.type] ?? entry.type}</p>
                       {entry.task_id ? (
                         <p className="text-sm text-muted">{titleById.get(entry.task_id) ?? "Errand"}</p>
-                      ) : null}
-                      {entry.listing_order_id ? (
-                        <p className="text-sm text-muted">{titleById.get(entry.listing_order_id) ?? "Marketplace order"}</p>
                       ) : null}
                       <p className="text-xs text-muted">{new Date(entry.created_at).toLocaleString()}</p>
                     </div>
