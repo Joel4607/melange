@@ -60,25 +60,25 @@ export function LiveLocationUpdater({ available }: { available: boolean }) {
   if (!available) return null;
 
   return (
-    <div className="rounded-[1.5rem] border border-cream-deep bg-white p-6 shadow-sm">
-      <p className="flex items-center gap-2 font-display text-lg font-semibold text-green-deep">
-        <Navigation className="h-5 w-5 text-orange-deep" aria-hidden /> Live location
+    <div className="mt-4 rounded-xl border border-cream-deep/60 bg-cream/30 p-3">
+      <p className="flex items-center gap-2 text-sm font-medium text-green-deep">
+        <Navigation className="h-4 w-4 text-orange-deep" aria-hidden /> Live location
       </p>
-      <p className="mt-1 text-sm text-muted">
+      <p className="mt-1 text-xs text-muted">
         {status === "updating" ? (
           <span className="inline-flex items-center gap-1.5">
-            <MapPin className="h-4 w-4 animate-bounce" aria-hidden /> Updating…
+            <MapPin className="h-3.5 w-3.5 animate-bounce" aria-hidden /> Updating…
           </span>
         ) : coords ? (
           <span className="inline-flex items-center gap-1.5">
-            <MapPin className="h-4 w-4" aria-hidden />
+            <MapPin className="h-3.5 w-3.5" aria-hidden />
             {coords.lat.toFixed(5)}, {coords.lng.toFixed(5)}
           </span>
         ) : (
           "Waiting for a GPS fix."
         )}
       </p>
-      {error ? <p className="mt-2 text-sm text-orange-deep">{error}</p> : null}
+      {error ? <p className="mt-1 text-xs text-orange-deep">{error}</p> : null}
     </div>
   );
 }
