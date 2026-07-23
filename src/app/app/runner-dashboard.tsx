@@ -1,5 +1,5 @@
-import { Bike, Star, Wallet as WalletIcon, Clock, CheckCircle, PackageCheck } from "lucide-react";
-import { WalletCard } from "./wallet-card";
+import { Bike, Star, Wallet as WalletIcon, Clock, CheckCircle } from "lucide-react";
+import { WalletCreditCard } from "./wallet-credit-card";
 import { VerificationCard } from "./verification-card";
 import { AvailabilityToggle } from "./availability-toggle";
 import { LiveLocationUpdater } from "./live-location-updater";
@@ -53,8 +53,7 @@ export function RunnerDashboard({
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <WalletCard wallet={wallet} name={name ?? null} className="min-h-[180px] md:col-span-2 lg:col-span-1" />
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <KpiCard
           title="Total earned"
           value={`GHS ${totalEarned.toFixed(2)}`}
@@ -78,7 +77,7 @@ export function RunnerDashboard({
 
           <Section title="Offers" icon={Clock}>
             {offers.length === 0 ? (
-              <Empty icon={PackageCheck} action={{ href: "/app/feed", label: "Browse errands" }}>
+              <Empty icon={CheckCircle} action={{ href: "/app/feed", label: "Browse errands" }}>
                 When a buyer pays, the top-ranked job shows up here.
               </Empty>
             ) : (
@@ -94,7 +93,7 @@ export function RunnerDashboard({
 
           <Section title="Active jobs" icon={Bike}>
             {active.length === 0 ? (
-              <Empty icon={PackageCheck} action={{ href: "/app/feed", label: "Find jobs" }}>
+              <Empty icon={CheckCircle} action={{ href: "/app/feed", label: "Find jobs" }}>
                 No live jobs yet.
               </Empty>
             ) : (
@@ -119,7 +118,7 @@ export function RunnerDashboard({
           ) : null}
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-6 lg:col-span-1">
           <RunnerAvailabilityCard available={available}>
             <AvailabilityToggle
               availableManual={profile?.available_manual ?? null}
@@ -130,6 +129,8 @@ export function RunnerDashboard({
             />
             <LiveLocationUpdater available={available} />
           </RunnerAvailabilityCard>
+
+          <WalletCreditCard wallet={wallet} name={name ?? null} />
 
           <VerificationCard
             verified={profile?.verified ?? false}

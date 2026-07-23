@@ -23,7 +23,6 @@ function navItems(role: Role): NavItem[] {
       { href: "/app", label: "Dashboard", icon: <LayoutDashboard className="h-5 w-5" /> },
       { href: "/app/feed", label: "Open errands", icon: <PackageCheck className="h-5 w-5" /> },
       { href: "/app/earnings", label: "Earnings", icon: <Wallet className="h-5 w-5" /> },
-      { href: "/app/verify", label: "Verify", icon: <ShieldCheck className="h-5 w-5" /> },
       { href: "/app/settings", label: "Settings", icon: <Settings className="h-5 w-5" /> },
     ];
   }
@@ -32,7 +31,6 @@ function navItems(role: Role): NavItem[] {
     { href: "/app/runners", label: "Browse runners", icon: <Users className="h-5 w-5" /> },
     { href: "/app/post", label: "Post errand", icon: <PlusCircle className="h-5 w-5" /> },
     { href: "/app/wallet", label: "Wallet", icon: <Wallet className="h-5 w-5" /> },
-    { href: "/app/verify", label: "Verify", icon: <ShieldCheck className="h-5 w-5" /> },
     { href: "/app/settings", label: "Settings", icon: <Settings className="h-5 w-5" /> },
   ];
 }

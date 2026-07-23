@@ -1,5 +1,5 @@
-import { Clock, CheckCircle, Wallet as WalletIcon } from "lucide-react";
-import { WalletCard } from "./wallet-card";
+import { Clock, CheckCircle } from "lucide-react";
+import { WalletCreditCard } from "./wallet-credit-card";
 import { VerificationCard } from "./verification-card";
 import {
   KpiCard,
@@ -27,8 +27,7 @@ export function BuyerDashboard({
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <WalletCard wallet={wallet} name={profile?.name ?? null} className="min-h-[180px] md:col-span-1" />
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <KpiCard title="Active errands" value={active} icon={Clock} tone="orange" />
         <KpiCard title="Completed" value={completed} icon={CheckCircle} tone="green" />
       </div>
@@ -41,18 +40,12 @@ export function BuyerDashboard({
           </Section>
         </div>
 
-        <div className="space-y-6">
-          <VerificationCard verified={profile?.verified ?? false} request={verificationRequest} />
-          {profile?.verified ? (
-            <div className="rounded-2xl border border-green/30 bg-green/5 p-5">
-              <p className="flex items-center gap-2 font-medium text-green-deep">
-                <WalletIcon className="h-5 w-5" aria-hidden /> Wallet protected
-              </p>
-              <p className="mt-1 text-sm text-muted">
-                Your identity is verified. Transactions are tied to your profile for dispute resolution.
-              </p>
-            </div>
-          ) : null}
+        <div className="space-y-6 lg:col-span-1">
+          <WalletCreditCard wallet={wallet} name={profile?.name ?? null} />
+          <VerificationCard
+            verified={profile?.verified ?? false}
+            request={verificationRequest}
+          />
         </div>
       </div>
     </div>
