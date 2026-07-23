@@ -9,6 +9,7 @@ import { updateProfile } from "../actions";
 import { AvailabilityToggle } from "../availability-toggle";
 import { CapabilitiesEditor } from "../capabilities-editor";
 import { ScheduleEditor } from "../schedule-editor";
+import { VerificationCard } from "../verification-card";
 
 export const metadata: Metadata = {
   title: "Settings — Mélange",
@@ -80,7 +81,11 @@ export default async function SettingsPage() {
       <main className="mx-auto w-full max-w-2xl flex-1 px-5 py-10">
         <h1 className="font-display text-fluid-h2 font-semibold text-green-deep">Settings</h1>
 
-        <section className="mt-6 rounded-2xl border border-cream-deep bg-white p-6 shadow-sm">
+        <div className="mt-6">
+          <VerificationCard verified={profile?.verified ?? false} request={null} />
+        </div>
+
+        <section className="mt-5 rounded-2xl border border-cream-deep bg-white p-6 shadow-sm">
           <p className="flex items-center gap-2 font-display text-lg font-semibold text-green-deep">
             <User className="h-5 w-5 text-orange-deep" aria-hidden /> Profile
           </p>
