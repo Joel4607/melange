@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft, User, ShieldCheck, Shield, Bike, PackageCheck, Star, Wallet } from "lucide-react";
+import { ArrowLeft, User, Shield, Bike, PackageCheck, Star, Wallet } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getServiceClient } from "@/lib/supabase/service";
 import { Logo } from "@/components/brand";
@@ -137,20 +137,6 @@ export default async function SettingsPage() {
               <span className="inline-flex items-center gap-1.5 rounded-full bg-green/10 px-2.5 py-1 text-xs font-medium text-green-deep">
                 {role === "runner" ? <Bike className="h-3.5 w-3.5" aria-hidden /> : <PackageCheck className="h-3.5 w-3.5" aria-hidden />}
                 {role === "runner" ? "Runner" : "Customer"}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-muted">Verification</span>
-              <span className="inline-flex items-center gap-1.5 font-medium text-ink">
-                {profile?.verified ? (
-                  <>
-                    <ShieldCheck className="h-4 w-4 text-green-deep" aria-hidden /> Verified
-                  </>
-                ) : (
-                  <>
-                    <Shield className="h-4 w-4 text-muted" aria-hidden /> Not verified
-                  </>
-                )}
               </span>
             </div>
             {profile?.is_admin ? (
