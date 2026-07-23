@@ -241,6 +241,19 @@ export default async function AdminPage() {
           Trust & safety
         </h1>
 
+        <section className="mt-6 rounded-2xl border border-cream-deep bg-white p-5 shadow-sm">
+          <p className="font-medium text-green-deep">Telegram Mini App</p>
+          <p className="mt-1 text-sm text-muted">
+            Manage verifications and disputes from Telegram. Link your Telegram account first.
+          </p>
+          <Link
+            href="/app/admin/telegram-link"
+            className="mt-3 inline-block rounded-full bg-green px-4 py-2 text-sm font-semibold text-cream transition hover:bg-green-deep"
+          >
+            Link Telegram
+          </Link>
+        </section>
+
         <section className="mt-8">
           <h2 className="flex items-center gap-2 font-display text-lg font-semibold text-green-deep">
             <AlertTriangle className="h-5 w-5 text-orange-deep" aria-hidden />
