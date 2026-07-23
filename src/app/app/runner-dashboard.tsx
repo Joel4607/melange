@@ -1,4 +1,4 @@
-import { Bike, Star, Wallet as WalletIcon, Clock, CheckCircle } from "lucide-react";
+import { Bike, Star, Wallet as WalletIcon, Clock, CheckCircle, PackageCheck } from "lucide-react";
 import { WalletCard } from "./wallet-card";
 import { VerificationCard } from "./verification-card";
 import { AvailabilityToggle } from "./availability-toggle";
@@ -52,9 +52,9 @@ export function RunnerDashboard({
   const trustStars = profile ? (profile.trust_score * 5).toFixed(1) : "0.0";
 
   return (
-    <div className="space-y-5">
-      <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-4">
-        <WalletCard wallet={wallet} name={name ?? null} className="h-60 md:col-span-2 lg:col-span-1" />
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <WalletCard wallet={wallet} name={name ?? null} className="min-h-[180px] md:col-span-2 lg:col-span-1" />
         <KpiCard
           title="Total earned"
           value={`GHS ${totalEarned.toFixed(2)}`}
@@ -72,13 +72,15 @@ export function RunnerDashboard({
         />
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-3">
-        <div className="space-y-5 lg:col-span-2">
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="space-y-6 lg:col-span-2">
           <QuickActions role="runner" />
 
           <Section title="Offers" icon={Clock}>
             {offers.length === 0 ? (
-              <Empty>When a buyer pays, the top-ranked job shows up here.</Empty>
+              <Empty icon={PackageCheck} action={{ href: "/app/feed", label: "Browse errands" }}>
+                When a buyer pays, the top-ranked job shows up here.
+              </Empty>
             ) : (
               <div className="space-y-3">
                 {offers.map((task) => (
@@ -92,7 +94,9 @@ export function RunnerDashboard({
 
           <Section title="Active jobs" icon={Bike}>
             {active.length === 0 ? (
-              <Empty>No live jobs yet.</Empty>
+              <Empty icon={PackageCheck} action={{ href: "/app/feed", label: "Find jobs" }}>
+                No live jobs yet.
+              </Empty>
             ) : (
               <div className="space-y-3">
                 {active.map((task) => (
@@ -115,7 +119,7 @@ export function RunnerDashboard({
           ) : null}
         </div>
 
-        <div className="space-y-5">
+        <div className="space-y-6">
           <RunnerAvailabilityCard available={available}>
             <AvailabilityToggle
               availableManual={profile?.available_manual ?? null}
@@ -124,9 +128,7 @@ export function RunnerDashboard({
               lng={profile?.current_lng ?? null}
               verified={profile?.verified ?? false}
             />
-            <div className="mt-4">
-              <LiveLocationUpdater available={available} />
-            </div>
+            <LiveLocationUpdater available={available} />
           </RunnerAvailabilityCard>
 
           <VerificationCard
@@ -136,8 +138,11 @@ export function RunnerDashboard({
 
           {avgRating > 0 ? (
             <div className="rounded-2xl border border-cream-deep bg-white p-5 shadow-sm">
-              <p className="text-sm font-medium text-muted">Average rating</p>
-              <p className="mt-1 font-display text-2xl font-semibold text-ink">
+              <div className="flex items-center gap-2">
+                <Star className="h-5 w-5 text-orange-deep" aria-hidden />
+                <p className="font-display font-semibold text-green-deep">Average rating</p>
+              </div>
+              <p className="mt-2 font-display text-2xl font-semibold text-ink">
                 {avgRating.toFixed(1)} / 5
               </p>
             </div>

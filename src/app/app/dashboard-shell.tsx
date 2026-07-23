@@ -141,14 +141,7 @@ export function DashboardShell({
                 <h1 className="font-display text-xl font-semibold text-green-deep">
                   Welcome, {firstName}
                 </h1>
-                <p className="text-xs text-muted">
-                  {new Date().toLocaleDateString(undefined, {
-                    weekday: "long",
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })}
-                </p>
+                <p className="text-xs capitalize text-muted">{role}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">

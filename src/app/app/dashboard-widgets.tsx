@@ -3,6 +3,12 @@ import { PackageCheck, Plus, Users, ArrowRight, Clock, CircleCheck, type LucideI
 import { acceptOffer, declineOffer, markPickedUp, cancelRunnerErrand } from "./actions";
 import { MarkDeliveredForm } from "./mark-delivered-form";
 
+interface EmptyStateProps {
+  children: React.ReactNode;
+  icon?: LucideIcon;
+  action?: { href: string; label: string };
+}
+
 export interface DashboardTask {
   id: string;
   title: string;
@@ -48,15 +54,17 @@ export function KpiCard({
   const bg = tone === "orange" ? "bg-orange/10" : "bg-green/10";
   const text = tone === "orange" ? "text-orange-deep" : "text-green-deep";
   return (
-    <div className="rounded-2xl border border-cream-deep bg-white p-5 shadow-sm">
+    <div className="flex flex-col justify-between rounded-2xl border border-cream-deep bg-white p-5 shadow-sm">
       <div className="flex items-center justify-between">
         <p className="text-sm font-medium text-muted">{title}</p>
         <span className={`grid h-9 w-9 place-items-center rounded-full ${bg} ${text}`}>
           <Icon className="h-5 w-5" aria-hidden />
         </span>
       </div>
-      <p className="mt-3 font-display text-2xl font-semibold text-ink">{value}</p>
-      {subtitle ? <p className="mt-1 text-xs text-muted">{subtitle}</p> : null}
+      <div className="mt-4">
+        <p className="font-display text-2xl font-semibold text-ink">{value}</p>
+        {subtitle ? <p className="mt-1 text-xs text-muted">{subtitle}</p> : null}
+      </div>
     </div>
   );
 }
@@ -64,13 +72,13 @@ export function KpiCard({
 export function QuickActions({ role }: { role: "buyer" | "runner" }) {
   if (role === "runner") {
     return (
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-3 sm:grid-cols-2">
         <Link
           href="/app/feed"
-          className="flex items-center justify-between rounded-2xl bg-green p-5 text-cream shadow-sm transition hover:bg-green-deep"
+          className="flex items-center justify-between rounded-2xl bg-green p-4 text-cream shadow-sm transition hover:bg-green-deep"
         >
           <span>
-            <span className="flex items-center gap-2 font-display text-lg font-semibold">
+            <span className="flex items-center gap-2 font-display text-base font-semibold">
               <PackageCheck className="h-5 w-5" aria-hidden /> Open errands
             </span>
             <span className="mt-1 block text-sm text-cream/80">Browse and claim nearby jobs.</span>
@@ -79,10 +87,10 @@ export function QuickActions({ role }: { role: "buyer" | "runner" }) {
         </Link>
         <Link
           href="/app/settings"
-          className="flex items-center justify-between rounded-2xl border border-cream-deep bg-white p-5 text-green-deep shadow-sm transition hover:bg-cream/40"
+          className="flex items-center justify-between rounded-2xl border border-cream-deep bg-white p-4 text-green-deep shadow-sm transition hover:bg-cream/40"
         >
           <span>
-            <span className="flex items-center gap-2 font-display text-lg font-semibold">
+            <span className="flex items-center gap-2 font-display text-base font-semibold">
               <Clock className="h-5 w-5" aria-hidden /> Set hours
             </span>
             <span className="mt-1 block text-sm text-muted">Update availability & capabilities.</span>
@@ -94,13 +102,13 @@ export function QuickActions({ role }: { role: "buyer" | "runner" }) {
   }
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2">
+    <div className="grid gap-3 sm:grid-cols-2">
       <Link
         href="/app/runners"
-        className="flex items-center justify-between rounded-2xl bg-green p-5 text-cream shadow-sm transition hover:bg-green-deep"
+        className="flex items-center justify-between rounded-2xl bg-green p-4 text-cream shadow-sm transition hover:bg-green-deep"
       >
         <span>
-          <span className="flex items-center gap-2 font-display text-lg font-semibold">
+          <span className="flex items-center gap-2 font-display text-base font-semibold">
             <Users className="h-5 w-5" aria-hidden /> Browse runners
           </span>
           <span className="mt-1 block text-sm text-cream/80">Pick a trusted runner first.</span>
@@ -109,10 +117,10 @@ export function QuickActions({ role }: { role: "buyer" | "runner" }) {
       </Link>
       <Link
         href="/app/post"
-        className="flex items-center justify-between rounded-2xl border border-cream-deep bg-white p-5 text-green-deep shadow-sm transition hover:bg-cream/40"
+        className="flex items-center justify-between rounded-2xl border border-cream-deep bg-white p-4 text-green-deep shadow-sm transition hover:bg-cream/40"
       >
         <span>
-          <span className="flex items-center gap-2 font-display text-lg font-semibold">
+          <span className="flex items-center gap-2 font-display text-base font-semibold">
             <Plus className="h-5 w-5" aria-hidden /> Quick match
           </span>
           <span className="mt-1 block text-sm text-muted">We’ll auto-match a runner for you.</span>
@@ -135,13 +143,13 @@ export function Section({
   action?: { href: string; label: string };
 }) {
   return (
-    <div className="rounded-2xl border border-cream-deep bg-white p-6 shadow-sm">
-      <div className="flex items-center justify-between">
+    <div className="rounded-2xl border border-cream-deep bg-white p-5 shadow-sm">
+      <div className="flex items-center justify-between gap-3">
         <p className="flex items-center gap-2 font-display font-semibold text-green-deep">
           <Icon className="h-5 w-5 text-orange-deep" aria-hidden /> {title}
         </p>
         {action ? (
-          <Link href={action.href} className="text-xs font-medium text-green-deep hover:underline">
+          <Link href={action.href} className="shrink-0 text-xs font-medium text-green-deep hover:underline">
             {action.label}
           </Link>
         ) : null}
@@ -151,13 +159,30 @@ export function Section({
   );
 }
 
-export function Empty({ children }: { children: React.ReactNode }) {
-  return <p className="text-sm text-muted">{children}</p>;
+export function Empty({ children, icon: Icon, action }: EmptyStateProps) {
+  return (
+    <div className="flex flex-col items-center justify-center py-8 text-center">
+      {Icon ? <Icon className="h-8 w-8 text-orange-deep/70" aria-hidden /> : null}
+      <p className={`text-sm text-muted ${Icon ? "mt-3" : ""}`}>{children}</p>
+      {action ? (
+        <Link
+          href={action.href}
+          className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-green px-4 py-2 text-sm font-semibold text-cream transition hover:bg-green-deep"
+        >
+          {action.label}
+        </Link>
+      ) : null}
+    </div>
+  );
 }
 
 export function BuyerErrandList({ errands }: { errands: DashboardErrand[] }) {
   if (errands.length === 0) {
-    return <Empty>No errands yet. Post one and track it from matched to delivered.</Empty>;
+    return (
+      <Empty icon={PackageCheck} action={{ href: "/app/post", label: "Post an errand" }}>
+        No errands yet. Post one and track it from matched to delivered.
+      </Empty>
+    );
   }
   return (
     <ul className="divide-y divide-cream-deep">
@@ -167,7 +192,7 @@ export function BuyerErrandList({ errands }: { errands: DashboardErrand[] }) {
           <li key={e.id}>
             <Link
               href={`/app/errands/${e.id}`}
-              className="flex items-center justify-between gap-4 py-3.5 transition hover:opacity-80"
+              className="flex items-center justify-between gap-4 rounded-xl px-2 py-3.5 transition hover:bg-cream/40"
             >
               <span className="min-w-0">
                 <span className="block truncate font-medium text-ink">{e.title}</span>
@@ -203,7 +228,7 @@ export function TaskCard({
       : Number(task.price).toFixed(2);
 
   return (
-    <div className="rounded-[1.25rem] border border-cream-deep/70 bg-cream/40 p-4">
+    <div className="rounded-[1.25rem] border border-cream-deep/70 bg-cream/40 p-4 transition hover:border-green-soft/40">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <p className="truncate font-medium text-ink">{task.title}</p>
