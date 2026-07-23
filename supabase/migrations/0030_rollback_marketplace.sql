@@ -2,6 +2,8 @@
 -- Phase 30 — Rollback the peer-to-peer marketplace.
 -- Drops all marketplace tables, functions, storage, policies, enum values and
 -- columns added for Phase 1/2 and restores the original ratings/disputes shape.
+-- Safe to run on a fresh database (objects won't exist) and on the production
+-- database that has the marketplace schema applied.
 -- ============================================================================
 
 -- ----------------------------------------------------------------------------
@@ -14,11 +16,19 @@ EXCEPTION
   WHEN OTHERS THEN NULL;
 END $$;
 
-DROP POLICY IF EXISTS marketplace_select_auth ON storage.objects;
-DROP POLICY IF EXISTS marketplace_select_admin ON storage.objects;
-DROP POLICY IF EXISTS marketplace_insert_own ON storage.objects;
-DROP POLICY IF EXISTS marketplace_delete_own_or_admin ON storage.objects;
-DROP POLICY IF EXISTS proofs_select_admin ON storage.objects;
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'storage' AND table_name = 'objects'
+  ) THEN
+    DROP POLICY IF EXISTS marketplace_select_auth ON storage.objects;
+    DROP POLICY IF EXISTS marketplace_select_admin ON storage.objects;
+    DROP POLICY IF EXISTS marketplace_insert_own ON storage.objects;
+    DROP POLICY IF EXISTS marketplace_delete_own_or_admin ON storage.objects;
+    DROP POLICY IF EXISTS proofs_select_admin ON storage.objects;
+  END IF;
+END $$;
 
 -- ----------------------------------------------------------------------------
 -- Drop marketplace functions before the types they reference.
@@ -30,9 +40,31 @@ DROP FUNCTION IF EXISTS public.market_refund_funds(uuid) CASCADE;
 -- ----------------------------------------------------------------------------
 -- Remove rows that depend on the marketplace tables.
 -- ----------------------------------------------------------------------------
-DELETE FROM public.ratings WHERE listing_order_id IS NOT NULL;
-DELETE FROM public.disputes WHERE listing_order_id IS NOT NULL;
-DELETE FROM public.tasks WHERE listing_order_id IS NOT NULL OR category = 'Marketplace delivery';
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'ratings' AND column_name = 'listing_order_id'
+  ) THEN
+    EXECUTE 'DELETE FROM public.ratings WHERE listing_order_id IS NOT NULL';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'disputes' AND column_name = 'listing_order_id'
+  ) THEN
+    EXECUTE 'DELETE FROM public.disputes WHERE listing_order_id IS NOT NULL';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'tasks' AND column_name = 'listing_order_id'
+  ) THEN
+    EXECUTE $q$ DELETE FROM public.tasks WHERE listing_order_id IS NOT NULL OR category = 'Marketplace delivery' $q$;
+  ELSE
+    DELETE FROM public.tasks WHERE category = 'Marketplace delivery';
+  END IF;
+END $$;
 
 -- ----------------------------------------------------------------------------
 -- Drop marketplace tables.
@@ -75,4 +107,3 @@ DROP TYPE IF EXISTS public.listing_order_status CASCADE;
 DROP TYPE IF EXISTS public.delivery_option CASCADE;
 DROP TYPE IF EXISTS public.listing_condition CASCADE;
 DROP TYPE IF EXISTS public.listing_status CASCADE;
-
