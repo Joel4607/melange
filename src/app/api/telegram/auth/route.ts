@@ -33,7 +33,7 @@ export async function POST(request: Request) {
 
   // If a link token is present, associate this Telegram account with the profile.
   if (data.startParam) {
-    const token = verifyTelegramLinkToken(data.startParam, botToken);
+    const token = await verifyTelegramLinkToken(data.startParam);
     if (token) {
       const { data: profile } = await db
         .from("profiles")

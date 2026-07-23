@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import { getServiceClient } from "@/lib/supabase/service";
 
 export interface TelegramWebAppUser {
   id: number;
@@ -74,40 +75,34 @@ export function validateInitData(
   };
 }
 
-export function createTelegramLinkToken(profileId: string, secret: string): string {
-  const payload = Buffer.from(
-    JSON.stringify({ profileId, exp: Date.now() + 10 * 60 * 1000 }),
-  ).toString("base64url");
-  const sig = crypto
-    .createHmac("sha256", secret)
-    .update(payload)
-    .digest("base64url");
-  return `${payload}.${sig}`;
+export async function createTelegramLinkToken(profileId: string): Promise<string> {
+  const db = getServiceClient();
+  const token = crypto.randomBytes(16).toString("hex");
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+  const { error } = await db.from("telegram_link_tokens").insert({
+    token,
+    profile_id: profileId,
+    expires_at: expiresAt,
+  });
+  if (error) throw new Error(`createTelegramLinkToken: ${error.message}`);
+  return token;
 }
 
-export function verifyTelegramLinkToken(
+export async function verifyTelegramLinkToken(
   token: string,
-  secret: string,
-): { profileId: string } | null {
-  const [payload, sig] = token.split(".");
-  if (!payload || !sig) return null;
-  const expected = crypto
-    .createHmac("sha256", secret)
-    .update(payload)
-    .digest("base64url");
-  if (!crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(sig))) return null;
+): Promise<{ profileId: string } | null> {
+  const db = getServiceClient();
+  const { data, error } = await db
+    .from("telegram_link_tokens")
+    .select("profile_id, expires_at, used_at")
+    .eq("token", token)
+    .maybeSingle<{ profile_id: string; expires_at: string; used_at: string | null }>();
+  if (error || !data) return null;
+  if (data.used_at) return null;
+  if (new Date() > new Date(data.expires_at)) return null;
 
-  let data: { profileId: string; exp: number };
-  try {
-    data = JSON.parse(Buffer.from(payload, "base64url").toString("utf-8")) as {
-      profileId: string;
-      exp: number;
-    };
-  } catch {
-    return null;
-  }
-  if (Date.now() > data.exp) return null;
-  return { profileId: data.profileId };
+  await db.from("telegram_link_tokens").update({ used_at: new Date().toISOString() }).eq("token", token);
+  return { profileId: data.profile_id };
 }
 
 export function getBotUsernameFromToken(botToken: string): Promise<string | null> {
