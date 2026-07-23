@@ -202,7 +202,6 @@ export function ListingForm() {
             <label className="mb-1.5 block text-sm font-medium text-ink">Seller delivery fee (GHS)</label>
             <input
               type="number"
-              name="seller_delivery_fee"
               min="0"
               step="0.01"
               value={sellerDeliveryFee}
