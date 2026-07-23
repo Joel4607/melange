@@ -1,6 +1,5 @@
 import { redirect, notFound } from "next/navigation";
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
@@ -104,15 +103,11 @@ export default async function OrderDetailPage({
           </div>
 
           {photoUrls[0] ? (
-            <div className="relative mt-5 aspect-video w-full overflow-hidden rounded-2xl">
-              <Image
-                src={photoUrls[0]}
-                alt={listing?.title ?? ""}
-                fill
-                sizes="(max-width: 1024px) 100vw, 50vw"
-                className="object-cover"
-              />
-            </div>
+            <img
+              src={photoUrls[0]}
+              alt={listing?.title ?? ""}
+              className="mt-5 aspect-video w-full rounded-2xl object-cover"
+            />
           ) : null}
 
           <div className="mt-5 grid gap-4 sm:grid-cols-2">
@@ -133,11 +128,7 @@ export default async function OrderDetailPage({
             <div className="rounded-2xl border border-cream-deep bg-cream/40 p-4">
               <p className="text-sm text-muted">Delivery option</p>
               <p className="font-display text-xl font-semibold text-ink">
-                {order.delivery_option === "pickup"
-                  ? "Pickup"
-                  : order.delivery_option === "seller_delivery"
-                    ? "Seller delivery"
-                    : "Runner delivery"}
+                {order.delivery_option === "pickup" ? "Pickup" : "Seller delivery"}
               </p>
             </div>
           </div>
@@ -152,13 +143,9 @@ export default async function OrderDetailPage({
             </div>
           ) : null}
 
-          {(order.delivery_option === "seller_delivery" || order.delivery_option === "runner_delivery") &&
-          order.delivery_lat != null &&
-          order.delivery_lng != null ? (
+          {order.delivery_option === "seller_delivery" && order.delivery_lat != null && order.delivery_lng != null ? (
             <div className="mt-5">
-              <p className="font-display font-semibold text-green-deep">
-                {order.delivery_option === "runner_delivery" ? "Drop-off location" : "Delivery location"}
-              </p>
+              <p className="font-display font-semibold text-green-deep">Delivery location</p>
               <MapView
                 center={{ lat: order.delivery_lat, lng: order.delivery_lng }}
                 markers={[
@@ -172,18 +159,6 @@ export default async function OrderDetailPage({
                 ]}
                 className="mt-3 h-64"
               />
-            </div>
-          ) : null}
-
-          {order.delivery_option === "runner_delivery" && order.delivery_task_id ? (
-            <div className="mt-5 rounded-2xl border border-cream-deep bg-cream/40 p-4">
-              <p className="text-sm text-muted">Delivery task</p>
-              <Link
-                href={`/app/errands/${order.delivery_task_id}`}
-                className="font-medium text-green-deep hover:underline"
-              >
-                View delivery task →
-              </Link>
             </div>
           ) : null}
 

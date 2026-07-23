@@ -1,5 +1,53 @@
 import { getServiceClient } from "@/lib/supabase/service";
+import { estimateFee } from "@/lib/pricing";
+import { haversineKm, type GeoPoint, type Urgency } from "@/lib/algorithm";
 import type { ListingOrderRow } from "./rows";
+
+const PLATFORM_FEE_RATE = 0.05;
+const PLATFORM_FEE_MIN = 1.0;
+
+export interface MarketplaceFeeEstimate {
+  price: number;
+  deliveryFee: number;
+  platformFee: number;
+  total: number;
+  sellerPayout: number;
+}
+
+export function computeMarketplaceFees(
+  price: number,
+  sellerDeliveryFee: number,
+  deliveryOption: "pickup" | "seller_delivery" | "runner_delivery",
+  sellerLocation: GeoPoint,
+  buyerLocation: GeoPoint | null,
+  urgency: Urgency,
+): MarketplaceFeeEstimate {
+  let deliveryFee = 0;
+
+  if (deliveryOption === "runner_delivery" && buyerLocation) {
+    const distanceKm = haversineKm(sellerLocation, buyerLocation);
+    deliveryFee = estimateFee(distanceKm, urgency);
+  } else if (deliveryOption === "seller_delivery") {
+    deliveryFee = Math.max(0, sellerDeliveryFee);
+  }
+
+  let platformFee = 0;
+  if (price > 0) {
+    platformFee = Math.max(price * PLATFORM_FEE_RATE, PLATFORM_FEE_MIN);
+    platformFee = Math.round(platformFee * 100) / 100;
+  }
+
+  const total = price + deliveryFee;
+  const sellerPayout = Math.max(0, price - platformFee) + (deliveryOption === "seller_delivery" ? deliveryFee : 0);
+
+  return {
+    price,
+    deliveryFee,
+    platformFee,
+    total,
+    sellerPayout,
+  };
+}
 
 export async function marketHoldFunds(orderId: string): Promise<void> {
   const db = getServiceClient();

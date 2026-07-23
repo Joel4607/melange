@@ -177,27 +177,23 @@ export function ListingForm() {
       <div>
         <label className="mb-1.5 block text-sm font-medium text-ink">Delivery options</label>
         <div className="flex flex-wrap gap-3">
-          {[
-            { value: "pickup", label: "Pickup" },
-            { value: "seller_delivery", label: "Seller delivery" },
-            { value: "runner_delivery", label: "Runner delivery" },
-          ].map((option) => (
+          {["pickup", "seller_delivery"].map((option) => (
             <label
-              key={option.value}
+              key={option}
               className={`flex cursor-pointer items-center gap-2 rounded-full border px-4 py-2 text-sm transition ${
-                deliveryOptions.includes(option.value)
+                deliveryOptions.includes(option)
                   ? "border-green bg-green/5 text-green-deep"
                   : "border-cream-deep bg-white text-ink hover:bg-cream/40"
               }`}
             >
               <input
                 type="checkbox"
-                value={option.value}
-                checked={deliveryOptions.includes(option.value)}
-                onChange={() => toggleDeliveryOption(option.value)}
+                value={option}
+                checked={deliveryOptions.includes(option)}
+                onChange={() => toggleDeliveryOption(option)}
                 className="h-4 w-4 accent-green"
               />
-              {option.label}
+              {option === "pickup" ? "Pickup" : "Seller delivery"}
             </label>
           ))}
         </div>

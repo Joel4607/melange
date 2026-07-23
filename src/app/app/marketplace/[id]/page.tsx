@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import { notFound } from "next/navigation";
-import Image from "next/image";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
@@ -68,15 +67,9 @@ export default async function ListingDetailPage({
       <main className="mx-auto w-full max-w-4xl flex-1 px-5 py-10">
         <div className="grid gap-6 lg:grid-cols-2">
           <div className="space-y-5">
-            <div className="relative overflow-hidden rounded-[1.5rem] border border-cream-deep bg-white shadow-sm">
+            <div className="overflow-hidden rounded-[1.5rem] border border-cream-deep bg-white shadow-sm">
               {photoUrls[0] ? (
-                <Image
-                  src={photoUrls[0]}
-                  alt={listing.title}
-                  fill
-                  sizes="(max-width: 1024px) 100vw, 50vw"
-                  className="aspect-square object-cover"
-                />
+                <img src={photoUrls[0]} alt={listing.title} className="aspect-square w-full object-cover" />
               ) : (
                 <div className="flex aspect-square w-full items-center justify-center text-sm text-muted">
                   No photo
@@ -86,14 +79,8 @@ export default async function ListingDetailPage({
             {photoUrls.length > 1 ? (
               <div className="grid grid-cols-4 gap-2">
                 {photoUrls.slice(1).map((url, i) => (
-                  <div key={i} className="relative aspect-square overflow-hidden rounded-xl border border-cream-deep">
-                    <Image
-                      src={url}
-                      alt={`${listing.title} ${i + 2}`}
-                      fill
-                      sizes="(max-width: 768px) 25vw, 15vw"
-                      className="object-cover"
-                    />
+                  <div key={i} className="aspect-square overflow-hidden rounded-xl border border-cream-deep">
+                    <img src={url} alt={`${listing.title} ${i + 2}`} className="h-full w-full object-cover" />
                   </div>
                 ))}
               </div>

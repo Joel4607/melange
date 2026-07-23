@@ -621,12 +621,6 @@ export async function markPickedUp(taskId: string) {
     task_title: task.title,
   });
 
-  await db
-    .from("listing_orders")
-    .update({ status: "in_delivery", updated_at: new Date().toISOString() })
-    .eq("delivery_task_id", taskId)
-    .eq("status", "paid");
-
   revalidatePath(`/app/errands/${taskId}`);
   revalidatePath("/app");
 }
@@ -715,26 +709,6 @@ export async function markDelivered(taskId: string, formData: FormData) {
     task_id: taskId,
     task_title: task.title,
   });
-
-  const { data: linkedOrder } = await db
-    .from("listing_orders")
-    .update({ status: "delivered", updated_at: new Date().toISOString() })
-    .eq("delivery_task_id", taskId)
-    .eq("status", "in_delivery")
-    .select("id, buyer_id, seller_id")
-    .maybeSingle<{ id: string; buyer_id: string; seller_id: string }>();
-  if (linkedOrder) {
-    await createNotification(linkedOrder.buyer_id, "marketplace_delivered", {
-      listing_order_id: linkedOrder.id,
-      listing_title: task.title,
-    });
-    await createNotification(linkedOrder.seller_id, "marketplace_delivered", {
-      listing_order_id: linkedOrder.id,
-      listing_title: task.title,
-    });
-    revalidatePath(`/app/marketplace/orders/${linkedOrder.id}`);
-    revalidatePath("/app/marketplace/orders");
-  }
 
   const { data: profile } = await db
     .from("runner_profile")

@@ -4,15 +4,7 @@ import { useState, useTransition } from "react";
 import { MapView } from "../map-view";
 import { createOrder } from "./actions";
 import type { ListingRow } from "@/lib/server/rows";
-import { computeMarketplaceFees } from "@/lib/marketplace-fees";
-import { estimateFee } from "@/lib/pricing";
-import { haversineKm } from "@/lib/algorithm";
-
-const OPTION_LABELS: Record<string, string> = {
-  pickup: "Pickup",
-  seller_delivery: "Seller delivery",
-  runner_delivery: "Runner delivery",
-};
+import { computeMarketplaceFees } from "@/lib/server/marketplace";
 
 export function OrderForm({ listing }: { listing: ListingRow }) {
   const [deliveryOption, setDeliveryOption] = useState<string>(listing.delivery_options[0] ?? "pickup");
@@ -26,19 +18,13 @@ export function OrderForm({ listing }: { listing: ListingRow }) {
     lng: listing.location_lng,
   };
   const buyerLocation = deliveryLat != null && deliveryLng != null ? { lat: deliveryLat, lng: deliveryLng } : null;
-
-  let deliveryFee = 0;
-  if (deliveryOption === "seller_delivery") {
-    deliveryFee = Number(listing.seller_delivery_fee) || 0;
-  } else if (deliveryOption === "runner_delivery" && buyerLocation) {
-    const distanceKm = haversineKm(sellerLocation, buyerLocation);
-    deliveryFee = estimateFee(distanceKm, "normal");
-  }
-
   const fees = computeMarketplaceFees(
     Number(listing.price),
-    deliveryFee,
+    Number(listing.seller_delivery_fee),
     deliveryOption as "pickup" | "seller_delivery" | "runner_delivery",
+    sellerLocation,
+    buyerLocation,
+    "normal",
   );
 
   function handleMapClick(lat: number, lng: number) {
@@ -62,10 +48,7 @@ export function OrderForm({ listing }: { listing: ListingRow }) {
 
   function submit(formData: FormData) {
     setError(null);
-    if (
-      (deliveryOption === "seller_delivery" || deliveryOption === "runner_delivery") &&
-      (deliveryLat == null || deliveryLng == null)
-    ) {
+    if (deliveryOption === "seller_delivery" && (deliveryLat == null || deliveryLng == null)) {
       setError("Select a delivery location on the map or use your current location");
       return;
     }
@@ -81,8 +64,6 @@ export function OrderForm({ listing }: { listing: ListingRow }) {
     });
   }
 
-  const showMap = deliveryOption === "seller_delivery" || deliveryOption === "runner_delivery";
-
   return (
     <form action={submit} className="space-y-5">
       {error ? (
@@ -95,10 +76,14 @@ export function OrderForm({ listing }: { listing: ListingRow }) {
           <label
             key={opt}
             className={`flex cursor-pointer items-center justify-between rounded-2xl border px-4 py-3 transition ${
-              deliveryOption === opt ? "border-green bg-green/5" : "border-cream-deep bg-white hover:bg-cream/40"
+              deliveryOption === opt
+                ? "border-green bg-green/5"
+                : "border-cream-deep bg-white hover:bg-cream/40"
             }`}
           >
-            <span className="text-sm font-medium text-green-deep">{OPTION_LABELS[opt] ?? opt}</span>
+            <span className="text-sm font-medium text-green-deep">
+              {opt === "pickup" ? "Pickup" : "Seller delivery"}
+            </span>
             <input
               type="radio"
               name="delivery_option"
@@ -111,12 +96,10 @@ export function OrderForm({ listing }: { listing: ListingRow }) {
         ))}
       </div>
 
-      {showMap ? (
+      {deliveryOption === "seller_delivery" ? (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-medium text-ink">
-              {deliveryOption === "runner_delivery" ? "Drop-off location" : "Delivery location"}
-            </p>
+            <p className="text-sm font-medium text-ink">Delivery location</p>
             <button
               type="button"
               onClick={handleUseCurrentLocation}
