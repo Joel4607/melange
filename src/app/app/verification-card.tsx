@@ -58,7 +58,7 @@ export function VerificationCard({
         <ShieldCheck className="h-5 w-5 text-orange-deep" aria-hidden /> Identity verification
       </p>
       <p className="mt-1 text-sm text-muted">
-        Get verified to build trust and unlock full platform features.
+        Upload your Ghana Card. An admin will review it and activate your account.
       </p>
       <Link
         href="/app/verify"
