@@ -25,14 +25,12 @@ export function MapView({
   className = "h-80",
   liveRunner,
   liveIntervalMs = 5000,
-  onMapClick,
 }: {
   center: { lat: number; lng: number };
   markers: MapMarker[];
   className?: string;
   liveRunner?: LiveRunner | null;
   liveIntervalMs?: number;
-  onMapClick?: (lat: number, lng: number) => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -64,11 +62,6 @@ export function MapView({
     mapRef.current = map;
     layerGroupRef.current = group;
     const markerMap = markerRefs.current;
-
-    if (onMapClick) {
-      const handleClick = (e: L.LeafletMouseEvent) => onMapClick(e.latlng.lat, e.latlng.lng);
-      map.on("click", handleClick);
-    }
 
     return () => {
       map.remove();
