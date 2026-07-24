@@ -13,6 +13,7 @@ import {
 } from "@/lib/server/presence";
 import { enforceRateLimit, withinRateLimit } from "@/lib/server/rate-limit";
 import { createNotification } from "@/lib/server/notifications";
+import { notifyAdminsOfVerification, notifyAdminsOfDispute } from "@/lib/telegram/messaging";
 import {
   evaluateCancellationFraud,
   evaluateTaskFraud,
@@ -868,7 +869,15 @@ export async function raiseDispute(taskId: string, formData: FormData) {
   }
   if (!inserted?.length) return;
 
-  await resolveDispute(inserted[0].id);
+  const result = await resolveDispute(inserted[0].id);
+
+  if (result.escalate) {
+    try {
+      await notifyAdminsOfDispute(inserted[0].id, task.title);
+    } catch {
+      // Notification failure must not block the dispute.
+    }
+  }
 
   if (task.selected_runner_id) {
     await createNotification(task.selected_runner_id, "dispute_raised", {
@@ -1052,19 +1061,29 @@ export async function submitVerification(formData: FormData) {
     throw new Error(backError.message);
   }
 
-  const { error } = await supabase.from("verification_requests").insert({
-    user_id: userId,
-    front_photo_path: frontPath,
-    back_photo_path: backPath,
-    phone,
-    email,
-  });
-  if (error) {
+  const { data: inserted, error } = await supabase
+    .from("verification_requests")
+    .insert({
+      user_id: userId,
+      front_photo_path: frontPath,
+      back_photo_path: backPath,
+      phone,
+      email,
+    })
+    .select("id")
+    .single<{ id: string }>();
+  if (error || !inserted) {
     await Promise.all([
       db.storage.from("verification").remove([frontPath]),
       db.storage.from("verification").remove([backPath]),
     ]);
-    throw new Error(error.message);
+    throw new Error(error?.message ?? "Failed to submit verification request");
+  }
+
+  try {
+    await notifyAdminsOfVerification(inserted.id, userId);
+  } catch {
+    // Notification failure must not block the submission.
   }
 
   revalidatePath("/app");

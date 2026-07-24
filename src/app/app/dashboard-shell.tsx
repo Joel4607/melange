@@ -89,7 +89,7 @@ export function DashboardShell({
           {isAdmin ? (
             <NavLink
               item={{
-                href: "/app/admin",
+                href: "/admin",
                 label: "Admin",
                 icon: <ShieldCheck className="h-5 w-5" />,
               }}
