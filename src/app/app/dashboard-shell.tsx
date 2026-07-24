@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, LayoutDashboard, Users, PlusCircle, Wallet, ShieldCheck, Settings, LogOut, Bike, PackageCheck } from "lucide-react";
+import { Menu, X, LayoutDashboard, Users, PlusCircle, Wallet, Settings, LogOut, Bike, PackageCheck } from "lucide-react";
 import { Logo } from "@/components/brand";
 import { NotificationsPopover } from "./notifications-popover";
 import { RealtimeStatus } from "./realtime-status";
@@ -39,14 +39,12 @@ export function DashboardShell({
   user,
   role,
   firstName,
-  isAdmin,
   notifications,
   children,
 }: {
   user: { id: string };
   role: Role;
   firstName: string;
-  isAdmin: boolean;
   notifications: NotificationSummary[];
   children: React.ReactNode;
 }) {
@@ -86,15 +84,6 @@ export function DashboardShell({
           {items.map((item) => (
             <NavLink key={item.href} item={item} />
           ))}
-          {isAdmin ? (
-            <NavLink
-              item={{
-                href: "/admin",
-                label: "Admin",
-                icon: <ShieldCheck className="h-5 w-5" />,
-              }}
-            />
-          ) : null}
         </nav>
 
         <div className="absolute bottom-0 left-0 w-full border-t border-cream-deep p-6">

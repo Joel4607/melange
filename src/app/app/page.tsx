@@ -60,6 +60,8 @@ export default async function AppHome() {
     .eq("id", user.id)
     .maybeSingle<{ name: string | null; phone: string | null; verified: boolean; is_admin: boolean }>();
 
+  if (profile?.is_admin) redirect("/admin");
+
   const metaPhone = (user.user_metadata?.phone as string | undefined) ?? "";
   if (profile && !profile.phone && metaPhone) {
     await supabase.from("profiles").update({ phone: metaPhone }).eq("id", user.id);
@@ -143,7 +145,7 @@ export default async function AppHome() {
       user={{ id: user.id }}
       role={role}
       firstName={firstName}
-      isAdmin={profile?.is_admin ?? false}
+
       notifications={notifications ?? []}
     >
       {role === "buyer" ? (
