@@ -24,7 +24,7 @@ async function requireAdmin(): Promise<string> {
     .select("is_admin")
     .eq("id", userId)
     .maybeSingle<{ is_admin: boolean }>();
-  if (!data?.is_admin) redirect("/app");
+  if (!data?.is_admin) redirect("/admin/login");
   return userId;
 }
 
@@ -40,7 +40,7 @@ export async function adminResolveDispute(
   }
   await resolveDisputeAdmin(disputeId, resolution);
 
-  revalidatePath("/app/admin");
+  revalidatePath("/admin");
 }
 
 export async function updateFraudFlag(
@@ -83,7 +83,7 @@ export async function updateFraudFlag(
   if (runnerStatus === "quarantined") update.is_available = false;
   await db.from("runner_profile").update(update).eq("user_id", flag.runner_id);
 
-  revalidatePath("/app/admin");
+  revalidatePath("/admin");
 }
 
 export async function approveVerificationAsAdmin(requestId: string, adminId: string) {
@@ -109,7 +109,7 @@ export async function approveVerificationAsAdmin(requestId: string, adminId: str
     .update({ verified: true, updated_at: now })
     .eq("user_id", updated.user_id);
 
-  revalidatePath("/app/admin");
+  revalidatePath("/admin");
   revalidatePath("/app");
   revalidatePath("/app/verify");
   return true;
@@ -143,7 +143,7 @@ export async function rejectVerificationAsAdmin(requestId: string, adminId: stri
     .update({ verified: false, updated_at: now })
     .eq("user_id", updated.user_id);
 
-  revalidatePath("/app/admin");
+  revalidatePath("/admin");
   revalidatePath("/app");
   revalidatePath("/app/verify");
   return true;

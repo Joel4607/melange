@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireTelegramAdmin } from "@/lib/telegram/admin-auth";
-import { rejectVerificationAsAdmin } from "@/app/app/admin/actions";
+import { rejectVerificationAsAdmin } from "@/app/admin/actions";
 
 export async function POST(
   request: Request,
