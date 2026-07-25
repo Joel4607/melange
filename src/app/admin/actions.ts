@@ -87,7 +87,11 @@ export async function updateFraudFlag(
   revalidatePath("/admin");
 }
 
-export async function approveVerificationAsAdmin(requestId: string, adminId: string) {
+export async function approveVerificationAsAdmin(
+  requestId: string,
+  adminId: string,
+  skipRevalidate = false,
+) {
   const db = getServiceClient();
   const { data: request } = await db
     .from("verification_requests")
@@ -110,9 +114,11 @@ export async function approveVerificationAsAdmin(requestId: string, adminId: str
     .update({ verified: true, updated_at: now })
     .eq("user_id", updated.user_id);
 
-  revalidatePath("/admin");
-  revalidatePath("/app");
-  revalidatePath("/app/verify");
+  if (!skipRevalidate) {
+    revalidatePath("/admin");
+    revalidatePath("/app");
+    revalidatePath("/app/verify");
+  }
   return true;
 }
 
@@ -121,7 +127,11 @@ export async function approveVerification(requestId: string) {
   await approveVerificationAsAdmin(requestId, adminId);
 }
 
-export async function rejectVerificationAsAdmin(requestId: string, adminId: string) {
+export async function rejectVerificationAsAdmin(
+  requestId: string,
+  adminId: string,
+  skipRevalidate = false,
+) {
   const db = getServiceClient();
   const { data: request } = await db
     .from("verification_requests")
@@ -144,9 +154,11 @@ export async function rejectVerificationAsAdmin(requestId: string, adminId: stri
     .update({ verified: false, updated_at: now })
     .eq("user_id", updated.user_id);
 
-  revalidatePath("/admin");
-  revalidatePath("/app");
-  revalidatePath("/app/verify");
+  if (!skipRevalidate) {
+    revalidatePath("/admin");
+    revalidatePath("/app");
+    revalidatePath("/app/verify");
+  }
   return true;
 }
 
