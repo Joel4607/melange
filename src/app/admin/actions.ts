@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getServiceClient } from "@/lib/supabase/service";
 import { resolveDisputeAdmin } from "@/lib/server/disputes";
 import { createTelegramLinkToken, getBotUsernameFromToken } from "@/lib/telegram/init-data";
+import { getTelegramBotToken } from "@/lib/telegram/env";
 
 async function requireUserId(): Promise<string> {
   const supabase = await createClient();
@@ -156,7 +157,7 @@ export async function rejectVerification(requestId: string) {
 
 export async function generateTelegramLink(): Promise<{ ok: boolean; link?: string; error?: string }> {
   const adminId = await requireAdmin();
-  const botToken = process.env.TELEGRAM_BOT_TOKEN;
+  const botToken = getTelegramBotToken();
   if (!botToken) return { ok: false, error: "Telegram bot token is not configured" };
 
   const [username, { data: profile }] = await Promise.all([

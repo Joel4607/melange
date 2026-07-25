@@ -4,9 +4,10 @@ import {
   validateInitData,
   verifyTelegramLinkToken,
 } from "@/lib/telegram/init-data";
+import { getTelegramBotToken } from "@/lib/telegram/env";
 
 export async function POST(request: Request) {
-  const botToken = process.env.TELEGRAM_BOT_TOKEN;
+  const botToken = getTelegramBotToken();
   if (!botToken) {
     return NextResponse.json({ ok: false, error: "Telegram bot not configured" }, { status: 500 });
   }
