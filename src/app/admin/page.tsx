@@ -13,22 +13,35 @@ import {
 } from "./actions";
 import type { DisputeRow, FraudFlagRow, VerificationRequestRow } from "@/lib/server/rows";
 
-async function signedUrl(
+async function signedStorageUrl(
   db: ReturnType<typeof getServiceClient>,
+  bucket: string,
   path: string | null,
 ): Promise<string | null> {
   if (!path) return null;
   if (path.startsWith("http")) return path;
-  const { data, error } = await db.storage
-    .from("verification")
-    .createSignedUrl(path, 60 * 5);
+  const { data, error } = await db.storage.from(bucket).createSignedUrl(path, 60 * 5);
   if (error || !data) return null;
   return data.signedUrl;
+}
+
+async function signedUrl(
+  db: ReturnType<typeof getServiceClient>,
+  path: string | null,
+): Promise<string | null> {
+  return signedStorageUrl(db, "verification", path);
 }
 
 export const metadata: Metadata = {
   title: "Admin — Mélange",
 };
+
+interface ProofView {
+  photo_url: string | null;
+  gps_lat: number | null;
+  gps_lng: number | null;
+  captured_at: string;
+}
 
 interface DisputeWithTask extends DisputeRow {
   task_title: string | null;
@@ -41,6 +54,7 @@ interface DisputeWithTask extends DisputeRow {
     phone: string | null;
     email: string | null;
   } | null;
+  proofs: ProofView[];
   ledger: { user_id: string; type: string; amount: string; created_at: string }[];
   payment_reference: string | null;
 }
@@ -92,6 +106,7 @@ export default async function AdminPage() {
         buyer_id: t?.buyer_id ?? null,
         runner_id: t?.selected_runner_id ?? null,
         runner_verification: null,
+        proofs: [],
         ledger: [],
         payment_reference: t?.payment_reference ?? null,
       });
@@ -177,6 +192,31 @@ export default async function AdminPage() {
     ledgerByTask.set(row.task_id, list);
   }
 
+  const { data: proofRows } = await db
+    .from("proofs")
+    .select("task_id, photo_path, gps_lat, gps_lng, captured_at")
+    .in("task_id", Array.from(taskIds))
+    .order("captured_at", { ascending: false })
+    .returns<{
+      task_id: string;
+      photo_path: string;
+      gps_lat: number | null;
+      gps_lng: number | null;
+      captured_at: string;
+    }[]>();
+
+  const proofsByTask = new Map<string, ProofView[]>();
+  for (const p of proofRows ?? []) {
+    const list = proofsByTask.get(p.task_id) ?? [];
+    list.push({
+      photo_url: p.photo_path,
+      gps_lat: p.gps_lat,
+      gps_lng: p.gps_lng,
+      captured_at: p.captured_at,
+    });
+    proofsByTask.set(p.task_id, list);
+  }
+
   const { data: profiles } = await db
     .from("profiles")
     .select("id, name")
@@ -196,6 +236,12 @@ export default async function AdminPage() {
       };
     }
     d.ledger = ledgerByTask.get(d.task_id) ?? [];
+
+    const proofs = proofsByTask.get(d.task_id) ?? [];
+    for (const p of proofs) {
+      p.photo_url = await signedStorageUrl(db, "proofs", p.photo_url);
+    }
+    d.proofs = proofs;
   }
 
   const { data: tasks } = await db
@@ -239,9 +285,17 @@ export default async function AdminPage() {
           <Shield className="h-4 w-4" aria-hidden /> Admin
         </span>
 
-        <h1 className="mt-4 font-display text-fluid-h2 font-semibold text-green-deep">
-          Trust & safety
-        </h1>
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <h1 className="font-display text-fluid-h2 font-semibold text-green-deep">
+            Trust & safety
+          </h1>
+          <Link
+            href="/admin/audit"
+            className="text-sm font-medium text-green-deep underline transition hover:text-green"
+          >
+            View admin audit log
+          </Link>
+        </div>
 
         <section className="mt-6 rounded-2xl border border-cream-deep bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between">
@@ -360,6 +414,40 @@ export default async function AdminPage() {
                               {entry.type} · {nameById.get(entry.user_id) ?? "Unknown"}
                             </span>
                             <span>GHS {Number(entry.amount).toFixed(2)}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+
+                  {d.proofs.length > 0 ? (
+                    <div className="mt-3 rounded-xl border border-cream-deep bg-cream/40 p-3 text-sm">
+                      <p className="font-medium text-green-deep">Delivery proof</p>
+                      <ul className="mt-1 space-y-2 text-muted">
+                        {d.proofs.map((p, i) => (
+                          <li key={i} className="flex flex-col gap-1">
+                            <div className="flex items-center gap-3">
+                              {p.photo_url ? (
+                                <a
+                                  href={p.photo_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-green-soft underline"
+                                >
+                                  View photo
+                                </a>
+                              ) : (
+                                <span>Photo unavailable</span>
+                              )}
+                              <span className="text-xs">
+                                {new Date(p.captured_at).toLocaleString()}
+                              </span>
+                            </div>
+                            {p.gps_lat != null && p.gps_lng != null ? (
+                              <span className="text-xs">
+                                GPS: {p.gps_lat.toFixed(5)}, {p.gps_lng.toFixed(5)}
+                              </span>
+                            ) : null}
                           </li>
                         ))}
                       </ul>

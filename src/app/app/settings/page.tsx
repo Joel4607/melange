@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft, User, Shield, Bike, PackageCheck, Star, Wallet } from "lucide-react";
+import { ArrowLeft, User, Shield, Bike, PackageCheck, Star, Wallet, ShieldCheck, Clock, XCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getServiceClient } from "@/lib/supabase/service";
 import { Logo } from "@/components/brand";
@@ -29,6 +29,14 @@ export default async function SettingsPage() {
     .select("name, phone, verified, is_admin")
     .eq("id", user.id)
     .single();
+
+  const { data: latestVerification } = await supabase
+    .from("verification_requests")
+    .select("id, status, created_at")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle<{ id: string; status: "pending" | "approved" | "rejected"; created_at: string }>();
 
   const { data: runnerProfile } = await getServiceClient()
     .from("runner_profile")
@@ -82,7 +90,7 @@ export default async function SettingsPage() {
         <h1 className="font-display text-fluid-h2 font-semibold text-green-deep">Settings</h1>
 
         <div className="mt-6">
-          <VerificationCard verified={profile?.verified ?? false} request={null} />
+          <VerificationCard verified={profile?.verified ?? false} request={latestVerification ?? null} />
         </div>
 
         <section className="mt-5 rounded-2xl border border-cream-deep bg-white p-6 shadow-sm">
@@ -138,6 +146,26 @@ export default async function SettingsPage() {
                 {role === "runner" ? <Bike className="h-3.5 w-3.5" aria-hidden /> : <PackageCheck className="h-3.5 w-3.5" aria-hidden />}
                 {role === "runner" ? "Runner" : "Customer"}
               </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-muted">Verification</span>
+              {profile?.verified ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-green/10 px-2.5 py-1 text-xs font-medium text-green-deep">
+                  <ShieldCheck className="h-3.5 w-3.5" aria-hidden /> Verified
+                </span>
+              ) : latestVerification?.status === "pending" ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-orange/10 px-2.5 py-1 text-xs font-medium text-orange-deep">
+                  <Clock className="h-3.5 w-3.5" aria-hidden /> Pending
+                </span>
+              ) : latestVerification?.status === "rejected" ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-orange/10 px-2.5 py-1 text-xs font-medium text-orange-deep">
+                  <XCircle className="h-3.5 w-3.5" aria-hidden /> Rejected
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-cream/40 px-2.5 py-1 text-xs font-medium text-muted">
+                  <Shield className="h-3.5 w-3.5" aria-hidden /> Not verified
+                </span>
+              )}
             </div>
             {profile?.is_admin ? (
               <div className="flex items-center justify-between">
