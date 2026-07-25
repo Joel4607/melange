@@ -1,28 +1,65 @@
 import { getServiceClient } from "@/lib/supabase/service";
-import { getTelegramBotToken } from "./env";
+import { getTelegramBotToken, getSiteUrl } from "./env";
 import { getBotUsernameFromToken } from "./init-data";
 
 const API_BASE = "https://api.telegram.org/bot";
+const MAX_RETRIES = 3;
+const BASE_DELAY_MS = 500;
 
 interface TelegramApiResponse {
   ok: boolean;
   description?: string;
+  error_code?: number;
+  parameters?: { retry_after?: number };
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 async function botApi(method: string, body: unknown): Promise<TelegramApiResponse> {
   const botToken = getTelegramBotToken();
-  if (!botToken) return { ok: false, description: "No bot token configured" };
-
-  try {
-    const res = await fetch(`${API_BASE}${botToken}/${method}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    return (await res.json()) as TelegramApiResponse;
-  } catch {
-    return { ok: false, description: "Network error" };
+  if (!botToken) {
+    console.error(`Telegram API ${method} failed: no bot token configured`);
+    return { ok: false, description: "No bot token configured" };
   }
+
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    try {
+      const res = await fetch(`${API_BASE}${botToken}/${method}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      if (!res.ok) {
+        if (attempt === MAX_RETRIES - 1) {
+          return { ok: false, description: `HTTP ${res.status}` };
+        }
+        await sleep(BASE_DELAY_MS * 2 ** attempt);
+        continue;
+      }
+
+      const data = (await res.json()) as TelegramApiResponse;
+      if (data.ok) return data;
+
+      if (data.error_code === 429 && data.parameters?.retry_after && attempt < MAX_RETRIES - 1) {
+        await sleep(data.parameters.retry_after * 1000 + 100);
+        continue;
+      }
+
+      console.warn(`Telegram API ${method} returned error:`, data);
+      return data;
+    } catch (err) {
+      console.error(`Telegram API ${method} network error (attempt ${attempt + 1}):`, err);
+      if (attempt === MAX_RETRIES - 1) {
+        return { ok: false, description: "Network error" };
+      }
+      await sleep(BASE_DELAY_MS * 2 ** attempt);
+    }
+  }
+
+  return { ok: false, description: "Max retries exceeded" };
 }
 
 export async function sendTelegramMessage(
@@ -52,6 +89,22 @@ export async function answerCallbackQuery(callbackQueryId: string, text?: string
   const res = await botApi("answerCallbackQuery", {
     callback_query_id: callbackQueryId,
     text: text ?? undefined,
+  });
+  return res.ok;
+}
+
+export async function editTelegramMessage(
+  chatId: string,
+  messageId: number,
+  text: string,
+  options?: { reply_markup?: unknown },
+): Promise<boolean> {
+  const res = await botApi("editMessageText", {
+    chat_id: chatId,
+    message_id: messageId,
+    text,
+    parse_mode: "HTML",
+    ...options,
   });
   return res.ok;
 }
@@ -105,10 +158,10 @@ export async function notifyAdminsOfVerification(
 ): Promise<void> {
   const db = getServiceClient();
 
-  const [{ data: request }, { data: profile }] = await Promise.all([
+  const [{ data: request }, { data: profile }, { data: runnerProfile }] = await Promise.all([
     db
       .from("verification_requests")
-      .select("id, user_id, front_photo_path, back_photo_path, phone, email, status")
+      .select("id, user_id, front_photo_path, back_photo_path, phone, email, status, created_at")
       .eq("id", requestId)
       .maybeSingle<{
         id: string;
@@ -118,12 +171,18 @@ export async function notifyAdminsOfVerification(
         phone: string | null;
         email: string | null;
         status: string;
+        created_at: string;
       }>(),
     db
       .from("profiles")
       .select("name")
       .eq("id", userId)
       .maybeSingle<{ name: string | null }>(),
+    db
+      .from("runner_profile")
+      .select("id")
+      .eq("user_id", userId)
+      .maybeSingle<{ id: string }>(),
   ]);
 
   if (!request || request.status !== "pending") return;
@@ -135,18 +194,31 @@ export async function notifyAdminsOfVerification(
 
   if (!frontUrl || !backUrl) return;
 
+  const role = runnerProfile ? "Runner" : "Buyer";
+  const submittedAt = new Date(request.created_at).toLocaleString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
   const name = profile?.name || request.email || "A user";
   const caption = [
-    `New verification request from <b>${escapeHtml(name)}</b>`,
+    `New verification request from <b>${escapeHtml(name)}</b> (${role})`,
     `Phone: ${escapeHtml(request.phone ?? "—")}`,
     request.email ? `Email: ${escapeHtml(request.email)}` : null,
+    `Submitted: ${submittedAt}`,
     `ID: #${requestId.slice(0, 8)}`,
   ]
     .filter(Boolean)
     .join("\n");
 
   const admins = await getLinkedAdminChats();
-  if (admins.length === 0) return;
+  if (admins.length === 0) {
+    console.warn(`No linked admins to notify for verification ${requestId}`);
+    return;
+  }
 
   const media = [
     { type: "photo" as const, media: frontUrl, caption, parse_mode: "HTML" },
@@ -190,17 +262,39 @@ export async function notifyAdminsOfDispute(
 
   const { data: task } = await db
     .from("tasks")
-    .select("id, title, price, fee")
+    .select("id, title, price, fee, buyer_id, selected_runner_id")
     .eq("id", dispute.task_id)
-    .maybeSingle<{ id: string; title: string; price: string; fee: string }>();
+    .maybeSingle<{
+      id: string;
+      title: string;
+      price: string;
+      fee: string;
+      buyer_id: string;
+      selected_runner_id: string | null;
+    }>();
 
-  const price = Number(task?.price ?? 0);
-  const fee = Number(task?.fee ?? 0);
+  if (!task) return;
+
+  const userIds = [task.buyer_id, task.selected_runner_id].filter(Boolean) as string[];
+  const { data: profiles } = await db
+    .from("profiles")
+    .select("id, name")
+    .in("id", userIds)
+    .returns<{ id: string; name: string | null }[]>();
+
+  const namesById = new Map(profiles?.map((p) => [p.id, p.name ?? "—"]) ?? []);
+
+  const price = Number(task.price ?? 0);
+  const fee = Number(task.fee ?? 0);
   const runnerPayout = Math.max(0, price - fee);
+
+  const adminUrl = `${getSiteUrl()}/admin`;
 
   const text = [
     `<b>Escalated dispute</b>`,
-    `Errand: ${escapeHtml(task?.title ?? taskTitle)}`,
+    `Errand: ${escapeHtml(task.title || taskTitle)}`,
+    `Buyer: ${escapeHtml(namesById.get(task.buyer_id) ?? "—")}`,
+    `Runner: ${escapeHtml(task.selected_runner_id ? namesById.get(task.selected_runner_id) ?? "—" : "—")}`,
     `Reason: ${escapeHtml(dispute.reason)}`,
     `Buyer refund: GHS ${price.toFixed(2)}`,
     `Runner payout: GHS ${runnerPayout.toFixed(2)}`,
@@ -213,11 +307,15 @@ export async function notifyAdminsOfDispute(
         { text: "Release to runner", callback_data: `dr:${disputeId}` },
         { text: "Refund buyer", callback_data: `df:${disputeId}` },
       ],
+      [{ text: "View in admin panel", url: adminUrl }],
     ],
   };
 
   const admins = await getLinkedAdminChats();
-  if (admins.length === 0) return;
+  if (admins.length === 0) {
+    console.warn(`No linked admins to notify for dispute ${disputeId}`);
+    return;
+  }
 
   await Promise.all(
     admins.map((admin) => sendTelegramMessage(admin.telegramUserId, text, { reply_markup: replyMarkup })),

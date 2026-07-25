@@ -17,6 +17,12 @@ export function getTelegramBotToken(): string | undefined {
  * If `TELEGRAM_WEBHOOK_SECRET` is not set, a deterministic HMAC of the bot token
  * is used so the route and the set-webhook script agree without extra config.
  */
+export function getSiteUrl(): string {
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+  if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL;
+  return "https://melange-liard.vercel.app";
+}
+
 export function getWebhookSecret(): string | undefined {
   const override = process.env.TELEGRAM_WEBHOOK_SECRET;
   if (override) return override;
