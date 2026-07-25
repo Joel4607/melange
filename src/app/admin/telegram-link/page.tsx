@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { Logo } from "@/components/brand";
-import { generateTelegramLink } from "../actions";
+import { getAdminTelegramStatus } from "../actions";
 import { TelegramLinkForm } from "./telegram-link-form";
 
 export const metadata: Metadata = {
@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 };
 
 export default async function TelegramLinkPage() {
-  const initial = await generateTelegramLink();
+  const status = await getAdminTelegramStatus();
 
   return (
     <div className="flex min-h-dvh flex-col bg-cream">
@@ -36,7 +36,10 @@ export default async function TelegramLinkPage() {
           with inline buttons to approve, reject, or resolve them.
         </p>
 
-        <TelegramLinkForm initial={initial} />
+        <TelegramLinkForm
+          initial={{ ok: status.ok, link: status.link, error: status.error }}
+          linkedTelegramId={status.linkedTelegramId ?? null}
+        />
       </main>
     </div>
   );

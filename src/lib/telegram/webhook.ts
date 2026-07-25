@@ -1,10 +1,8 @@
 import { getServiceClient } from "@/lib/supabase/service";
-import {
-  approveVerificationAsAdmin,
-  rejectVerificationAsAdmin,
-} from "@/app/admin/actions";
+import { approveVerificationCore, rejectVerificationCore } from "@/lib/server/admin-verification";
+import { logAdminAction } from "@/lib/server/admin-audit";
 import { resolveDisputeAdmin } from "@/lib/server/disputes";
-import { sendTelegramMessage, answerCallbackQuery } from "./messaging";
+import { sendTelegramMessage, answerCallbackQuery, editTelegramMessage } from "./messaging";
 import { verifyTelegramLinkToken } from "./init-data";
 
 interface TelegramUser {
@@ -41,6 +39,16 @@ export interface TelegramUpdate {
   callback_query?: TelegramCallbackQuery;
 }
 
+async function isDuplicateUpdate(updateId: number): Promise<boolean> {
+  const db = getServiceClient();
+  const { error } = await db.from("telegram_webhook_updates").insert({ update_id: updateId });
+  if (error) {
+    if ((error as { code?: string }).code === "23505") return true;
+    console.error("Failed to record Telegram update", error);
+  }
+  return false;
+}
+
 async function findAdminByTelegramId(telegramUserId: string): Promise<{ id: string; name: string | null } | null> {
   const db = getServiceClient();
   const { data, error } = await db
@@ -74,6 +82,7 @@ async function linkTelegramFromToken(
 
   if (!alreadyLinked) {
     await db.from("profiles").update({ telegram_user_id: telegramUserId }).eq("id", profile.id);
+    await logAdminAction(profile.id, "telegram_link", profile.id, { telegram_user_id: telegramUserId });
   }
 
   return { ok: true, name: profile.name, alreadyLinked };
@@ -114,9 +123,182 @@ async function handleStart(message: TelegramMessage): Promise<void> {
   }
 }
 
+interface DisputeContext {
+  title: string;
+  price: number;
+  fee: number;
+  runnerPayout: number;
+  buyerRefund: number;
+}
+
+async function getDisputeContext(disputeId: string): Promise<DisputeContext | null> {
+  const db = getServiceClient();
+  const { data: dispute, error: dErr } = await db
+    .from("disputes")
+    .select("id, task_id, status")
+    .eq("id", disputeId)
+    .maybeSingle<{ id: string; task_id: string; status: string }>();
+  if (dErr || !dispute || dispute.status !== "escalated") return null;
+
+  const { data: task } = await db
+    .from("tasks")
+    .select("id, title, price, fee")
+    .eq("id", dispute.task_id)
+    .maybeSingle<{ id: string; title: string; price: string; fee: string }>();
+  if (!task) return null;
+
+  const price = Number(task.price ?? 0);
+  const fee = Number(task.fee ?? 0);
+  const runnerPayout = Math.max(0, price - fee);
+  return {
+    title: task.title,
+    price,
+    fee,
+    runnerPayout,
+    buyerRefund: price,
+  };
+}
+
+function originalDisputeReplyMarkup(disputeId: string) {
+  return {
+    inline_keyboard: [
+      [
+        { text: "Release to runner", callback_data: `dr:${disputeId}` },
+        { text: "Refund buyer", callback_data: `df:${disputeId}` },
+      ],
+    ],
+  };
+}
+
+async function handleDisputeAction(
+  disputeId: string,
+  resolution: "release" | "refund",
+  admin: { id: string; name: string | null },
+  chatId: string,
+  messageId?: number,
+): Promise<void> {
+  const before = await getDisputeContext(disputeId);
+  if (!before) {
+    const text = `Dispute #${disputeId.slice(0, 8)} is no longer escalated or could not be found.`;
+    if (messageId) {
+      await editTelegramMessage(chatId, messageId, text, { reply_markup: { inline_keyboard: [] } });
+    } else {
+      await sendTelegramMessage(chatId, text);
+    }
+    return;
+  }
+
+  await resolveDisputeAdmin(disputeId, resolution);
+
+  const after = await getDisputeContext(disputeId);
+  if (after) {
+    const text = `Could not resolve dispute #${disputeId.slice(0, 8)}. Please try again or use the admin panel.`;
+    if (messageId) {
+      await editTelegramMessage(chatId, messageId, text, { reply_markup: { inline_keyboard: [] } });
+    } else {
+      await sendTelegramMessage(chatId, text);
+    }
+    return;
+  }
+
+  const actionType = resolution === "release" ? "dispute_release" : "dispute_refund";
+  await logAdminAction(admin.id, actionType, disputeId, { resolution });
+
+  const text = `Dispute #${disputeId.slice(0, 8)} was resolved by ${escapeHtml(admin.name ?? "admin")}: ${
+    resolution === "release" ? "released to runner" : "refunded to buyer"
+  }.`;
+  if (messageId) {
+    await editTelegramMessage(chatId, messageId, text, { reply_markup: { inline_keyboard: [] } });
+  } else {
+    await sendTelegramMessage(chatId, text);
+  }
+}
+
+async function handleDisputeConfirmation(
+  disputeId: string,
+  resolution: "release" | "refund",
+  chatId: string,
+  messageId?: number,
+): Promise<void> {
+  const ctx = await getDisputeContext(disputeId);
+  if (!ctx) {
+    if (messageId) {
+      await editTelegramMessage(
+        chatId,
+        messageId,
+        `Dispute #${disputeId.slice(0, 8)} is no longer escalated or could not be found.`,
+        { reply_markup: { inline_keyboard: [] } },
+      );
+    } else {
+      await sendTelegramMessage(chatId, `Dispute #${disputeId.slice(0, 8)} is no longer escalated or could not be found.`);
+    }
+    return;
+  }
+
+  const amount = resolution === "release" ? ctx.runnerPayout : ctx.buyerRefund;
+  const text = [
+    `<b>Confirm dispute resolution</b>`,
+    `Errand: ${escapeHtml(ctx.title)}`,
+    `Action: ${resolution === "release" ? "Release to runner" : "Refund to buyer"}`,
+    `Amount: GHS ${amount.toFixed(2)}`,
+    `ID: #${disputeId.slice(0, 8)}`,
+  ].join("\n");
+
+  const replyMarkup = {
+    inline_keyboard: [
+      [
+        { text: `Yes, ${resolution}`, callback_data: `${resolution === "release" ? "dr" : "df"}_confirm:${disputeId}` },
+        { text: "Cancel", callback_data: `${resolution === "release" ? "dr" : "df"}_cancel:${disputeId}` },
+      ],
+    ],
+  };
+
+  if (messageId) {
+    await editTelegramMessage(chatId, messageId, text, { reply_markup: replyMarkup });
+  } else {
+    await sendTelegramMessage(chatId, text, { reply_markup: replyMarkup });
+  }
+}
+
+async function cancelDisputeAction(
+  disputeId: string,
+  chatId: string,
+  messageId?: number,
+): Promise<void> {
+  const ctx = await getDisputeContext(disputeId);
+  if (!ctx) {
+    if (messageId) {
+      await editTelegramMessage(
+        chatId,
+        messageId,
+        `Dispute #${disputeId.slice(0, 8)} is no longer escalated or could not be found.`,
+        { reply_markup: { inline_keyboard: [] } },
+      );
+    } else {
+      await sendTelegramMessage(chatId, `Dispute #${disputeId.slice(0, 8)} is no longer escalated or could not be found.`);
+    }
+    return;
+  }
+
+  const text = [
+    `<b>Escalated dispute</b>`,
+    `Errand: ${escapeHtml(ctx.title)}`,
+    `Buyer refund: GHS ${ctx.buyerRefund.toFixed(2)}`,
+    `Runner payout: GHS ${ctx.runnerPayout.toFixed(2)}`,
+    `ID: #${disputeId.slice(0, 8)}`,
+  ].join("\n");
+
+  if (messageId) {
+    await editTelegramMessage(chatId, messageId, text, { reply_markup: originalDisputeReplyMarkup(disputeId) });
+  } else {
+    await sendTelegramMessage(chatId, text, { reply_markup: originalDisputeReplyMarkup(disputeId) });
+  }
+}
+
 async function handleCallback(callback: TelegramCallbackQuery): Promise<void> {
   const from = callback.from;
   const chatId = callback.message ? String(callback.message.chat.id) : String(from.id);
+  const messageId = callback.message?.message_id;
   const telegramUserId = String(from.id);
 
   const admin = await findAdminByTelegramId(telegramUserId);
@@ -127,42 +309,61 @@ async function handleCallback(callback: TelegramCallbackQuery): Promise<void> {
   }
 
   const data = callback.data ?? "";
-  const [prefix, id] = data.split(":");
-  if (!prefix || !id) {
+  const [rawPrefix, id] = data.split(":");
+  if (!rawPrefix || !id) {
     await answerCallbackQuery(callback.id, "Unknown action.");
     return;
   }
 
-  switch (prefix) {
+  const [base, modifier] = rawPrefix.split("_") as [string, string | undefined];
+
+  switch (base) {
     case "va":
     case "vr": {
+      if (modifier) {
+        await answerCallbackQuery(callback.id, "Unknown action.");
+        return;
+      }
       const ok =
-        prefix === "va"
-          ? await approveVerificationAsAdmin(id, admin.id, true)
-          : await rejectVerificationAsAdmin(id, admin.id, true);
+        base === "va"
+          ? await approveVerificationCore(id, admin.id)
+          : await rejectVerificationCore(id, admin.id);
+      const statusText = ok
+        ? `Verification #${id.slice(0, 8)} was ${base === "va" ? "approved" : "rejected"} by ${escapeHtml(admin.name ?? "admin")}.`
+        : `Could not update verification #${id.slice(0, 8)}. It may have already been reviewed.`;
       await answerCallbackQuery(callback.id, ok ? "Verification updated." : "Request not found or already reviewed.");
-      await sendTelegramMessage(
-        chatId,
-        ok
-          ? `Verification #${id.slice(0, 8)} was ${prefix === "va" ? "approved" : "rejected"}.`
-          : `Could not update verification #${id.slice(0, 8)}. It may have already been reviewed.`,
-      );
+      if (messageId) {
+        await editTelegramMessage(chatId, messageId, statusText, { reply_markup: { inline_keyboard: [] } });
+      } else {
+        await sendTelegramMessage(chatId, statusText);
+      }
       break;
     }
     case "dr":
     case "df": {
-      const resolution = prefix === "dr" ? "release" : "refund";
-      try {
-        await resolveDisputeAdmin(id, resolution);
-        await answerCallbackQuery(callback.id, "Dispute resolved.");
-        await sendTelegramMessage(
-          chatId,
-          `Dispute #${id.slice(0, 8)} was resolved: ${resolution === "release" ? "released to runner" : "refunded to buyer"}.`,
-        );
-      } catch (err) {
-        const message = err instanceof Error ? err.message : "Could not resolve dispute.";
-        await answerCallbackQuery(callback.id, message);
-        await sendTelegramMessage(chatId, `Could not resolve dispute #${id.slice(0, 8)}: ${message}`);
+      const resolution = base === "dr" ? ("release" as const) : ("refund" as const);
+      if (!modifier) {
+        await answerCallbackQuery(callback.id, "Please confirm.");
+        await handleDisputeConfirmation(id, resolution, chatId, messageId);
+      } else if (modifier === "confirm") {
+        try {
+          await handleDisputeAction(id, resolution, admin, chatId, messageId);
+          await answerCallbackQuery(callback.id, "Dispute resolved.");
+        } catch {
+          await answerCallbackQuery(callback.id, "Could not resolve dispute.");
+          if (messageId) {
+            await editTelegramMessage(chatId, messageId, `Could not resolve dispute #${id.slice(0, 8)}.`, {
+              reply_markup: { inline_keyboard: [] },
+            });
+          } else {
+            await sendTelegramMessage(chatId, `Could not resolve dispute #${id.slice(0, 8)}.`);
+          }
+        }
+      } else if (modifier === "cancel") {
+        await answerCallbackQuery(callback.id, "Cancelled.");
+        await cancelDisputeAction(id, chatId, messageId);
+      } else {
+        await answerCallbackQuery(callback.id, "Unknown action.");
       }
       break;
     }
@@ -172,6 +373,12 @@ async function handleCallback(callback: TelegramCallbackQuery): Promise<void> {
 }
 
 export async function handleTelegramUpdate(update: TelegramUpdate): Promise<void> {
+  const duplicate = await isDuplicateUpdate(update.update_id);
+  if (duplicate) {
+    console.log(`Skipping duplicate Telegram update ${update.update_id}`);
+    return;
+  }
+
   if (update.message?.text && /^\/start\b/i.test(update.message.text)) {
     await handleStart(update.message);
     return;

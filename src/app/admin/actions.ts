@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getServiceClient } from "@/lib/supabase/service";
 import { resolveDisputeAdmin } from "@/lib/server/disputes";
+import { approveVerificationCore, rejectVerificationCore } from "@/lib/server/admin-verification";
+import { logAdminAction } from "@/lib/server/admin-audit";
 import { createTelegramLinkToken, getBotUsernameFromToken } from "@/lib/telegram/init-data";
 import { getTelegramBotToken } from "@/lib/telegram/env";
 
@@ -35,11 +37,19 @@ export async function adminResolveDispute(
   disputeId: string,
   resolution: string,
 ) {
-  await requireAdmin();
+  const adminId = await requireAdmin();
   if (resolution !== "release" && resolution !== "refund" && resolution !== "partial") {
     throw new Error("Invalid resolution");
   }
   await resolveDisputeAdmin(disputeId, resolution);
+
+  const actionType =
+    resolution === "release"
+      ? "dispute_release"
+      : resolution === "refund"
+        ? "dispute_refund"
+        : "dispute_partial";
+  await logAdminAction(adminId, actionType, disputeId, { resolution });
 
   revalidatePath("/admin");
 }
@@ -92,34 +102,13 @@ export async function approveVerificationAsAdmin(
   adminId: string,
   skipRevalidate = false,
 ) {
-  const db = getServiceClient();
-  const { data: request } = await db
-    .from("verification_requests")
-    .select("user_id, status")
-    .eq("id", requestId)
-    .maybeSingle<{ user_id: string; status: string }>();
-  if (!request || request.status !== "pending") return false;
-  const now = new Date().toISOString();
-  const { data: updated } = await db
-    .from("verification_requests")
-    .update({ status: "approved", reviewed_at: now, reviewed_by: adminId })
-    .eq("id", requestId)
-    .eq("status", "pending")
-    .select("user_id")
-    .maybeSingle<{ user_id: string }>();
-  if (!updated) return false;
-  await db.from("profiles").update({ verified: true }).eq("id", updated.user_id);
-  await db
-    .from("runner_profile")
-    .update({ verified: true, updated_at: now })
-    .eq("user_id", updated.user_id);
-
-  if (!skipRevalidate) {
+  const ok = await approveVerificationCore(requestId, adminId);
+  if (ok && !skipRevalidate) {
     revalidatePath("/admin");
     revalidatePath("/app");
     revalidatePath("/app/verify");
   }
-  return true;
+  return ok;
 }
 
 export async function approveVerification(requestId: string) {
@@ -132,34 +121,13 @@ export async function rejectVerificationAsAdmin(
   adminId: string,
   skipRevalidate = false,
 ) {
-  const db = getServiceClient();
-  const { data: request } = await db
-    .from("verification_requests")
-    .select("user_id, status")
-    .eq("id", requestId)
-    .maybeSingle<{ user_id: string; status: string }>();
-  if (!request || request.status !== "pending") return false;
-  const now = new Date().toISOString();
-  const { data: updated } = await db
-    .from("verification_requests")
-    .update({ status: "rejected", reviewed_at: now, reviewed_by: adminId })
-    .eq("id", requestId)
-    .eq("status", "pending")
-    .select("user_id")
-    .maybeSingle<{ user_id: string }>();
-  if (!updated) return false;
-  await db.from("profiles").update({ verified: false }).eq("id", updated.user_id);
-  await db
-    .from("runner_profile")
-    .update({ verified: false, updated_at: now })
-    .eq("user_id", updated.user_id);
-
-  if (!skipRevalidate) {
+  const ok = await rejectVerificationCore(requestId, adminId);
+  if (ok && !skipRevalidate) {
     revalidatePath("/admin");
     revalidatePath("/app");
     revalidatePath("/app/verify");
   }
-  return true;
+  return ok;
 }
 
 export async function rejectVerification(requestId: string) {
@@ -172,15 +140,53 @@ export async function generateTelegramLink(): Promise<{ ok: boolean; link?: stri
   const botToken = getTelegramBotToken();
   if (!botToken) return { ok: false, error: "Telegram bot token is not configured" };
 
+  const username = await getBotUsernameFromToken(botToken);
+  if (!username) return { ok: false, error: "Could not fetch bot username from Telegram" };
+
+  const token = await createTelegramLinkToken(adminId);
+  const link = `https://t.me/${username}?start=${encodeURIComponent(token)}`;
+  return { ok: true, link };
+}
+
+export async function getAdminTelegramStatus(): Promise<{
+  ok: boolean;
+  linkedTelegramId?: string | null;
+  link?: string;
+  error?: string;
+}> {
+  const adminId = await requireAdmin();
+  const botToken = getTelegramBotToken();
+  if (!botToken) return { ok: false, error: "Telegram bot token is not configured" };
+
   const [username, { data: profile }] = await Promise.all([
     getBotUsernameFromToken(botToken),
     getServiceClient().from("profiles").select("telegram_user_id").eq("id", adminId).maybeSingle<{ telegram_user_id: string | null }>(),
   ]);
 
   if (!username) return { ok: false, error: "Could not fetch bot username from Telegram" };
-  if (profile?.telegram_user_id) return { ok: false, error: "This admin account is already linked to Telegram" };
 
   const token = await createTelegramLinkToken(adminId);
   const link = `https://t.me/${username}?start=${encodeURIComponent(token)}`;
-  return { ok: true, link };
+  return { ok: true, linkedTelegramId: profile?.telegram_user_id ?? null, link };
+}
+
+export async function unlinkTelegram(): Promise<{ ok: boolean; error?: string }> {
+  const adminId = await requireAdmin();
+  const db = getServiceClient();
+  const { data: profile } = await db
+    .from("profiles")
+    .select("telegram_user_id")
+    .eq("id", adminId)
+    .maybeSingle<{ telegram_user_id: string | null }>();
+
+  if (!profile?.telegram_user_id) {
+    return { ok: false, error: "This admin account is not linked to Telegram" };
+  }
+
+  const { error } = await db.from("profiles").update({ telegram_user_id: null }).eq("id", adminId);
+  if (error) return { ok: false, error: error.message };
+
+  revalidatePath("/admin");
+  revalidatePath("/admin/telegram-link");
+  return { ok: true };
 }

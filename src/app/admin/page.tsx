@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { AlertTriangle, Shield, ShieldCheck } from "lucide-react";
 import { getServiceClient } from "@/lib/supabase/service";
+import { getTelegramBotStatus } from "@/lib/telegram/bot-status";
 import { Logo } from "@/components/brand";
 import {
   requireAdmin,
@@ -56,8 +57,9 @@ interface VerificationRequestWithNames extends VerificationRequestRow {
 }
 
 export default async function AdminPage() {
-  await requireAdmin();
+  const adminId = await requireAdmin();
   const db = getServiceClient();
+  const botStatus = await getTelegramBotStatus(adminId);
 
   const { data: disputes } = await db
     .from("disputes")
@@ -242,16 +244,48 @@ export default async function AdminPage() {
         </h1>
 
         <section className="mt-6 rounded-2xl border border-cream-deep bg-white p-5 shadow-sm">
-          <p className="font-medium text-green-deep">Telegram Bot Alerts</p>
+          <div className="flex items-center justify-between">
+            <p className="font-medium text-green-deep">Telegram Bot Alerts</p>
+            <span
+              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                botStatus.webhookActive
+                  ? "bg-green/15 text-green-deep"
+                  : "bg-orange/15 text-orange-deep"
+              }`}
+            >
+              {botStatus.webhookActive ? "Webhook active" : "Webhook not set"}
+            </span>
+          </div>
           <p className="mt-1 text-sm text-muted">
             Receive verification and dispute alerts in Telegram with inline buttons to approve,
             reject, or resolve them. Link your Telegram account first.
           </p>
+          <div className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
+            <p className="text-muted">
+              Linked admins: <span className="font-medium text-ink">{botStatus.linkedAdminCount}</span>
+            </p>
+            <p className="text-muted">
+              Your account:{" "}
+              <span className="font-medium text-ink">
+                {botStatus.thisAdminLinked ? "Linked" : "Not linked"}
+              </span>
+            </p>
+            {botStatus.botUsername ? (
+              <p className="text-muted">
+                Bot: <span className="font-medium text-ink">@{botStatus.botUsername}</span>
+              </p>
+            ) : null}
+            {botStatus.webhookUrl ? (
+              <p className="break-all text-muted">
+                URL: <span className="font-mono text-xs text-ink">{botStatus.webhookUrl}</span>
+              </p>
+            ) : null}
+          </div>
           <Link
             href="/admin/telegram-link"
-            className="mt-3 inline-block rounded-full bg-green px-4 py-2 text-sm font-semibold text-cream transition hover:bg-green-deep"
+            className="mt-4 inline-block rounded-full bg-green px-4 py-2 text-sm font-semibold text-cream transition hover:bg-green-deep"
           >
-            Link Telegram
+            {botStatus.thisAdminLinked ? "Manage Telegram link" : "Link Telegram"}
           </Link>
         </section>
 
