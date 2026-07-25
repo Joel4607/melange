@@ -1,4 +1,5 @@
 import { getServiceClient } from "@/lib/supabase/service";
+import { getTelegramBotToken } from "./env";
 import { getBotUsernameFromToken } from "./init-data";
 
 let cachedBotUsername: string | null | undefined;
@@ -6,7 +7,7 @@ let cachedBotUsername: string | null | undefined;
 async function getBotUsername(): Promise<string | null> {
   if (cachedBotUsername !== undefined) return cachedBotUsername;
 
-  const botToken = process.env.TELEGRAM_BOT_TOKEN;
+  const botToken = getTelegramBotToken();
   if (!botToken) {
     cachedBotUsername = null;
     return null;
@@ -20,7 +21,7 @@ export async function sendTelegramMessage(
   chatId: string,
   text: string,
 ): Promise<boolean> {
-  const botToken = process.env.TELEGRAM_BOT_TOKEN;
+  const botToken = getTelegramBotToken();
   if (!botToken) return false;
 
   try {
