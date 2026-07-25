@@ -242,9 +242,10 @@ export default async function AdminPage() {
         </h1>
 
         <section className="mt-6 rounded-2xl border border-cream-deep bg-white p-5 shadow-sm">
-          <p className="font-medium text-green-deep">Telegram Mini App</p>
+          <p className="font-medium text-green-deep">Telegram Bot Alerts</p>
           <p className="mt-1 text-sm text-muted">
-            Manage verifications and disputes from Telegram. Link your Telegram account first.
+            Receive verification and dispute alerts in Telegram with inline buttons to approve,
+            reject, or resolve them. Link your Telegram account first.
           </p>
           <Link
             href="/admin/telegram-link"

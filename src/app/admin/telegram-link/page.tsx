@@ -32,7 +32,8 @@ export default async function TelegramLinkPage() {
         </h1>
         <p className="mt-2 text-muted">
           Open the generated link inside Telegram to connect this admin account to your Telegram
-          user. Once linked, you can open the Mélange Admin Mini App from Telegram.
+          user. Once linked, you will receive verification and dispute alerts directly in Telegram
+          with inline buttons to approve, reject, or resolve them.
         </p>
 
         <TelegramLinkForm initial={initial} />
