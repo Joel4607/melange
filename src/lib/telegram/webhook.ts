@@ -138,8 +138,8 @@ async function handleCallback(callback: TelegramCallbackQuery): Promise<void> {
     case "vr": {
       const ok =
         prefix === "va"
-          ? await approveVerificationAsAdmin(id, admin.id)
-          : await rejectVerificationAsAdmin(id, admin.id);
+          ? await approveVerificationAsAdmin(id, admin.id, true)
+          : await rejectVerificationAsAdmin(id, admin.id, true);
       await answerCallbackQuery(callback.id, ok ? "Verification updated." : "Request not found or already reviewed.");
       await sendTelegramMessage(
         chatId,
