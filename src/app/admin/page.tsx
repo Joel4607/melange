@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { AlertTriangle, Shield, ShieldCheck } from "lucide-react";
+import { AlertTriangle, Shield, ShieldAlert, ShieldCheck } from "lucide-react";
 import { getServiceClient } from "@/lib/supabase/service";
 import { getTelegramBotStatus } from "@/lib/telegram/bot-status";
 import { Logo } from "@/components/brand";
@@ -340,6 +340,22 @@ export default async function AdminPage() {
             className="mt-4 inline-block rounded-full bg-green px-4 py-2 text-sm font-semibold text-cream transition hover:bg-green-deep"
           >
             {botStatus.thisAdminLinked ? "Manage Telegram link" : "Link Telegram"}
+          </Link>
+        </section>
+
+        <section className="mt-6 rounded-2xl border border-cream-deep bg-white p-5 shadow-sm">
+          <div className="flex items-center gap-2">
+            <ShieldAlert className="h-5 w-5 text-orange-deep" aria-hidden />
+            <p className="font-medium text-green-deep">Runner oversight</p>
+          </div>
+          <p className="mt-1 text-sm text-muted">
+            View runner trust scores, statuses, active fraud flags, and trust events in one place.
+          </p>
+          <Link
+            href="/admin/trust"
+            className="mt-4 inline-block rounded-full bg-green px-4 py-2 text-sm font-semibold text-cream transition hover:bg-green-deep"
+          >
+            Open trust dashboard
           </Link>
         </section>
 

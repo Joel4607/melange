@@ -53,7 +53,7 @@ export default async function SettingsPage() {
       capabilities: string[] | null;
     }>();
 
-  const [{ data: runnerRatings }, { data: completedTasks }] = await Promise.all([
+  const [{ data: runnerRatings }, { data: completedTasks }, { data: trustEvents }] = await Promise.all([
     getServiceClient().from("ratings").select("stars").eq("ratee_id", user.id).returns<{ stars: number }[]>(),
     getServiceClient()
       .from("tasks")
@@ -61,6 +61,13 @@ export default async function SettingsPage() {
       .eq("selected_runner_id", user.id)
       .in("status", ["completed", "resolved"])
       .returns<{ id: string; price: string; fee: string }[]>(),
+    getServiceClient()
+      .from("trust_events")
+      .select("type, value, created_at")
+      .eq("runner_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(10)
+      .returns<{ type: string; value: number; created_at: string }[]>(),
   ]);
 
   const averageRating =
@@ -208,6 +215,35 @@ export default async function SettingsPage() {
                     : "Any Other Errand"}
                 </span>
               </div>
+            </div>
+            <div className="mt-5 border-t border-cream-deep pt-4">
+              <p className="text-sm font-medium text-green-deep">Trust history</p>
+              {trustEvents?.length ? (
+                <ul className="mt-2 space-y-2 text-sm">
+                  {trustEvents.map((e, i) => (
+                    <li key={i} className="flex items-center justify-between">
+                      <span className="text-ink">
+                        {e.type === "completed"
+                          ? "Task completed"
+                          : e.type === "cancelled"
+                            ? "Task cancelled"
+                            : e.type === "dispute_lost"
+                              ? "Dispute lost"
+                              : e.type === "rating"
+                                ? `Rated ${e.value} / 5`
+                                : e.type === "responsiveness"
+                                  ? `Responsiveness ${(e.value * 100).toFixed(0)}%`
+                                  : e.type.replace(/_/g, " ")}
+                      </span>
+                      <span className="text-xs text-muted">
+                        {new Date(e.created_at).toLocaleDateString()}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-1 text-sm text-muted">No trust events yet.</p>
+              )}
             </div>
             <Link
               href="/app/earnings"

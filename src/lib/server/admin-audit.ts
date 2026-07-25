@@ -6,7 +6,11 @@ export type AdminActionType =
   | "dispute_release"
   | "dispute_refund"
   | "dispute_partial"
-  | "telegram_link";
+  | "telegram_link"
+  | "runner_activate"
+  | "runner_suspend"
+  | "runner_quarantine"
+  | "fraud_flags_clear";
 
 export async function logAdminAction(
   adminId: string,
