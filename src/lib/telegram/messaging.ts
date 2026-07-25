@@ -121,9 +121,9 @@ export async function notifyAdminsOfVerification(
       }>(),
     db
       .from("profiles")
-      .select("name, email")
+      .select("name")
       .eq("id", userId)
-      .maybeSingle<{ name: string | null; email: string | null }>(),
+      .maybeSingle<{ name: string | null }>(),
   ]);
 
   if (!request || request.status !== "pending") return;
@@ -135,7 +135,7 @@ export async function notifyAdminsOfVerification(
 
   if (!frontUrl || !backUrl) return;
 
-  const name = profile?.name || profile?.email || "A user";
+  const name = profile?.name || request.email || "A user";
   const caption = [
     `New verification request from <b>${escapeHtml(name)}</b>`,
     `Phone: ${escapeHtml(request.phone ?? "—")}`,
