@@ -169,6 +169,6 @@ export async function generateTelegramLink(): Promise<{ ok: boolean; link?: stri
   if (profile?.telegram_user_id) return { ok: false, error: "This admin account is already linked to Telegram" };
 
   const token = await createTelegramLinkToken(adminId);
-  const link = `https://t.me/${username}?startapp=${encodeURIComponent(token)}`;
+  const link = `https://t.me/${username}?start=${encodeURIComponent(token)}`;
   return { ok: true, link };
 }
