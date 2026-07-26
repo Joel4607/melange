@@ -28,6 +28,7 @@ import {
   rematch,
 } from "../../actions";
 import { TaskActions } from "../../dashboard-widgets";
+import { TaskChat } from "./task-chat";
 
 function isUuid(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
@@ -158,6 +159,13 @@ export default async function ErrandPage({
   let runnerName = "A trusted runner";
   let runnerLocation: { lat: number; lng: number } | null = null;
   let runnerTrust = candidate?.trust ?? 0;
+  const { data: buyerProfile } = await db
+    .from("profiles")
+    .select("name")
+    .eq("id", task.buyer_id)
+    .maybeSingle<{ name: string | null }>();
+  const buyerName = buyerProfile?.name ?? "the buyer";
+
   if (runnerId) {
     const [{ data: rp }, { data: rprofile }] = await Promise.all([
       db.from("profiles").select("name").eq("id", runnerId).maybeSingle<{ name: string | null }>(),
@@ -202,6 +210,13 @@ export default async function ErrandPage({
     .eq("task_id", task.id)
     .eq("rater_id", user.id)
     .maybeSingle<{ stars: number }>();
+
+  const { data: messages } = await supabase
+    .from("messages")
+    .select("id, sender_id, content, created_at")
+    .eq("task_id", task.id)
+    .order("created_at", { ascending: true })
+    .returns<{ id: string; sender_id: string; content: string; created_at: string }[]>();
 
   const [held, released, refunded] = await Promise.all([
     hasLedgerEntry(db, task.id, ["hold"]),
@@ -251,6 +266,17 @@ export default async function ErrandPage({
           lng: runnerLocation?.lng ?? null,
         }
       : null;
+
+  const chatAllowedStatuses: TaskStatus[] = [
+    "matched",
+    "accepted",
+    "in_progress",
+    "completed",
+    "resolved",
+  ];
+  const showChat =
+    (isBuyer || isRunner) && runnerId && chatAllowedStatuses.includes(task.status);
+  const chatRecipientName = isBuyer ? runnerName : buyerName;
 
   return (
     <div className="flex min-h-dvh flex-col bg-cream">
@@ -414,6 +440,16 @@ export default async function ErrandPage({
             <MapView center={mapCenter} markers={mapMarkers} liveRunner={liveRunner} />
           </div>
         </section>
+
+        {/* Chat */}
+        {showChat ? (
+          <TaskChat
+            taskId={task.id}
+            userId={user.id}
+            messages={messages ?? []}
+            recipientName={chatRecipientName}
+          />
+        ) : null}
 
         {/* Delivery proof */}
         {proof ? (
