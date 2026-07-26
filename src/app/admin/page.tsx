@@ -49,10 +49,19 @@ interface DisputeWithTask extends DisputeRow {
   runner_id: string | null;
   runner_verification: {
     user_id: string;
+    legal_name: string | null;
+    date_of_birth: string | null;
+    ghana_card_number: string | null;
+    residential_address: string | null;
     front_url: string | null;
     back_url: string | null;
+    selfie_url: string | null;
     phone: string | null;
     email: string | null;
+    emergency_contact_name: string | null;
+    emergency_contact_phone: string | null;
+    next_of_kin_name: string | null;
+    next_of_kin_phone: string | null;
   } | null;
   proofs: ProofView[];
   ledger: { user_id: string; type: string; amount: string; created_at: string }[];
@@ -68,6 +77,7 @@ interface VerificationRequestWithNames extends VerificationRequestRow {
   user_name: string | null;
   front_url: string | null;
   back_url: string | null;
+  selfie_url: string | null;
 }
 
 export default async function AdminPage() {
@@ -131,7 +141,7 @@ export default async function AdminPage() {
   const { data: verificationRequests } = await db
     .from("verification_requests")
     .select(
-      "id, user_id, front_photo_path, back_photo_path, phone, email, status, created_at",
+      "id, user_id, front_photo_path, back_photo_path, selfie_photo_path, phone, email, legal_name, date_of_birth, ghana_card_number, residential_address, emergency_contact_name, emergency_contact_phone, next_of_kin_name, next_of_kin_phone, status, created_at",
     )
     .eq("status", "pending")
     .order("created_at", { ascending: false })
@@ -144,34 +154,13 @@ export default async function AdminPage() {
   const { data: allVerifications } = await db
     .from("verification_requests")
     .select(
-      "user_id, front_photo_path, back_photo_path, phone, email, status, created_at",
+      "user_id, front_photo_path, back_photo_path, selfie_photo_path, phone, email, legal_name, date_of_birth, ghana_card_number, residential_address, emergency_contact_name, emergency_contact_phone, next_of_kin_name, next_of_kin_phone, status, created_at",
     )
     .in("user_id", Array.from(userIds))
     .order("created_at", { ascending: false })
-    .returns<
-      {
-        user_id: string;
-        front_photo_path: string;
-        back_photo_path: string | null;
-        phone: string | null;
-        email: string | null;
-        status: string;
-        created_at: string;
-      }[]
-    >();
+    .returns<VerificationRequestRow[]>();
 
-  const latestVerificationByUser = new Map<
-    string,
-    {
-      user_id: string;
-      front_photo_path: string;
-      back_photo_path: string | null;
-      phone: string | null;
-      email: string | null;
-      status: string;
-      created_at: string;
-    }
-  >();
+  const latestVerificationByUser = new Map<string, VerificationRequestRow>();
   for (const v of allVerifications ?? []) {
     if (!latestVerificationByUser.has(v.user_id)) latestVerificationByUser.set(v.user_id, v);
   }
@@ -229,10 +218,19 @@ export default async function AdminPage() {
     if (v) {
       d.runner_verification = {
         user_id: v.user_id,
+        legal_name: v.legal_name,
+        date_of_birth: v.date_of_birth,
+        ghana_card_number: v.ghana_card_number,
+        residential_address: v.residential_address,
         front_url: await signedUrl(db, v.front_photo_path),
         back_url: await signedUrl(db, v.back_photo_path),
+        selfie_url: await signedUrl(db, v.selfie_photo_path),
         phone: v.phone,
         email: v.email,
+        emergency_contact_name: v.emergency_contact_name,
+        emergency_contact_phone: v.emergency_contact_phone,
+        next_of_kin_name: v.next_of_kin_name,
+        next_of_kin_phone: v.next_of_kin_phone,
       };
     }
     d.ledger = ledgerByTask.get(d.task_id) ?? [];
@@ -263,6 +261,7 @@ export default async function AdminPage() {
       user_name: nameById.get(v.user_id) ?? null,
       front_url: await signedUrl(db, v.front_photo_path),
       back_url: await signedUrl(db, v.back_photo_path),
+      selfie_url: await signedUrl(db, v.selfie_photo_path),
     })),
   );
 
@@ -391,11 +390,47 @@ export default async function AdminPage() {
                   {d.runner_verification ? (
                     <div className="mt-4 rounded-xl border border-cream-deep bg-cream/40 p-3 text-sm">
                       <p className="font-medium text-green-deep">Runner identity</p>
-                      <p className="text-muted">
-                        Phone: {d.runner_verification.phone ?? "—"} · Email:{" "}
-                        {d.runner_verification.email ?? "—"}
-                      </p>
-                      <div className="mt-2 flex gap-3">
+                      <dl className="mt-1 space-y-1 text-muted">
+                        <div className="flex gap-1">
+                          <dt className="font-medium">Name:</dt>
+                          <dd>{d.runner_verification.legal_name ?? "—"}</dd>
+                        </div>
+                        <div className="flex gap-1">
+                          <dt className="font-medium">DOB:</dt>
+                          <dd>{d.runner_verification.date_of_birth ?? "—"}</dd>
+                        </div>
+                        <div className="flex gap-1">
+                          <dt className="font-medium">Ghana Card:</dt>
+                          <dd>{d.runner_verification.ghana_card_number ?? "—"}</dd>
+                        </div>
+                        <div className="flex gap-1">
+                          <dt className="font-medium">Address:</dt>
+                          <dd>{d.runner_verification.residential_address ?? "—"}</dd>
+                        </div>
+                        <div className="flex gap-1">
+                          <dt className="font-medium">Phone:</dt>
+                          <dd>{d.runner_verification.phone ?? "—"}</dd>
+                        </div>
+                        <div className="flex gap-1">
+                          <dt className="font-medium">Email:</dt>
+                          <dd>{d.runner_verification.email ?? "—"}</dd>
+                        </div>
+                        <div className="flex gap-1">
+                          <dt className="font-medium">Emergency:</dt>
+                          <dd>
+                            {d.runner_verification.emergency_contact_name ?? "—"} /{" "}
+                            {d.runner_verification.emergency_contact_phone ?? "—"}
+                          </dd>
+                        </div>
+                        <div className="flex gap-1">
+                          <dt className="font-medium">Next of kin:</dt>
+                          <dd>
+                            {d.runner_verification.next_of_kin_name ?? "—"} /{" "}
+                            {d.runner_verification.next_of_kin_phone ?? "—"}
+                          </dd>
+                        </div>
+                      </dl>
+                      <div className="mt-2 flex flex-wrap gap-3">
                         {d.runner_verification.front_url ? (
                           <a
                             href={d.runner_verification.front_url}
@@ -414,6 +449,16 @@ export default async function AdminPage() {
                             className="text-green-soft underline"
                           >
                             Ghana Card back
+                          </a>
+                        ) : null}
+                        {d.runner_verification.selfie_url ? (
+                          <a
+                            href={d.runner_verification.selfie_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-green-soft underline"
+                          >
+                            Selfie
                           </a>
                         ) : null}
                       </div>
@@ -559,17 +604,45 @@ export default async function AdminPage() {
                   key={v.id}
                   className="rounded-[1.25rem] border border-cream-deep bg-white p-5 shadow-sm"
                 >
-                  <p className="font-medium text-ink">{v.user_name ?? "Unknown user"}</p>
+                  <p className="font-medium text-ink">{v.legal_name ?? v.user_name ?? "Unknown user"}</p>
                   <p className="mt-1 text-xs text-muted">
-                    {new Date(v.created_at).toLocaleString()}
+                    {new Date(v.created_at).toLocaleString()} · ID #{v.id.slice(0, 8)}
                   </p>
-                  {v.phone ? (
-                    <p className="mt-1 text-sm text-ink">Phone: {v.phone}</p>
-                  ) : null}
-                  {v.email ? (
-                    <p className="mt-1 text-sm text-ink">Email: {v.email}</p>
-                  ) : null}
-                  <div className="mt-2 flex gap-3">
+                  <dl className="mt-2 space-y-1 text-sm text-ink">
+                    <div className="flex gap-1">
+                      <dt className="font-medium">DOB:</dt>
+                      <dd>{v.date_of_birth ?? "—"}</dd>
+                    </div>
+                    <div className="flex gap-1">
+                      <dt className="font-medium">Ghana Card:</dt>
+                      <dd>{v.ghana_card_number ?? "—"}</dd>
+                    </div>
+                    <div className="flex gap-1">
+                      <dt className="font-medium">Address:</dt>
+                      <dd>{v.residential_address ?? "—"}</dd>
+                    </div>
+                    <div className="flex gap-1">
+                      <dt className="font-medium">Phone:</dt>
+                      <dd>{v.phone ?? "—"}</dd>
+                    </div>
+                    <div className="flex gap-1">
+                      <dt className="font-medium">Email:</dt>
+                      <dd>{v.email ?? "—"}</dd>
+                    </div>
+                    <div className="flex gap-1">
+                      <dt className="font-medium">Emergency:</dt>
+                      <dd>
+                        {v.emergency_contact_name ?? "—"} / {v.emergency_contact_phone ?? "—"}
+                      </dd>
+                    </div>
+                    <div className="flex gap-1">
+                      <dt className="font-medium">Next of kin:</dt>
+                      <dd>
+                        {v.next_of_kin_name ?? "—"} / {v.next_of_kin_phone ?? "—"}
+                      </dd>
+                    </div>
+                  </dl>
+                  <div className="mt-2 flex flex-wrap gap-3">
                     {v.front_url ? (
                       <a
                         href={v.front_url}
@@ -588,6 +661,16 @@ export default async function AdminPage() {
                         className="text-sm text-green-soft underline"
                       >
                         View back
+                      </a>
+                    ) : null}
+                    {v.selfie_url ? (
+                      <a
+                        href={v.selfie_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-green-soft underline"
+                      >
+                        View selfie
                       </a>
                     ) : null}
                   </div>

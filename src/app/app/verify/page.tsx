@@ -29,6 +29,9 @@ export default async function VerifyPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
+  const role = user.user_metadata?.role === "runner" ? "runner" : "buyer";
+  if (role !== "runner") redirect("/app/settings");
+
   const { data: profile } = await supabase
     .from("profiles")
     .select("verified")
@@ -38,7 +41,7 @@ export default async function VerifyPage() {
   const { data: request } = await supabase
     .from("verification_requests")
     .select(
-      "status, created_at, front_photo_path, back_photo_path, phone, email",
+      "status, created_at, front_photo_path, back_photo_path, selfie_photo_path, phone, email, legal_name, date_of_birth, ghana_card_number, residential_address, emergency_contact_name, emergency_contact_phone, next_of_kin_name, next_of_kin_phone",
     )
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
@@ -48,14 +51,26 @@ export default async function VerifyPage() {
       created_at: string;
       front_photo_path: string | null;
       back_photo_path: string | null;
+      selfie_photo_path: string | null;
       phone: string | null;
       email: string | null;
+      legal_name: string | null;
+      date_of_birth: string | null;
+      ghana_card_number: string | null;
+      residential_address: string | null;
+      emergency_contact_name: string | null;
+      emergency_contact_phone: string | null;
+      next_of_kin_name: string | null;
+      next_of_kin_phone: string | null;
     }>();
 
-  const [frontUrl, backUrl] = await Promise.all([
+  const [frontUrl, backUrl, selfieUrl] = await Promise.all([
     signedImageUrl(supabase, request?.front_photo_path ?? null),
     signedImageUrl(supabase, request?.back_photo_path ?? null),
+    signedImageUrl(supabase, request?.selfie_photo_path ?? null),
   ]);
+
+  const initial = request ?? undefined;
 
   return (
     <div className="flex min-h-dvh flex-col bg-cream">
@@ -70,16 +85,16 @@ export default async function VerifyPage() {
 
       <main className="mx-auto w-full max-w-lg flex-1 px-6 py-10">
         <h1 className="font-display text-3xl font-semibold text-green-deep">
-          Verify your account
+          Runner verification
         </h1>
         <p className="mt-2 text-muted">
-          Upload the front and back of your Ghana card. An admin will review it.
+          Upload your Ghana Card and a selfie. An admin will review your details.
         </p>
 
         {profile?.verified ? (
           <div className="mt-8 rounded-[1.5rem] border border-green/30 bg-green/5 p-6 text-center">
             <CheckCircle className="mx-auto h-8 w-8 text-green-deep" aria-hidden />
-            <p className="mt-3 font-medium text-green-deep">Your account is verified</p>
+            <p className="mt-3 font-medium text-green-deep">Your runner account is verified</p>
             <Link
               href="/app"
               className="mt-4 inline-block rounded-full border border-green-soft px-5 py-2 text-sm font-semibold text-green-deep transition hover:bg-cream/40"
@@ -116,6 +131,16 @@ export default async function VerifyPage() {
                   View Ghana card back
                 </a>
               ) : null}
+              {selfieUrl ? (
+                <a
+                  href={selfieUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-green-soft underline"
+                >
+                  View selfie
+                </a>
+              ) : null}
             </div>
           </div>
         ) : request?.status === "rejected" ? (
@@ -124,7 +149,7 @@ export default async function VerifyPage() {
               <XCircle className="mx-auto h-8 w-8 text-orange-deep" aria-hidden />
               <p className="mt-3 font-medium text-green-deep">Verification rejected</p>
               <p className="mt-1 text-sm text-muted">
-                You can submit clearer photos and contact details again.
+                You can submit clearer photos and updated details again.
               </p>
               <div className="mt-4 flex flex-col items-center gap-2 text-sm">
                 {frontUrl ? (
@@ -147,9 +172,19 @@ export default async function VerifyPage() {
                     View previous Ghana card back
                   </a>
                 ) : null}
+                {selfieUrl ? (
+                  <a
+                    href={selfieUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-green-soft underline"
+                  >
+                    View previous selfie
+                  </a>
+                ) : null}
               </div>
             </div>
-            <VerifyForm />
+            <VerifyForm initial={initial} />
           </div>
         ) : (
           <div className="mt-8">

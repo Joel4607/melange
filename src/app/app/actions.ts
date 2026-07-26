@@ -68,9 +68,8 @@ async function requireRunnerId(): Promise<string> {
 }
 
 /**
- * Identity verification is required for both sides of the marketplace. The
- * admin must approve the user's Ghana Card submission before they can post
- * errands (buyers) or go available/claim errands (runners).
+ * Identity verification is runner-only. The admin must approve a runner's
+ * Ghana Card submission before they can go available or claim errands.
  */
 async function isUserVerified(userId: string): Promise<boolean> {
   const db = getServiceClient();
@@ -153,7 +152,6 @@ async function assignedTask(taskId: string, runnerId: string) {
  */
 export async function createErrand(formData: FormData) {
   const userId = await requireUserId();
-  await requireVerified(userId);
   await enforceRateLimit("post-errand", userId, 5, 300);
   const db = getServiceClient();
 
@@ -1012,20 +1010,39 @@ function assertImageFile(value: FormDataEntryValue | null, label: string): File 
   return value;
 }
 
-/** Submit an ID verification request for the signed-in user. */
+/** Submit an ID verification request for runners. */
 export async function submitVerification(formData: FormData) {
-  const userId = await requireUserId();
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+  if (user.user_metadata?.role !== "runner") {
+    throw new Error("Only runners can submit identity verification");
+  }
+
+  const userId = user.id;
   const db = getServiceClient();
+
+  function requireText(name: string, label: string): string {
+    const value = String(formData.get(name) ?? "").trim();
+    if (!value) throw new Error(`Please provide your ${label}`);
+    return value;
+  }
 
   const front = assertImageFile(formData.get("front"), "front");
   const back = assertImageFile(formData.get("back"), "back");
-  const phone = String(formData.get("phone") ?? "").trim();
+  const selfie = assertImageFile(formData.get("selfie"), "selfie");
+  const phone = requireText("phone", "phone number");
   const email = String(formData.get("email") ?? "").trim() || null;
-
-  if (!phone) {
-    throw new Error("Please provide a phone number");
-  }
+  const legalName = requireText("legal_name", "full legal name");
+  const dateOfBirth = requireText("date_of_birth", "date of birth");
+  const ghanaCardNumber = requireText("ghana_card_number", "Ghana Card number");
+  const residentialAddress = requireText("residential_address", "residential address");
+  const emergencyContactName = requireText("emergency_contact_name", "emergency contact name");
+  const emergencyContactPhone = requireText("emergency_contact_phone", "emergency contact phone");
+  const nextOfKinName = requireText("next_of_kin_name", "next of kin name");
+  const nextOfKinPhone = requireText("next_of_kin_phone", "next of kin phone");
 
   const { data: existing } = await supabase
     .from("verification_requests")
@@ -1037,29 +1054,20 @@ export async function submitVerification(formData: FormData) {
     throw new Error("You already have a pending or approved verification request");
   }
 
-  const frontPath = `${userId}/${randomUUID()}.${fileExtension(front)}`;
-  const backPath = `${userId}/${randomUUID()}.${fileExtension(back)}`;
-  const frontBuffer = await front.arrayBuffer();
-  const backBuffer = await back.arrayBuffer();
-
-  const { error: frontError } = await db.storage
-    .from("verification")
-    .upload(frontPath, frontBuffer, {
-      contentType: front.type,
+  const uploadImage = async (file: File, label: string) => {
+    const photoPath = `${userId}/${randomUUID()}.${fileExtension(file)}`;
+    const buffer = await file.arrayBuffer();
+    const { error } = await db.storage.from("verification").upload(photoPath, buffer, {
+      contentType: file.type,
       upsert: false,
     });
-  if (frontError) throw new Error(frontError.message);
+    if (error) throw new Error(`Failed to upload ${label} photo: ${error.message}`);
+    return photoPath;
+  };
 
-  const { error: backError } = await db.storage
-    .from("verification")
-    .upload(backPath, backBuffer, {
-      contentType: back.type,
-      upsert: false,
-    });
-  if (backError) {
-    await db.storage.from("verification").remove([frontPath]);
-    throw new Error(backError.message);
-  }
+  const frontPath = await uploadImage(front, "front");
+  const backPath = await uploadImage(back, "back");
+  const selfiePath = await uploadImage(selfie, "selfie");
 
   const { data: inserted, error } = await supabase
     .from("verification_requests")
@@ -1067,8 +1075,17 @@ export async function submitVerification(formData: FormData) {
       user_id: userId,
       front_photo_path: frontPath,
       back_photo_path: backPath,
+      selfie_photo_path: selfiePath,
       phone,
       email,
+      legal_name: legalName,
+      date_of_birth: dateOfBirth,
+      ghana_card_number: ghanaCardNumber,
+      residential_address: residentialAddress,
+      emergency_contact_name: emergencyContactName,
+      emergency_contact_phone: emergencyContactPhone,
+      next_of_kin_name: nextOfKinName,
+      next_of_kin_phone: nextOfKinPhone,
     })
     .select("id")
     .single<{ id: string }>();
@@ -1076,6 +1093,7 @@ export async function submitVerification(formData: FormData) {
     await Promise.all([
       db.storage.from("verification").remove([frontPath]),
       db.storage.from("verification").remove([backPath]),
+      db.storage.from("verification").remove([selfiePath]),
     ]);
     throw new Error(error?.message ?? "Failed to submit verification request");
   }

@@ -55,10 +55,10 @@ export function VerificationCard({
   return (
     <div className="rounded-2xl border border-cream-deep bg-white p-5 shadow-sm">
       <p className="flex items-center gap-2 font-medium text-green-deep">
-        <ShieldCheck className="h-5 w-5 text-orange-deep" aria-hidden /> Identity verification
+        <ShieldCheck className="h-5 w-5 text-orange-deep" aria-hidden /> Runner verification
       </p>
       <p className="mt-1 text-sm text-muted">
-        Upload your Ghana Card. An admin will review it and activate your account.
+        Upload your Ghana Card and a selfie. An admin will review it and activate your runner account.
       </p>
       <Link
         href="/app/verify"
