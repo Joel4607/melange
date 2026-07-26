@@ -211,12 +211,22 @@ export default async function ErrandPage({
     .eq("rater_id", user.id)
     .maybeSingle<{ stars: number }>();
 
-  const { data: messages } = await supabase
+  const { data: rawMessages } = await supabase
     .from("messages")
-    .select("id, sender_id, content, created_at")
+    .select("id, sender_id, content, image_path, read_at, created_at")
     .eq("task_id", task.id)
     .order("created_at", { ascending: true })
-    .returns<{ id: string; sender_id: string; content: string; created_at: string }[]>();
+    .returns<
+      { id: string; sender_id: string; content: string; image_path: string | null; read_at: string | null; created_at: string }[]
+    >();
+
+  const messages = await Promise.all(
+    (rawMessages ?? []).map(async (m) => {
+      if (!m.image_path) return { ...m, image_url: null };
+      const { data: signed } = await supabase.storage.from("chat-images").createSignedUrl(m.image_path, 60 * 5);
+      return { ...m, image_url: signed?.signedUrl ?? null };
+    }),
+  );
 
   const [held, released, refunded] = await Promise.all([
     hasLedgerEntry(db, task.id, ["hold"]),
