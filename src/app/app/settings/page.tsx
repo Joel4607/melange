@@ -1,11 +1,11 @@
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft, User, Shield, Bike, PackageCheck, Star, Wallet, ShieldCheck, Clock, XCircle } from "lucide-react";
+import { ArrowLeft, User, Shield, Bike, PackageCheck, Star, Wallet, ShieldCheck, Clock, XCircle, Bell } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getServiceClient } from "@/lib/supabase/service";
 import { Logo } from "@/components/brand";
-import { updateProfile } from "../actions";
+import { updateNotificationPreferences, updateProfile } from "../actions";
 import { AvailabilityToggle } from "../availability-toggle";
 import { CapabilitiesEditor } from "../capabilities-editor";
 import { ScheduleEditor } from "../schedule-editor";
@@ -26,9 +26,20 @@ export default async function SettingsPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("name, phone, verified, is_admin")
+    .select(
+      "name, phone, verified, is_admin, notify_in_app, notify_push, notify_email, notify_telegram",
+    )
     .eq("id", user.id)
-    .maybeSingle<{ name: string | null; phone: string | null; verified: boolean; is_admin: boolean }>();
+    .maybeSingle<{
+      name: string | null;
+      phone: string | null;
+      verified: boolean;
+      is_admin: boolean;
+      notify_in_app: boolean;
+      notify_push: boolean;
+      notify_email: boolean;
+      notify_telegram: boolean;
+    }>();
 
   const { data: latestVerification } =
     role === "runner"
@@ -188,6 +199,61 @@ export default async function SettingsPage() {
               </div>
             ) : null}
           </div>
+        </section>
+
+        <section className="mt-5 rounded-2xl border border-cream-deep bg-white p-6 shadow-sm">
+          <p className="flex items-center gap-2 font-display text-lg font-semibold text-green-deep">
+            <Bell className="h-5 w-5 text-orange-deep" aria-hidden /> Notifications
+          </p>
+          <p className="mt-1 text-sm text-muted">Choose how we contact you.</p>
+          <form action={updateNotificationPreferences} className="mt-4 space-y-3">
+            <label className="flex items-center justify-between gap-3">
+              <span className="text-sm text-ink">In-app</span>
+              <input
+                type="checkbox"
+                name="notify_in_app"
+                value="on"
+                defaultChecked={profile?.notify_in_app ?? true}
+                className="h-5 w-5 accent-green-deep"
+              />
+            </label>
+            <label className="flex items-center justify-between gap-3">
+              <span className="text-sm text-ink">Push</span>
+              <input
+                type="checkbox"
+                name="notify_push"
+                value="on"
+                defaultChecked={profile?.notify_push ?? true}
+                className="h-5 w-5 accent-green-deep"
+              />
+            </label>
+            <label className="flex items-center justify-between gap-3">
+              <span className="text-sm text-ink">Email</span>
+              <input
+                type="checkbox"
+                name="notify_email"
+                value="on"
+                defaultChecked={profile?.notify_email ?? true}
+                className="h-5 w-5 accent-green-deep"
+              />
+            </label>
+            <label className="flex items-center justify-between gap-3">
+              <span className="text-sm text-ink">Telegram</span>
+              <input
+                type="checkbox"
+                name="notify_telegram"
+                value="on"
+                defaultChecked={profile?.notify_telegram ?? true}
+                className="h-5 w-5 accent-green-deep"
+              />
+            </label>
+            <button
+              type="submit"
+              className="rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-cream transition hover:bg-green-deep"
+            >
+              Save preferences
+            </button>
+          </form>
         </section>
 
         {role === "runner" ? (

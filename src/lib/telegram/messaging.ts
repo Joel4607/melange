@@ -341,9 +341,24 @@ export async function notifyAdminsOfDispute(
   );
 }
 
-function escapeHtml(text: string): string {
+export function escapeHtml(text: string): string {
   return text
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
+}
+
+/**
+ * Send a plain notification message to a user's Telegram chat.
+ * The account must have already started a conversation with the bot.
+ */
+export async function sendTelegramToUser(
+  telegramUserId: string,
+  title: string,
+  body: string,
+): Promise<void> {
+  const text = [`<b>${escapeHtml(title)}</b>`, escapeHtml(body)]
+    .filter(Boolean)
+    .join("\n\n");
+  await sendTelegramMessage(telegramUserId, text);
 }
