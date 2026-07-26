@@ -107,6 +107,15 @@ export interface VerificationRequestRow {
   back_photo_path: string | null;
   phone: string | null;
   email: string | null;
+  legal_name: string | null;
+  date_of_birth: string | null;
+  ghana_card_number: string | null;
+  residential_address: string | null;
+  selfie_photo_path: string | null;
+  emergency_contact_name: string | null;
+  emergency_contact_phone: string | null;
+  next_of_kin_name: string | null;
+  next_of_kin_phone: string | null;
   status: VerificationStatus;
   reviewed_at: string | null;
   reviewed_by: string | null;

@@ -30,13 +30,16 @@ export default async function SettingsPage() {
     .eq("id", user.id)
     .single();
 
-  const { data: latestVerification } = await supabase
-    .from("verification_requests")
-    .select("id, status, created_at")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle<{ id: string; status: "pending" | "approved" | "rejected"; created_at: string }>();
+  const { data: latestVerification } =
+    role === "runner"
+      ? await supabase
+          .from("verification_requests")
+          .select("id, status, created_at")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle<{ id: string; status: "pending" | "approved" | "rejected"; created_at: string }>()
+      : { data: null };
 
   const { data: runnerProfile } = await getServiceClient()
     .from("runner_profile")
@@ -96,9 +99,11 @@ export default async function SettingsPage() {
       <main className="mx-auto w-full max-w-2xl flex-1 px-5 py-10">
         <h1 className="font-display text-fluid-h2 font-semibold text-green-deep">Settings</h1>
 
-        <div className="mt-6">
-          <VerificationCard verified={profile?.verified ?? false} request={latestVerification ?? null} />
-        </div>
+        {role === "runner" ? (
+          <div className="mt-6">
+            <VerificationCard verified={profile?.verified ?? false} request={latestVerification ?? null} />
+          </div>
+        ) : null}
 
         <section className="mt-5 rounded-2xl border border-cream-deep bg-white p-6 shadow-sm">
           <p className="flex items-center gap-2 font-display text-lg font-semibold text-green-deep">
@@ -154,26 +159,28 @@ export default async function SettingsPage() {
                 {role === "runner" ? "Runner" : "Customer"}
               </span>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-muted">Verification</span>
-              {profile?.verified ? (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-green/10 px-2.5 py-1 text-xs font-medium text-green-deep">
-                  <ShieldCheck className="h-3.5 w-3.5" aria-hidden /> Verified
-                </span>
-              ) : latestVerification?.status === "pending" ? (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-orange/10 px-2.5 py-1 text-xs font-medium text-orange-deep">
-                  <Clock className="h-3.5 w-3.5" aria-hidden /> Pending
-                </span>
-              ) : latestVerification?.status === "rejected" ? (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-orange/10 px-2.5 py-1 text-xs font-medium text-orange-deep">
-                  <XCircle className="h-3.5 w-3.5" aria-hidden /> Rejected
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-cream/40 px-2.5 py-1 text-xs font-medium text-muted">
-                  <Shield className="h-3.5 w-3.5" aria-hidden /> Not verified
-                </span>
-              )}
-            </div>
+            {role === "runner" ? (
+              <div className="flex items-center justify-between">
+                <span className="text-muted">Verification</span>
+                {profile?.verified ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-green/10 px-2.5 py-1 text-xs font-medium text-green-deep">
+                    <ShieldCheck className="h-3.5 w-3.5" aria-hidden /> Verified
+                  </span>
+                ) : latestVerification?.status === "pending" ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-orange/10 px-2.5 py-1 text-xs font-medium text-orange-deep">
+                    <Clock className="h-3.5 w-3.5" aria-hidden /> Pending
+                  </span>
+                ) : latestVerification?.status === "rejected" ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-orange/10 px-2.5 py-1 text-xs font-medium text-orange-deep">
+                    <XCircle className="h-3.5 w-3.5" aria-hidden /> Rejected
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-cream/40 px-2.5 py-1 text-xs font-medium text-muted">
+                    <Shield className="h-3.5 w-3.5" aria-hidden /> Not verified
+                  </span>
+                )}
+              </div>
+            ) : null}
             {profile?.is_admin ? (
               <div className="flex items-center justify-between">
                 <span className="text-muted">Admin</span>

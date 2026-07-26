@@ -158,18 +158,29 @@ export async function notifyAdminsOfVerification(
 ): Promise<void> {
   const db = getServiceClient();
 
-  const [{ data: request }, { data: profile }, { data: runnerProfile }] = await Promise.all([
+  const [{ data: request }, { data: profile }] = await Promise.all([
     db
       .from("verification_requests")
-      .select("id, user_id, front_photo_path, back_photo_path, phone, email, status, created_at")
+      .select(
+        "id, user_id, front_photo_path, back_photo_path, selfie_photo_path, phone, email, legal_name, date_of_birth, ghana_card_number, residential_address, emergency_contact_name, emergency_contact_phone, next_of_kin_name, next_of_kin_phone, status, created_at",
+      )
       .eq("id", requestId)
       .maybeSingle<{
         id: string;
         user_id: string;
         front_photo_path: string | null;
         back_photo_path: string | null;
+        selfie_photo_path: string | null;
         phone: string | null;
         email: string | null;
+        legal_name: string | null;
+        date_of_birth: string | null;
+        ghana_card_number: string | null;
+        residential_address: string | null;
+        emergency_contact_name: string | null;
+        emergency_contact_phone: string | null;
+        next_of_kin_name: string | null;
+        next_of_kin_phone: string | null;
         status: string;
         created_at: string;
       }>(),
@@ -178,23 +189,18 @@ export async function notifyAdminsOfVerification(
       .select("name")
       .eq("id", userId)
       .maybeSingle<{ name: string | null }>(),
-    db
-      .from("runner_profile")
-      .select("id")
-      .eq("user_id", userId)
-      .maybeSingle<{ id: string }>(),
   ]);
 
   if (!request || request.status !== "pending") return;
 
-  const [frontUrl, backUrl] = await Promise.all([
+  const [frontUrl, backUrl, selfieUrl] = await Promise.all([
     signedStorageUrl("verification", request.front_photo_path),
     signedStorageUrl("verification", request.back_photo_path),
+    signedStorageUrl("verification", request.selfie_photo_path),
   ]);
 
-  if (!frontUrl || !backUrl) return;
+  if (!frontUrl || !backUrl || !selfieUrl) return;
 
-  const role = runnerProfile ? "Runner" : "Buyer";
   const submittedAt = new Date(request.created_at).toLocaleString("en-GB", {
     day: "2-digit",
     month: "short",
@@ -203,13 +209,19 @@ export async function notifyAdminsOfVerification(
     minute: "2-digit",
   });
 
-  const name = profile?.name || request.email || "A user";
+  const name = request.legal_name || profile?.name || "A runner";
   const caption = [
-    `New verification request from <b>${escapeHtml(name)}</b> (${role})`,
-    `Phone: ${escapeHtml(request.phone ?? "—")}`,
-    request.email ? `Email: ${escapeHtml(request.email)}` : null,
-    `Submitted: ${submittedAt}`,
-    `ID: #${requestId.slice(0, 8)}`,
+    `New runner verification from <b>${escapeHtml(name)}</b>`,
+    `<b>Legal name:</b> ${escapeHtml(request.legal_name ?? "—")}`,
+    `<b>DOB:</b> ${escapeHtml(request.date_of_birth ?? "—")}`,
+    `<b>Ghana Card:</b> ${escapeHtml(request.ghana_card_number ?? "—")}`,
+    `<b>Phone:</b> ${escapeHtml(request.phone ?? "—")}`,
+    request.email ? `<b>Email:</b> ${escapeHtml(request.email)}` : null,
+    `<b>Address:</b> ${escapeHtml(request.residential_address ?? "—")}`,
+    `<b>Emergency contact:</b> ${escapeHtml(request.emergency_contact_name ?? "—")} / ${escapeHtml(request.emergency_contact_phone ?? "—")}`,
+    `<b>Next of kin:</b> ${escapeHtml(request.next_of_kin_name ?? "—")} / ${escapeHtml(request.next_of_kin_phone ?? "—")}`,
+    `<b>Submitted:</b> ${submittedAt}`,
+    `<b>ID:</b> #${requestId.slice(0, 8)}`,
   ]
     .filter(Boolean)
     .join("\n");
@@ -223,6 +235,7 @@ export async function notifyAdminsOfVerification(
   const media = [
     { type: "photo" as const, media: frontUrl, caption, parse_mode: "HTML" },
     { type: "photo" as const, media: backUrl, parse_mode: "HTML" },
+    { type: "photo" as const, media: selfieUrl, parse_mode: "HTML" },
   ];
 
   const replyMarkup = {
@@ -239,7 +252,7 @@ export async function notifyAdminsOfVerification(
       await sendTelegramMediaGroup(admin.telegramUserId, media);
       await sendTelegramMessage(
         admin.telegramUserId,
-        "Use the buttons below to approve or reject the verification request.",
+        "Use the buttons below to approve or reject the runner verification request.",
         { reply_markup: replyMarkup },
       );
     }),
