@@ -184,6 +184,17 @@ export function VerifyForm({ initial }: VerifyFormProps) {
         />
       </label>
 
+      <label className="block">
+        <span className="text-sm font-medium text-ink">Vehicle / bike license (optional)</span>
+        <input
+          name="vehicle_license"
+          type="file"
+          accept="image/*"
+          capture="environment"
+          className="mt-1 block w-full text-sm text-ink file:rounded-full file:border-0 file:bg-cream-deep file:px-4 file:py-2 file:font-medium file:text-green-deep hover:file:bg-cream/60"
+        />
+      </label>
+
       <Submit />
     </form>
   );

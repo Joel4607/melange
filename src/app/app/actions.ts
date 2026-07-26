@@ -1010,6 +1010,17 @@ function assertImageFile(value: FormDataEntryValue | null, label: string): File 
   return value;
 }
 
+function optionalImageFile(value: FormDataEntryValue | null, label: string): File | null {
+  if (!value || !(value instanceof File) || value.size === 0) return null;
+  if (value.size > MAX_IMAGE_SIZE) {
+    throw new Error(`${label} photo is too large (max ${MAX_IMAGE_SIZE / 1024 / 1024} MB)`);
+  }
+  if (!ALLOWED_IMAGE_TYPES.has(value.type.toLowerCase())) {
+    throw new Error(`${label} photo must be a JPEG, PNG, or WebP image`);
+  }
+  return value;
+}
+
 /** Submit an ID verification request for runners. */
 export async function submitVerification(formData: FormData) {
   const supabase = await createClient();
@@ -1033,6 +1044,7 @@ export async function submitVerification(formData: FormData) {
   const front = assertImageFile(formData.get("front"), "front");
   const back = assertImageFile(formData.get("back"), "back");
   const selfie = assertImageFile(formData.get("selfie"), "selfie");
+  const vehicleLicense = optionalImageFile(formData.get("vehicle_license"), "vehicle license");
   const phone = requireText("phone", "phone number");
   const email = String(formData.get("email") ?? "").trim() || null;
   const legalName = requireText("legal_name", "full legal name");
@@ -1068,6 +1080,7 @@ export async function submitVerification(formData: FormData) {
   const frontPath = await uploadImage(front, "front");
   const backPath = await uploadImage(back, "back");
   const selfiePath = await uploadImage(selfie, "selfie");
+  const vehicleLicensePath = vehicleLicense ? await uploadImage(vehicleLicense, "vehicle license") : null;
 
   const { data: inserted, error } = await supabase
     .from("verification_requests")
@@ -1076,6 +1089,7 @@ export async function submitVerification(formData: FormData) {
       front_photo_path: frontPath,
       back_photo_path: backPath,
       selfie_photo_path: selfiePath,
+      vehicle_license_photo_path: vehicleLicensePath,
       phone,
       email,
       legal_name: legalName,
@@ -1090,11 +1104,11 @@ export async function submitVerification(formData: FormData) {
     .select("id")
     .single<{ id: string }>();
   if (error || !inserted) {
-    await Promise.all([
-      db.storage.from("verification").remove([frontPath]),
-      db.storage.from("verification").remove([backPath]),
-      db.storage.from("verification").remove([selfiePath]),
-    ]);
+    await Promise.all(
+      [frontPath, backPath, selfiePath, vehicleLicensePath]
+        .filter((p): p is string => p != null)
+        .map((p) => db.storage.from("verification").remove([p])),
+    );
     throw new Error(error?.message ?? "Failed to submit verification request");
   }
 

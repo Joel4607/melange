@@ -41,7 +41,7 @@ export default async function VerifyPage() {
   const { data: request } = await supabase
     .from("verification_requests")
     .select(
-      "status, created_at, front_photo_path, back_photo_path, selfie_photo_path, phone, email, legal_name, date_of_birth, ghana_card_number, residential_address, emergency_contact_name, emergency_contact_phone, next_of_kin_name, next_of_kin_phone",
+      "status, created_at, front_photo_path, back_photo_path, selfie_photo_path, vehicle_license_photo_path, phone, email, legal_name, date_of_birth, ghana_card_number, residential_address, emergency_contact_name, emergency_contact_phone, next_of_kin_name, next_of_kin_phone",
     )
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
@@ -52,6 +52,7 @@ export default async function VerifyPage() {
       front_photo_path: string | null;
       back_photo_path: string | null;
       selfie_photo_path: string | null;
+      vehicle_license_photo_path: string | null;
       phone: string | null;
       email: string | null;
       legal_name: string | null;
@@ -64,10 +65,11 @@ export default async function VerifyPage() {
       next_of_kin_phone: string | null;
     }>();
 
-  const [frontUrl, backUrl, selfieUrl] = await Promise.all([
+  const [frontUrl, backUrl, selfieUrl, vehicleLicenseUrl] = await Promise.all([
     signedImageUrl(supabase, request?.front_photo_path ?? null),
     signedImageUrl(supabase, request?.back_photo_path ?? null),
     signedImageUrl(supabase, request?.selfie_photo_path ?? null),
+    signedImageUrl(supabase, request?.vehicle_license_photo_path ?? null),
   ]);
 
   const initial = request ?? undefined;
@@ -141,6 +143,16 @@ export default async function VerifyPage() {
                   View selfie
                 </a>
               ) : null}
+              {vehicleLicenseUrl ? (
+                <a
+                  href={vehicleLicenseUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-green-soft underline"
+                >
+                  View vehicle license
+                </a>
+              ) : null}
             </div>
           </div>
         ) : request?.status === "rejected" ? (
@@ -180,6 +192,16 @@ export default async function VerifyPage() {
                     className="text-green-soft underline"
                   >
                     View previous selfie
+                  </a>
+                ) : null}
+                {vehicleLicenseUrl ? (
+                  <a
+                    href={vehicleLicenseUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-green-soft underline"
+                  >
+                    View previous vehicle license
                   </a>
                 ) : null}
               </div>

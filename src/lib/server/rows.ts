@@ -112,6 +112,7 @@ export interface VerificationRequestRow {
   ghana_card_number: string | null;
   residential_address: string | null;
   selfie_photo_path: string | null;
+  vehicle_license_photo_path: string | null;
   emergency_contact_name: string | null;
   emergency_contact_phone: string | null;
   next_of_kin_name: string | null;
