@@ -1,5 +1,7 @@
 import { getServiceClient } from "@/lib/supabase/service";
+import { sendEmail, isEmailConfigured } from "./email";
 import { sendPushToUser } from "./push";
+import { sendTelegramToUser } from "@/lib/telegram/messaging";
 
 export interface NotificationPayload {
   task_id?: string;
@@ -65,9 +67,42 @@ function getBody(type: NotificationType, payload: NotificationPayload): string {
   }
 }
 
+interface UserNotificationChannels {
+  email: string | null;
+  telegram_user_id: string | null;
+  notify_in_app: boolean;
+  notify_push: boolean;
+  notify_email: boolean;
+  notify_telegram: boolean;
+}
+
+async function getChannelsForUser(
+  db: ReturnType<typeof getServiceClient>,
+  userId: string,
+): Promise<UserNotificationChannels | null> {
+  const { data: profile, error: profileError } = await db
+    .from("profiles")
+    .select("telegram_user_id, notify_in_app, notify_push, notify_email, notify_telegram")
+    .eq("id", userId)
+    .maybeSingle<UserNotificationChannels>();
+
+  if (profileError || !profile) return null;
+
+  const { data: authUser, error: authError } = await db.auth.admin.getUserById(userId);
+  if (authError) {
+    console.error("notifications: failed to load auth email", authError.message);
+  }
+
+  return {
+    ...profile,
+    email: authUser?.user?.email ?? null,
+  };
+}
+
 /**
- * Create a notification for a user. Service-role so callers must ensure the
- * recipient is the correct user.
+ * Create a notification for a user across enabled channels. Service-role so
+ * callers must ensure the recipient is the correct user. Channel failures are
+ * logged but never thrown so in-app delivery is not blocked.
  */
 export async function createNotification(
   recipientId: string,
@@ -75,21 +110,54 @@ export async function createNotification(
   payload: NotificationPayload = {},
 ): Promise<void> {
   const db = getServiceClient();
-  const { error } = await db.from("notifications").insert({
-    recipient_id: recipientId,
-    type,
-    payload,
-    channel: "in_app",
-    read: false,
-  });
-  if (error) {
-    throw new Error(`createNotification: ${error.message}`);
+  const title = getTitle(type);
+  const body = getBody(type, payload);
+
+  const channels = await getChannelsForUser(db, recipientId);
+
+  if (!channels || channels.notify_in_app) {
+    const { error } = await db.from("notifications").insert({
+      recipient_id: recipientId,
+      type,
+      payload,
+      channel: "in_app",
+      read: false,
+    });
+    if (error) {
+      throw new Error(`createNotification: ${error.message}`);
+    }
   }
 
-  await sendPushToUser(recipientId, {
-    title: getTitle(type),
-    body: getBody(type, payload),
-    icon: "/icon-192x192.png",
-    data: { url: payload.task_id ? `/app/errands/${payload.task_id}` : "/app" },
-  });
+  if (channels?.notify_push) {
+    try {
+      await sendPushToUser(recipientId, {
+        title,
+        body,
+        icon: "/icon-192x192.png",
+        data: { url: payload.task_id ? `/app/errands/${payload.task_id}` : "/app" },
+      });
+    } catch (err) {
+      console.error("notifications: push dispatch failed", err);
+    }
+  }
+
+  if (channels?.notify_email && channels.email && isEmailConfigured()) {
+    try {
+      await sendEmail(
+        channels.email,
+        title,
+        `<p>${body.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</p>`,
+      );
+    } catch (err) {
+      console.error("notifications: email dispatch failed", err);
+    }
+  }
+
+  if (channels?.notify_telegram && channels.telegram_user_id) {
+    try {
+      await sendTelegramToUser(channels.telegram_user_id, title, body);
+    } catch (err) {
+      console.error("notifications: telegram dispatch failed", err);
+    }
+  }
 }

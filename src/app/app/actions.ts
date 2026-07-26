@@ -959,6 +959,24 @@ export async function clearReadNotifications() {
   revalidatePath("/app/notifications");
 }
 
+/** Update the signed-in user's notification channel preferences. */
+export async function updateNotificationPreferences(formData: FormData) {
+  const userId = await requireUserId();
+  const db = getServiceClient();
+
+  await db
+    .from("profiles")
+    .update({
+      notify_in_app: formData.has("notify_in_app"),
+      notify_push: formData.has("notify_push"),
+      notify_email: formData.has("notify_email"),
+      notify_telegram: formData.has("notify_telegram"),
+    })
+    .eq("id", userId);
+
+  revalidatePath("/app/settings");
+}
+
 /** Update the signed-in user's profile name and phone. */
 export async function updateProfile(formData: FormData) {
   const userId = await requireUserId();
