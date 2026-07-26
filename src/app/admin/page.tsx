@@ -56,6 +56,7 @@ interface DisputeWithTask extends DisputeRow {
     front_url: string | null;
     back_url: string | null;
     selfie_url: string | null;
+    vehicle_license_url: string | null;
     phone: string | null;
     email: string | null;
     emergency_contact_name: string | null;
@@ -78,6 +79,7 @@ interface VerificationRequestWithNames extends VerificationRequestRow {
   front_url: string | null;
   back_url: string | null;
   selfie_url: string | null;
+  vehicle_license_url: string | null;
 }
 
 export default async function AdminPage() {
@@ -141,7 +143,7 @@ export default async function AdminPage() {
   const { data: verificationRequests } = await db
     .from("verification_requests")
     .select(
-      "id, user_id, front_photo_path, back_photo_path, selfie_photo_path, phone, email, legal_name, date_of_birth, ghana_card_number, residential_address, emergency_contact_name, emergency_contact_phone, next_of_kin_name, next_of_kin_phone, status, created_at",
+      "id, user_id, front_photo_path, back_photo_path, selfie_photo_path, vehicle_license_photo_path, phone, email, legal_name, date_of_birth, ghana_card_number, residential_address, emergency_contact_name, emergency_contact_phone, next_of_kin_name, next_of_kin_phone, status, created_at",
     )
     .eq("status", "pending")
     .order("created_at", { ascending: false })
@@ -154,7 +156,7 @@ export default async function AdminPage() {
   const { data: allVerifications } = await db
     .from("verification_requests")
     .select(
-      "user_id, front_photo_path, back_photo_path, selfie_photo_path, phone, email, legal_name, date_of_birth, ghana_card_number, residential_address, emergency_contact_name, emergency_contact_phone, next_of_kin_name, next_of_kin_phone, status, created_at",
+      "user_id, front_photo_path, back_photo_path, selfie_photo_path, vehicle_license_photo_path, phone, email, legal_name, date_of_birth, ghana_card_number, residential_address, emergency_contact_name, emergency_contact_phone, next_of_kin_name, next_of_kin_phone, status, created_at",
     )
     .in("user_id", Array.from(userIds))
     .order("created_at", { ascending: false })
@@ -225,6 +227,7 @@ export default async function AdminPage() {
         front_url: await signedUrl(db, v.front_photo_path),
         back_url: await signedUrl(db, v.back_photo_path),
         selfie_url: await signedUrl(db, v.selfie_photo_path),
+        vehicle_license_url: await signedUrl(db, v.vehicle_license_photo_path),
         phone: v.phone,
         email: v.email,
         emergency_contact_name: v.emergency_contact_name,
@@ -262,6 +265,7 @@ export default async function AdminPage() {
       front_url: await signedUrl(db, v.front_photo_path),
       back_url: await signedUrl(db, v.back_photo_path),
       selfie_url: await signedUrl(db, v.selfie_photo_path),
+      vehicle_license_url: await signedUrl(db, v.vehicle_license_photo_path),
     })),
   );
 
@@ -459,6 +463,16 @@ export default async function AdminPage() {
                             className="text-green-soft underline"
                           >
                             Selfie
+                          </a>
+                        ) : null}
+                        {d.runner_verification.vehicle_license_url ? (
+                          <a
+                            href={d.runner_verification.vehicle_license_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-green-soft underline"
+                          >
+                            Vehicle license
                           </a>
                         ) : null}
                       </div>
@@ -671,6 +685,16 @@ export default async function AdminPage() {
                         className="text-sm text-green-soft underline"
                       >
                         View selfie
+                      </a>
+                    ) : null}
+                    {v.vehicle_license_url ? (
+                      <a
+                        href={v.vehicle_license_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-green-soft underline"
+                      >
+                        View vehicle license
                       </a>
                     ) : null}
                   </div>

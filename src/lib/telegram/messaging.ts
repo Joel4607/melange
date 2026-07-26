@@ -162,7 +162,7 @@ export async function notifyAdminsOfVerification(
     db
       .from("verification_requests")
       .select(
-        "id, user_id, front_photo_path, back_photo_path, selfie_photo_path, phone, email, legal_name, date_of_birth, ghana_card_number, residential_address, emergency_contact_name, emergency_contact_phone, next_of_kin_name, next_of_kin_phone, status, created_at",
+        "id, user_id, front_photo_path, back_photo_path, selfie_photo_path, vehicle_license_photo_path, phone, email, legal_name, date_of_birth, ghana_card_number, residential_address, emergency_contact_name, emergency_contact_phone, next_of_kin_name, next_of_kin_phone, status, created_at",
       )
       .eq("id", requestId)
       .maybeSingle<{
@@ -171,6 +171,7 @@ export async function notifyAdminsOfVerification(
         front_photo_path: string | null;
         back_photo_path: string | null;
         selfie_photo_path: string | null;
+        vehicle_license_photo_path: string | null;
         phone: string | null;
         email: string | null;
         legal_name: string | null;
@@ -193,10 +194,11 @@ export async function notifyAdminsOfVerification(
 
   if (!request || request.status !== "pending") return;
 
-  const [frontUrl, backUrl, selfieUrl] = await Promise.all([
+  const [frontUrl, backUrl, selfieUrl, vehicleLicenseUrl] = await Promise.all([
     signedStorageUrl("verification", request.front_photo_path),
     signedStorageUrl("verification", request.back_photo_path),
     signedStorageUrl("verification", request.selfie_photo_path),
+    signedStorageUrl("verification", request.vehicle_license_photo_path),
   ]);
 
   if (!frontUrl || !backUrl || !selfieUrl) return;
@@ -220,6 +222,7 @@ export async function notifyAdminsOfVerification(
     `<b>Address:</b> ${escapeHtml(request.residential_address ?? "—")}`,
     `<b>Emergency contact:</b> ${escapeHtml(request.emergency_contact_name ?? "—")} / ${escapeHtml(request.emergency_contact_phone ?? "—")}`,
     `<b>Next of kin:</b> ${escapeHtml(request.next_of_kin_name ?? "—")} / ${escapeHtml(request.next_of_kin_phone ?? "—")}`,
+    vehicleLicenseUrl ? `<b>Vehicle license:</b> ${escapeHtml(vehicleLicenseUrl)}` : null,
     `<b>Submitted:</b> ${submittedAt}`,
     `<b>ID:</b> #${requestId.slice(0, 8)}`,
   ]
@@ -232,11 +235,14 @@ export async function notifyAdminsOfVerification(
     return;
   }
 
-  const media = [
+  const media: { type: "photo"; media: string; caption?: string; parse_mode?: string }[] = [
     { type: "photo" as const, media: frontUrl, caption, parse_mode: "HTML" },
     { type: "photo" as const, media: backUrl, parse_mode: "HTML" },
     { type: "photo" as const, media: selfieUrl, parse_mode: "HTML" },
   ];
+  if (vehicleLicenseUrl) {
+    media.push({ type: "photo" as const, media: vehicleLicenseUrl, parse_mode: "HTML" });
+  }
 
   const replyMarkup = {
     inline_keyboard: [
