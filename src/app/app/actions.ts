@@ -932,6 +932,33 @@ export async function markAllNotificationsRead() {
   revalidatePath("/app/notifications");
 }
 
+/** Delete a single notification belonging to the signed-in user. */
+export async function deleteNotification(notificationId: string) {
+  if (!isUuid(notificationId)) {
+    throw new Error("Invalid notification");
+  }
+  const userId = await requireUserId();
+  const db = getServiceClient();
+  await db
+    .from("notifications")
+    .delete()
+    .eq("id", notificationId)
+    .eq("recipient_id", userId);
+
+  revalidatePath("/app");
+  revalidatePath("/app/notifications");
+}
+
+/** Delete all read notifications for the signed-in user. */
+export async function clearReadNotifications() {
+  const userId = await requireUserId();
+  const db = getServiceClient();
+  await db.from("notifications").delete().eq("recipient_id", userId).eq("read", true);
+
+  revalidatePath("/app");
+  revalidatePath("/app/notifications");
+}
+
 /** Update the signed-in user's profile name and phone. */
 export async function updateProfile(formData: FormData) {
   const userId = await requireUserId();

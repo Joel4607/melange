@@ -28,7 +28,7 @@ export default async function SettingsPage() {
     .from("profiles")
     .select("name, phone, verified, is_admin")
     .eq("id", user.id)
-    .single();
+    .maybeSingle<{ name: string | null; phone: string | null; verified: boolean; is_admin: boolean }>();
 
   const { data: latestVerification } =
     role === "runner"

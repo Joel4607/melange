@@ -2,9 +2,14 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { Bell, Check, X } from "lucide-react";
+import { Bell, Check, Trash2, X } from "lucide-react";
 import { formatNotification, NotificationSummary } from "@/lib/notification-text";
-import { markNotificationRead, markAllNotificationsRead } from "./actions";
+import {
+  markNotificationRead,
+  markAllNotificationsRead,
+  deleteNotification,
+  clearReadNotifications,
+} from "./actions";
 
 export function NotificationsPopover({
   notifications,
@@ -48,24 +53,36 @@ export function NotificationsPopover({
         <div className="absolute right-0 z-50 mt-2 w-80 rounded-2xl border border-cream-deep bg-white p-4 shadow-xl sm:w-96">
           <div className="flex items-center justify-between">
             <p className="font-display font-semibold text-green-deep">Notifications</p>
-            {notifications.length > 0 ? (
-              <form action={markAllNotificationsRead}>
-                <button
-                  type="submit"
-                  className="flex items-center gap-1 text-xs font-medium text-green-deep hover:text-green"
-                >
-                  <Check className="h-3.5 w-3.5" aria-hidden /> Mark all read
-                </button>
-              </form>
-            ) : null}
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              className="rounded-full p-1 text-muted hover:bg-cream/40"
-              aria-label="Close"
-            >
-              <X className="h-4 w-4" aria-hidden />
-            </button>
+            <div className="flex items-center gap-2">
+              {notifications.length > 0 ? (
+                <form action={markAllNotificationsRead}>
+                  <button
+                    type="submit"
+                    className="flex items-center gap-1 text-xs font-medium text-green-deep hover:text-green"
+                  >
+                    <Check className="h-3.5 w-3.5" aria-hidden /> Mark all read
+                  </button>
+                </form>
+              ) : null}
+              {notifications.some((n) => n.read) ? (
+                <form action={clearReadNotifications}>
+                  <button
+                    type="submit"
+                    className="flex items-center gap-1 text-xs font-medium text-orange-deep hover:text-orange"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" aria-hidden /> Clear read
+                  </button>
+                </form>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="rounded-full p-1 text-muted hover:bg-cream/40"
+                aria-label="Close"
+              >
+                <X className="h-4 w-4" aria-hidden />
+              </button>
+            </div>
           </div>
 
           {notifications.length === 0 ? (
@@ -82,16 +99,27 @@ export function NotificationsPopover({
                   <span className={`text-sm ${n.read ? "text-muted" : "text-ink"}`}>
                     {formatNotification(n)}
                   </span>
-                  {!n.read ? (
-                    <form action={markNotificationRead.bind(null, n.id)}>
+                  <div className="flex shrink-0 items-center gap-2">
+                    {!n.read ? (
+                      <form action={markNotificationRead.bind(null, n.id)}>
+                        <button
+                          type="submit"
+                          className="shrink-0 rounded-full border border-green-soft px-2.5 py-1 text-xs font-medium text-green-deep transition hover:bg-cream"
+                        >
+                          Mark read
+                        </button>
+                      </form>
+                    ) : null}
+                    <form action={deleteNotification.bind(null, n.id)}>
                       <button
                         type="submit"
-                        className="shrink-0 rounded-full border border-green-soft px-2.5 py-1 text-xs font-medium text-green-deep transition hover:bg-cream"
+                        className="rounded-full p-1.5 text-muted transition hover:bg-red-50 hover:text-red-500"
+                        aria-label="Delete notification"
                       >
-                        Mark read
+                        <Trash2 className="h-3.5 w-3.5" aria-hidden />
                       </button>
                     </form>
-                  ) : null}
+                  </div>
                 </li>
               ))}
             </ul>

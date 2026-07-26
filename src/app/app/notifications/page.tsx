@@ -1,11 +1,16 @@
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft, Check } from "lucide-react";
+import { ArrowLeft, Check, Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { formatNotification, NotificationSummary } from "@/lib/notification-text";
 import { Logo } from "@/components/brand";
-import { markAllNotificationsRead, markNotificationRead } from "../actions";
+import {
+  markAllNotificationsRead,
+  markNotificationRead,
+  deleteNotification,
+  clearReadNotifications,
+} from "../actions";
 
 export const metadata: Metadata = {
   title: "Notifications — Mélange",
@@ -43,14 +48,26 @@ export default async function NotificationsPage() {
         <div className="flex items-center justify-between">
           <h1 className="font-display text-fluid-h2 font-semibold text-green-deep">Notifications</h1>
           {(notifications?.length ?? 0) > 0 ? (
-            <form action={markAllNotificationsRead}>
-              <button
-                type="submit"
-                className="flex items-center gap-2 rounded-full border border-cream-deep bg-white px-4 py-2 text-sm font-medium text-green-deep transition hover:bg-cream/40"
-              >
-                <Check className="h-4 w-4" aria-hidden /> Mark all read
-              </button>
-            </form>
+            <div className="flex items-center gap-2">
+              <form action={markAllNotificationsRead}>
+                <button
+                  type="submit"
+                  className="flex items-center gap-2 rounded-full border border-cream-deep bg-white px-4 py-2 text-sm font-medium text-green-deep transition hover:bg-cream/40"
+                >
+                  <Check className="h-4 w-4" aria-hidden /> Mark all read
+                </button>
+              </form>
+              {(notifications?.some((n) => n.read) ?? false) ? (
+                <form action={clearReadNotifications}>
+                  <button
+                    type="submit"
+                    className="flex items-center gap-2 rounded-full border border-cream-deep bg-white px-4 py-2 text-sm font-medium text-orange-deep transition hover:bg-cream/40"
+                  >
+                    <Trash2 className="h-4 w-4" aria-hidden /> Clear read
+                  </button>
+                </form>
+              ) : null}
+            </div>
           ) : null}
         </div>
 
@@ -71,16 +88,27 @@ export default async function NotificationsPage() {
                     {new Date(n.created_at).toLocaleString()}
                   </p>
                 </div>
-                {!n.read ? (
-                  <form action={markNotificationRead.bind(null, n.id)}>
+                <div className="flex shrink-0 items-center gap-2">
+                  {!n.read ? (
+                    <form action={markNotificationRead.bind(null, n.id)}>
+                      <button
+                        type="submit"
+                        className="rounded-full border border-green-soft px-3 py-1 text-xs font-medium text-green-deep transition hover:bg-cream"
+                      >
+                        Mark read
+                      </button>
+                    </form>
+                  ) : null}
+                  <form action={deleteNotification.bind(null, n.id)}>
                     <button
                       type="submit"
-                      className="shrink-0 rounded-full border border-green-soft px-3 py-1 text-xs font-medium text-green-deep transition hover:bg-cream"
+                      className="rounded-full p-2 text-muted transition hover:bg-red-50 hover:text-red-500"
+                      aria-label="Delete notification"
                     >
-                      Mark read
+                      <Trash2 className="h-4 w-4" aria-hidden />
                     </button>
                   </form>
-                ) : null}
+                </div>
               </li>
             ))}
           </ul>
