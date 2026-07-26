@@ -19,7 +19,8 @@ export type NotificationType =
   | "buyer_cancelled"
   | "runner_cancelled"
   | "dispute_raised"
-  | "dispute_resolved";
+  | "dispute_resolved"
+  | "new_message";
 
 function getTitle(type: NotificationType): string {
   switch (type) {
@@ -40,6 +41,8 @@ function getTitle(type: NotificationType): string {
       return "Dispute raised";
     case "dispute_resolved":
       return "Dispute resolved";
+    case "new_message":
+      return "New message";
   }
 }
 
@@ -64,6 +67,8 @@ function getBody(type: NotificationType, payload: NotificationPayload): string {
       return `A dispute was raised for ${title}.`;
     case "dispute_resolved":
       return `A dispute was resolved for ${title}.`;
+    case "new_message":
+      return `You have a new message about ${title}.`;
   }
 }
 

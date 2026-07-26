@@ -770,6 +770,62 @@ export async function rateRunner(taskId: string, stars: number, formData: FormDa
   revalidatePath(`/app/errands/${taskId}`);
 }
 
+const CHAT_ALLOWED_STATUSES = new Set([
+  "matched",
+  "accepted",
+  "in_progress",
+  "completed",
+  "resolved",
+]);
+
+/** Buyer or runner sends a message on an active errand. */
+export async function sendMessage(taskId: string, content: string): Promise<{ error?: string }> {
+  if (!isUuid(taskId)) {
+    return { error: "Invalid errand" };
+  }
+
+  const userId = await requireUserId();
+  const supabase = await createClient();
+
+  const { data: task } = await supabase
+    .from("tasks")
+    .select("id, buyer_id, title, selected_runner_id, status")
+    .eq("id", taskId)
+    .maybeSingle<{ id: string; buyer_id: string; title: string; selected_runner_id: string | null; status: string }>();
+
+  if (!task) return { error: "Errand not found" };
+  if (!task.selected_runner_id || !CHAT_ALLOWED_STATUSES.has(task.status)) {
+    return { error: "Messaging is not available for this errand yet" };
+  }
+  if (task.buyer_id !== userId && task.selected_runner_id !== userId) {
+    return { error: "You are not a participant" };
+  }
+
+  const text = content.trim();
+  if (text.length === 0 || text.length > 1000) {
+    return { error: "Message must be 1–1000 characters" };
+  }
+
+  const { error: insertError } = await supabase.from("messages").insert({
+    task_id: taskId,
+    sender_id: userId,
+    content: text,
+  });
+
+  if (insertError) {
+    return { error: insertError.message };
+  }
+
+  const recipientId = task.buyer_id === userId ? task.selected_runner_id : task.buyer_id;
+  await createNotification(recipientId, "new_message", {
+    task_id: taskId,
+    task_title: task.title,
+  });
+
+  revalidatePath(`/app/errands/${taskId}`);
+  return {};
+}
+
 /** Buyer cancels an errand before the runner has accepted. */
 export async function cancelErrand(taskId: string) {
   const userId = await requireUserId();
