@@ -724,12 +724,20 @@ export async function markDelivered(taskId: string, formData: FormData) {
   revalidatePath("/app");
 }
 
-/** Buyer rates the runner after delivery; releases escrow and feeds trust. */
+/** Buyer rates the runner after delivery; releases escrow, records the review,
+ * and transfers an optional tip from the buyer's wallet to the runner. */
 export async function rateRunner(taskId: string, stars: number, formData: FormData) {
   if (!Number.isInteger(stars) || stars < 1 || stars > 5) {
     throw new Error("Rating must be an integer between 1 and 5 stars");
   }
   const comment = (formData.get("comment")?.toString().trim() ?? null) || null;
+  const tipRaw = parseNumber(formData.get("tip"));
+  const tipAmount = Number.isNaN(tipRaw) ? 0 : Math.max(0, tipRaw);
+  const tipCents = Math.round(tipAmount * 100);
+  if (tipAmount > 10000) {
+    throw new Error("Tip amount cannot exceed GHS 10,000");
+  }
+
   const userId = await requireUserId();
   const task = await ownedTask(taskId, userId);
   if (!task.selected_runner_id) return;
@@ -741,21 +749,22 @@ export async function rateRunner(taskId: string, stars: number, formData: FormDa
     await releaseFunds(taskId);
   }
 
-  const { data: inserted, error: insertError } = await db
-    .from("ratings")
-    .insert({
-      task_id: taskId,
-      rater_id: userId,
-      ratee_id: task.selected_runner_id,
-      stars,
-      comment,
-    })
-    .select("id");
-  if (insertError) {
-    if (insertError.code === "23505") return;
-    throw new Error(insertError.message);
+  const { data: ratingId, error: rpcError } = await db.rpc("rate_and_tip", {
+    p_task_id: taskId,
+    p_rater_id: userId,
+    p_stars: stars,
+    p_comment: comment,
+    p_tip_cents: tipCents,
+  });
+
+  if (rpcError) {
+    const message = rpcError.message ?? String(rpcError);
+    if (message.toLowerCase().includes("already been rated")) return;
+    throw new Error(message);
   }
-  if (!inserted?.length) return;
+
+  if (!ratingId) return;
+
   await db.from("trust_events").insert({
     runner_id: task.selected_runner_id,
     type: "rating",
@@ -766,6 +775,13 @@ export async function rateRunner(taskId: string, stars: number, formData: FormDa
     task_id: taskId,
     task_title: task.title,
   });
+
+  if (tipAmount > 0) {
+    await createNotification(task.selected_runner_id, "tip_received", {
+      task_id: taskId,
+      task_title: task.title,
+    });
+  }
 
   revalidatePath(`/app/errands/${taskId}`);
 }

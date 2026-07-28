@@ -18,6 +18,8 @@ const LABELS: Record<string, string> = {
   release: "Escrow released",
   payout: "Payout",
   refund: "Refund",
+  tip: "Tip",
+  tip_charge: "Tip",
 };
 
 export default async function WalletPage() {

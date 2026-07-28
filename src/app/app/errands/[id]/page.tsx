@@ -206,10 +206,10 @@ export default async function ErrandPage({
 
   const { data: existingRating } = await db
     .from("ratings")
-    .select("stars")
+    .select("stars, tip_amount")
     .eq("task_id", task.id)
     .eq("rater_id", user.id)
-    .maybeSingle<{ stars: number }>();
+    .maybeSingle<{ stars: number; tip_amount: string }>();
 
   const { data: rawMessages } = await supabase
     .from("messages")
@@ -538,7 +538,11 @@ export default async function ErrandPage({
                 </p>
                 {existingRating ? (
                   <p className="mt-1 text-sm text-muted">
-                    You rated {runnerName} {existingRating.stars}★. Thanks!
+                    You rated {runnerName} {existingRating.stars}★
+                    {Number(existingRating.tip_amount ?? 0) > 0
+                      ? ` and tipped GHS ${Number(existingRating.tip_amount).toFixed(2)}`
+                      : ""}
+                    . Thanks!
                   </p>
                 ) : released ? (
                   <p className="mt-1 text-sm text-muted">
@@ -568,6 +572,14 @@ export default async function ErrandPage({
                       name="comment"
                       placeholder="Add a comment (optional)"
                       rows={2}
+                      className="mx-auto w-full max-w-xs rounded-xl border border-cream-deep bg-white px-4 py-2 text-sm text-ink outline-none transition placeholder:text-muted focus:border-green-soft"
+                    />
+                    <input
+                      type="number"
+                      name="tip"
+                      step="0.01"
+                      min={0}
+                      placeholder="Optional tip (GHS)"
                       className="mx-auto w-full max-w-xs rounded-xl border border-cream-deep bg-white px-4 py-2 text-sm text-ink outline-none transition placeholder:text-muted focus:border-green-soft"
                     />
                   </form>
@@ -608,7 +620,11 @@ export default async function ErrandPage({
                 </p>
                 {existingRating ? (
                   <p className="mt-1 text-sm text-muted">
-                    You rated {runnerName} {existingRating.stars}★.
+                    You rated {runnerName} {existingRating.stars}★
+                    {Number(existingRating.tip_amount ?? 0) > 0
+                      ? ` and tipped GHS ${Number(existingRating.tip_amount).toFixed(2)}`
+                      : ""}
+                    .
                   </p>
                 ) : !refunded ? (
                   <>
@@ -633,6 +649,14 @@ export default async function ErrandPage({
                         name="comment"
                         placeholder="Add a comment (optional)"
                         rows={2}
+                        className="mx-auto w-full max-w-xs rounded-xl border border-cream-deep bg-white px-4 py-2 text-sm text-ink outline-none transition placeholder:text-muted focus:border-green-soft"
+                      />
+                      <input
+                        type="number"
+                        name="tip"
+                        step="0.01"
+                        min={0}
+                        placeholder="Optional tip (GHS)"
                         className="mx-auto w-full max-w-xs rounded-xl border border-cream-deep bg-white px-4 py-2 text-sm text-ink outline-none transition placeholder:text-muted focus:border-green-soft"
                       />
                     </form>
