@@ -25,6 +25,7 @@ interface Rating {
   task_id: string;
   stars: number;
   comment: string | null;
+  tip_amount: string;
   created_at: string;
 }
 
@@ -49,17 +50,21 @@ export default async function EarningsPage() {
       .returns<CompletedTask[]>(),
     db
       .from("ratings")
-      .select("task_id, stars, comment, created_at")
+      .select("task_id, stars, comment, tip_amount, created_at")
       .eq("ratee_id", user.id)
       .returns<Rating[]>(),
   ]);
 
   const ratingByTask = new Map((ratings ?? []).map((r) => [r.task_id, r]));
   const completed = tasks ?? [];
+  const totalTips = (ratings ?? []).reduce(
+    (sum, r) => sum + Number(r.tip_amount ?? 0),
+    0,
+  );
   const totalEarned = completed.reduce(
     (sum, t) => sum + Math.max(0, Number(t.price) - Number(t.fee)),
     0,
-  );
+  ) + totalTips;
   const averageRating =
     ratings && ratings.length > 0
       ? ratings.reduce((sum, r) => sum + r.stars, 0) / ratings.length
@@ -115,6 +120,8 @@ export default async function EarningsPage() {
             {completed.map((task) => {
               const payout = Math.max(0, Number(task.price) - Number(task.fee));
               const rating = ratingByTask.get(task.id);
+              const tip = Number(rating?.tip_amount ?? 0);
+              const total = payout + tip;
               const date = task.completed_at ?? task.created_at;
               return (
                 <li
@@ -133,6 +140,7 @@ export default async function EarningsPage() {
                         <Star className="h-3.5 w-3.5 fill-current" aria-hidden />
                         {rating.stars} / 5
                         {rating.comment ? ` · ${rating.comment}` : null}
+                        {tip > 0 ? ` · Tip GHS ${tip.toFixed(2)}` : null}
                       </p>
                     ) : (
                       <p className="mt-2 text-sm text-muted">No rating yet</p>
@@ -140,9 +148,12 @@ export default async function EarningsPage() {
                   </div>
                   <div className="text-left sm:text-right">
                     <p className="font-display text-xl font-semibold text-green-deep">
-                      GHS {payout.toFixed(2)}
+                      GHS {total.toFixed(2)}
                     </p>
-                    <p className="text-sm text-muted">Fee GHS {Number(task.fee).toFixed(2)}</p>
+                    <p className="text-sm text-muted">
+                      Payout GHS {payout.toFixed(2)}
+                      {tip > 0 ? ` · Tip GHS ${tip.toFixed(2)}` : ""}
+                    </p>
                   </div>
                 </li>
               );

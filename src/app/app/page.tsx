@@ -82,7 +82,7 @@ export default async function AppHome() {
 
   let runnerProfile: RunnerProfileSummary | null = null;
   let runnerTasks: RunnerTaskSummary[] | null = null;
-  let runnerRatings: { stars: number }[] | null = null;
+  let runnerRatings: { stars: number; tip_amount: string }[] | null = null;
 
   if (role === "runner") {
     const db = getServiceClient();
@@ -100,7 +100,11 @@ export default async function AppHome() {
         .eq("selected_runner_id", user.id)
         .order("created_at", { ascending: false })
         .returns<RunnerTaskSummary[]>(),
-      db.from("ratings").select("stars").eq("ratee_id", user.id).returns<{ stars: number }[]>(),
+      db
+        .from("ratings")
+        .select("stars, tip_amount")
+        .eq("ratee_id", user.id)
+        .returns<{ stars: number; tip_amount: string }[]>(),
     ]);
     runnerProfile = rp ?? null;
     runnerTasks = rt ?? null;
@@ -131,10 +135,14 @@ export default async function AppHome() {
 
   const completedTasks =
     runnerTasks?.filter((t) => t.status === "completed" || t.status === "resolved") ?? [];
+  const totalTips = (runnerRatings ?? []).reduce(
+    (sum, r) => sum + Number(r.tip_amount ?? 0),
+    0,
+  );
   const totalEarned = completedTasks.reduce(
     (sum, t) => sum + Math.max(0, Number(t.price) - Number(t.fee)),
     0,
-  );
+  ) + totalTips;
   const avgRating =
     runnerRatings && runnerRatings.length > 0
       ? runnerRatings.reduce((sum, r) => sum + r.stars, 0) / runnerRatings.length

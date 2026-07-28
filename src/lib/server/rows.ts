@@ -71,7 +71,7 @@ export interface LedgerRow {
   id: string;
   task_id: string | null;
   user_id: string;
-  type: "hold" | "release" | "refund" | "topup" | "payout";
+  type: "hold" | "release" | "refund" | "topup" | "payout" | "tip" | "tip_charge";
   amount: string;
   created_at: string;
 }

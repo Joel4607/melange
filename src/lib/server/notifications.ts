@@ -16,6 +16,7 @@ export type NotificationType =
   | "picked_up"
   | "delivered"
   | "rated"
+  | "tip_received"
   | "buyer_cancelled"
   | "runner_cancelled"
   | "dispute_raised"
@@ -34,6 +35,8 @@ function getTitle(type: NotificationType): string {
       return "Errand delivered";
     case "rated":
       return "New rating";
+    case "tip_received":
+      return "Tip received";
     case "buyer_cancelled":
     case "runner_cancelled":
       return "Errand cancelled";
@@ -59,6 +62,8 @@ function getBody(type: NotificationType, payload: NotificationPayload): string {
       return `Your errand ${title} has been delivered.`;
     case "rated":
       return `You received a rating for ${title}.`;
+    case "tip_received":
+      return `You received a tip for ${title}.`;
     case "buyer_cancelled":
       return `A buyer cancelled ${title}.`;
     case "runner_cancelled":
