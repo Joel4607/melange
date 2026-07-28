@@ -267,7 +267,7 @@ export default async function ErrandPage({
   }
 
   const liveRunner: LiveRunner | null =
-    runnerId && (task.status === "accepted" || task.status === "in_progress")
+    isBuyer && runnerId && (task.status === "accepted" || task.status === "in_progress")
       ? {
           id: runnerId,
           name: runnerName,

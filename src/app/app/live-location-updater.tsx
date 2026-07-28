@@ -6,14 +6,14 @@ import { updateLocation } from "./actions";
 
 const UPDATE_INTERVAL_MS = 30_000;
 
-export function LiveLocationUpdater({ available }: { available: boolean }) {
+export function LiveLocationUpdater({ enabled }: { enabled: boolean }) {
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [status, setStatus] = useState<"idle" | "updating" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
   const lastSent = useRef<{ lat: number; lng: number; at: number } | null>(null);
 
   useEffect(() => {
-    if (!available) return;
+    if (!enabled) return;
 
     function sendLocation(lat: number, lng: number) {
       if (lastSent.current) {
@@ -55,9 +55,9 @@ export function LiveLocationUpdater({ available }: { available: boolean }) {
     readAndSend();
     const interval = setInterval(readAndSend, UPDATE_INTERVAL_MS);
     return () => clearInterval(interval);
-  }, [available]);
+  }, [enabled]);
 
-  if (!available) return null;
+  if (!enabled) return null;
 
   return (
     <div className="mt-4 rounded-xl border border-cream-deep/60 bg-cream/30 p-3">
