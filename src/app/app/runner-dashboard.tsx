@@ -127,7 +127,7 @@ export function RunnerDashboard({
               lng={profile?.current_lng ?? null}
               verified={profile?.verified ?? false}
             />
-            <LiveLocationUpdater available={available} />
+            <LiveLocationUpdater enabled={available || active.length > 0} />
           </RunnerAvailabilityCard>
 
           <WalletCreditCard wallet={wallet} name={name ?? null} />
