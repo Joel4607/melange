@@ -5,7 +5,7 @@
  * columns arrive as strings (the driver preserves precision), hence the
  * `string` types for money fields.
  */
-import type { Urgency } from "@/lib/algorithm";
+import type { Urgency, TaskStop } from "@/lib/algorithm";
 
 export type TaskStatus =
   | "posted"
@@ -25,11 +25,17 @@ export interface TaskRow {
   id: string;
   buyer_id: string;
   title: string;
+  description?: string | null;
   category: string | null;
   pickup_lat: number;
   pickup_lng: number;
   dropoff_lat: number | null;
   dropoff_lng: number | null;
+  stops?: TaskStop[] | null;
+  recurrence?: "none" | "daily" | "weekly" | "monthly" | null;
+  recurrence_end_date?: string | null;
+  parent_task_id?: string | null;
+  series_number?: number;
   urgency: Urgency;
   price: string;
   fee: string;

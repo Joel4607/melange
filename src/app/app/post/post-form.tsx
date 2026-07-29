@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useFormStatus } from "react-dom";
 import Link from "next/link";
-import { LoaderCircle, MapPin, Navigation, Star, User, ShieldAlert } from "lucide-react";
+import { LoaderCircle, MapPin, Navigation, Plus, Star, Trash2, User, ShieldAlert } from "lucide-react";
 import type { Urgency } from "@/lib/algorithm";
 import { estimateErrandFee } from "@/lib/pricing";
 import { createErrand } from "../actions";
@@ -24,6 +24,15 @@ const URGENCIES: { value: string; label: string; hint: string }[] = [
   { value: "normal", label: "Today", hint: "Standard" },
   { value: "express", label: "ASAP", hint: "Express" },
 ];
+
+const RECURRENCE_OPTIONS = [
+  { value: "none", label: "One-time" },
+  { value: "daily", label: "Daily" },
+  { value: "weekly", label: "Weekly" },
+  { value: "monthly", label: "Monthly" },
+] as const;
+
+type Recurrence = (typeof RECURRENCE_OPTIONS)[number]["value"];
 
 export function PostForm({
   preselectedRunner,
@@ -47,10 +56,13 @@ export function PostForm({
     lat: "",
     lng: "",
   });
+  const [stops, setStops] = useState<{ lat: string; lng: string; label: string }[]>([]);
   const [locating, setLocating] = useState(false);
   const [locError, setLocError] = useState<string | null>(null);
   const [urgency, setUrgency] = useState("normal");
   const [price, setPrice] = useState("50");
+  const [recurrence, setRecurrence] = useState<Recurrence>("none");
+  const [recurrenceEnd, setRecurrenceEnd] = useState("");
 
   const hasLocation = coords.lat !== "" && coords.lng !== "";
   const hasDropoff = dropoffCoords.lat !== "" && dropoffCoords.lng !== "";
@@ -62,9 +74,17 @@ export function PostForm({
   const dropoff = hasDropoff
     ? { lat: Number(dropoffCoords.lat), lng: Number(dropoffCoords.lng) }
     : null;
+  const validStops = stops
+    .map((s, i) => ({
+      ...s,
+      sequence: i + 1,
+      lat: Number(s.lat),
+      lng: Number(s.lng),
+    }))
+    .filter((s) => Number.isFinite(s.lat) && Number.isFinite(s.lng));
   const { distanceKm, fee, runnerPayout } =
     pickup && !Number.isNaN(pickup.lat) && !Number.isNaN(pickup.lng)
-      ? estimateErrandFee(priceNum, pickup, dropoff, urgency as Urgency)
+      ? estimateErrandFee(priceNum, pickup, dropoff, urgency as Urgency, validStops)
       : { distanceKm: 0, fee: 0, runnerPayout: priceNum };
 
   const categoryDefault =
@@ -316,6 +336,116 @@ export function PostForm({
           />
         </div>
       </Field>
+
+      <input type="hidden" name="stops" value={JSON.stringify(validStops)} />
+
+      <Field label="Extra stops (optional)">
+        <div className="space-y-3">
+          {stops.map((stop, i) => (
+            <div
+              key={i}
+              className="rounded-xl border border-cream-deep bg-white p-3"
+            >
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-sm font-medium text-green-deep">
+                  Stop {i + 1}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setStops((prev) => prev.filter((_, idx) => idx !== i))}
+                  className="inline-flex items-center gap-1 text-sm text-orange-deep"
+                >
+                  <Trash2 className="h-3.5 w-3.5" aria-hidden /> Remove
+                </button>
+              </div>
+              <input
+                aria-label={`Stop ${i + 1} label`}
+                placeholder="Label, e.g. Pharmacy"
+                value={stop.label}
+                maxLength={80}
+                onChange={(e) =>
+                  setStops((prev) =>
+                    prev.map((s, idx) => (idx === i ? { ...s, label: e.target.value } : s))
+                  )
+                }
+                className={`${inputClass} mb-2 text-sm`}
+              />
+              <div className="grid grid-cols-2 gap-2.5">
+                <input
+                  aria-label={`Stop ${i + 1} latitude`}
+                  inputMode="decimal"
+                  placeholder="Latitude"
+                  value={stop.lat}
+                  onChange={(e) =>
+                    setStops((prev) =>
+                      prev.map((s, idx) => (idx === i ? { ...s, lat: e.target.value } : s))
+                    )
+                  }
+                  className={`${inputClass} text-sm`}
+                />
+                <input
+                  aria-label={`Stop ${i + 1} longitude`}
+                  inputMode="decimal"
+                  placeholder="Longitude"
+                  value={stop.lng}
+                  onChange={(e) =>
+                    setStops((prev) =>
+                      prev.map((s, idx) => (idx === i ? { ...s, lng: e.target.value } : s))
+                    )
+                  }
+                  className={`${inputClass} text-sm`}
+                />
+              </div>
+            </div>
+          ))}
+          {stops.length < 5 ? (
+            <button
+              type="button"
+              onClick={() => setStops((prev) => [...prev, { lat: "", lng: "", label: "" }])}
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-cream-deep bg-cream/40 px-4 py-3 text-sm font-medium text-green-deep transition hover:bg-white"
+            >
+              <Plus className="h-4 w-4" aria-hidden /> Add stop
+            </button>
+          ) : null}
+        </div>
+      </Field>
+
+      <Field label="Repeat this errand?">
+        <input type="hidden" name="recurrence" value={recurrence} />
+        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+          {RECURRENCE_OPTIONS.map((r) => {
+            const active = recurrence === r.value;
+            return (
+              <button
+                type="button"
+                key={r.value}
+                onClick={() => setRecurrence(r.value)}
+                className={`rounded-2xl border px-3 py-3 text-center transition ${
+                  active
+                    ? "border-green bg-green text-cream"
+                    : "border-cream-deep bg-cream/40 text-green-deep hover:bg-white"
+                }`}
+              >
+                <span className="block text-sm font-semibold">{r.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </Field>
+
+      {recurrence !== "none" ? (
+        <Field label="Repeat until">
+          <input
+            name="recurrence_end_date"
+            type="date"
+            required
+            value={recurrenceEnd}
+            min={new Date().toISOString().split("T")[0]}
+            onChange={(e) => setRecurrenceEnd(e.target.value)}
+            className={inputClass}
+          />
+        </Field>
+      ) : null}
 
       <Submit
         disabled={!hasLocation || priceNum <= fee || !verified}

@@ -16,7 +16,7 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import { getServiceClient } from "@/lib/supabase/service";
 import { hasLedgerEntry } from "@/lib/server/escrow";
-import { haversineKm } from "@/lib/algorithm";
+import { haversineKm, type TaskStop } from "@/lib/algorithm";
 import { Logo } from "@/components/brand";
 import { RealtimeStatus } from "../../realtime-status";
 import { MapView, MapMarker, type LiveRunner } from "../../map-view";
@@ -86,7 +86,7 @@ export default async function ErrandPage({
   const { data: task } = await db
     .from("tasks")
     .select(
-      "id, buyer_id, title, description, category, urgency, price, fee, payment_reference, status, selected_runner_id, pickup_lat, pickup_lng, dropoff_lat, dropoff_lng, created_at, accepted_at, completed_at",
+      "id, buyer_id, title, description, category, urgency, price, fee, payment_reference, status, selected_runner_id, pickup_lat, pickup_lng, dropoff_lat, dropoff_lng, stops, recurrence, recurrence_end_date, parent_task_id, series_number, created_at, accepted_at, completed_at",
     )
     .eq("id", id)
     .maybeSingle<{
@@ -105,6 +105,11 @@ export default async function ErrandPage({
       pickup_lng: number;
       dropoff_lat: number | null;
       dropoff_lng: number | null;
+      stops: TaskStop[] | null;
+      recurrence: "none" | "daily" | "weekly" | "monthly" | null;
+      recurrence_end_date: string | null;
+      parent_task_id: string | null;
+      series_number: number;
       created_at: string;
       accepted_at: string | null;
       completed_at: string | null;
@@ -249,6 +254,14 @@ export default async function ErrandPage({
   const mapMarkers: MapMarker[] = [
     { lat: task.pickup_lat, lng: task.pickup_lng, label: "Pickup", kind: "pickup" },
   ];
+  (task.stops ?? []).forEach((stop, i) => {
+    mapMarkers.push({
+      lat: stop.lat,
+      lng: stop.lng,
+      label: stop.label || `Stop ${i + 1}`,
+      kind: "stop",
+    });
+  });
   if (task.dropoff_lat != null && task.dropoff_lng != null) {
     mapMarkers.push({
       lat: task.dropoff_lat,
@@ -430,6 +443,14 @@ export default async function ErrandPage({
               <span className="font-medium text-ink">Pickup:</span>{" "}
               {task.pickup_lat.toFixed(5)}, {task.pickup_lng.toFixed(5)}
             </p>
+            {(task.stops ?? []).map((stop, i) => (
+              <p className="text-muted" key={i}>
+                <span className="font-medium text-ink">
+                  {stop.label ? `${stop.label}` : `Stop ${i + 1}`}:
+                </span>{" "}
+                {stop.lat.toFixed(5)}, {stop.lng.toFixed(5)}
+              </p>
+            ))}
             {task.dropoff_lat != null && task.dropoff_lng != null ? (
               <p className="text-muted">
                 <span className="font-medium text-ink">Dropoff:</span>{" "}
@@ -438,6 +459,13 @@ export default async function ErrandPage({
             ) : (
               <p className="text-muted">Dropoff: same as pickup</p>
             )}
+            {task.recurrence && task.recurrence !== "none" ? (
+              <p className="text-muted">
+                <span className="font-medium text-ink">Repeats:</span>{" "}
+                {task.recurrence} until {task.recurrence_end_date}
+                {task.series_number && task.series_number > 1 ? ` · #${task.series_number}` : ""}
+              </p>
+            ) : null}
           </div>
         </section>
 

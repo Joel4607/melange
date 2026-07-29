@@ -21,7 +21,8 @@ export type NotificationType =
   | "runner_cancelled"
   | "dispute_raised"
   | "dispute_resolved"
-  | "new_message";
+  | "new_message"
+  | "recurring_scheduled";
 
 function getTitle(type: NotificationType): string {
   switch (type) {
@@ -46,6 +47,8 @@ function getTitle(type: NotificationType): string {
       return "Dispute resolved";
     case "new_message":
       return "New message";
+    case "recurring_scheduled":
+      return "Next errand scheduled";
   }
 }
 
@@ -74,6 +77,8 @@ function getBody(type: NotificationType, payload: NotificationPayload): string {
       return `A dispute was resolved for ${title}.`;
     case "new_message":
       return `You have a new message about ${title}.`;
+    case "recurring_scheduled":
+      return `Your recurring errand ${title} has been scheduled.`;
   }
 }
 

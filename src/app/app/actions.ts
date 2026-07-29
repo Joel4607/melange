@@ -19,13 +19,14 @@ import {
   evaluateTaskFraud,
   persistFraudFlags,
 } from "@/lib/server/fraud";
-import type { Urgency } from "@/lib/algorithm";
+import type { TaskStop, Urgency } from "@/lib/algorithm";
 import { isRunnerAvailable, type TimeRange } from "@/lib/availability";
 import { estimateErrandFee } from "@/lib/pricing";
 import type { ProofRow, TaskRow } from "@/lib/server/rows";
 import { randomUUID } from "node:crypto";
 
 const URGENCIES: readonly Urgency[] = ["low", "normal", "express"];
+const RECURRENCE: readonly string[] = ["none", "daily", "weekly", "monthly"];
 
 const ALLOWED_IMAGE_TYPES = new Map([
   ["image/jpeg", "jpg"],
@@ -52,6 +53,34 @@ function isFiniteCoordinate(lat: number, lng: number): boolean {
     lng >= -180 &&
     lng <= 180
   );
+}
+
+function parseStops(raw: string): TaskStop[] {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    throw new Error("Stops must be a valid JSON array");
+  }
+  if (!Array.isArray(parsed)) throw new Error("Stops must be an array");
+  if (parsed.length > 5) throw new Error("You can add up to 5 stops");
+
+  return parsed
+    .map((item: unknown, index: number) => {
+      const s = typeof item === "object" && item != null ? (item as Record<string, unknown>) : {};
+      const lat = Number(s.lat);
+      const lng = Number(s.lng);
+      const label = String(s.label ?? "").trim();
+      if (!isFiniteCoordinate(lat, lng)) {
+        throw new Error(`Stop ${index + 1} has an invalid coordinate`);
+      }
+      return {
+        lat,
+        lng,
+        label: label || null,
+        sequence: index + 1,
+      };
+    });
 }
 
 async function requireUserId(): Promise<string> {
@@ -170,6 +199,14 @@ export async function createErrand(formData: FormData) {
   const runnerId = String(formData.get("runner_id") ?? "").trim();
   const paymentReference = String(formData.get("payment_reference") ?? "").trim();
 
+  const stopsRaw = String(formData.get("stops") ?? "[]").trim();
+  const stops = parseStops(stopsRaw);
+
+  const recurrenceRaw = String(formData.get("recurrence") ?? "none").trim();
+  const recurrence = RECURRENCE.includes(recurrenceRaw) ? recurrenceRaw : "none";
+  const recurrenceEndRaw = String(formData.get("recurrence_end_date") ?? "").trim();
+  const recurrenceEndDate = recurrence !== "none" && recurrenceEndRaw ? recurrenceEndRaw : null;
+
   if (!title || !isFiniteCoordinate(pickupLat, pickupLng)) {
     throw new Error("Missing title or valid pickup location");
   }
@@ -189,7 +226,7 @@ export async function createErrand(formData: FormData) {
     throw new Error("Dropoff location is invalid");
   }
 
-  const { fee, runnerPayout } = estimateErrandFee(priceRaw, pickup, dropoff, urgency);
+  const { fee, runnerPayout } = estimateErrandFee(priceRaw, pickup, dropoff, urgency, stops);
 
   const price = priceRaw;
   if (price <= fee) {
@@ -240,6 +277,10 @@ export async function createErrand(formData: FormData) {
         dropoff_lat: dropoff?.lat ?? null,
         dropoff_lng: dropoff?.lng ?? null,
         payment_reference: paymentReference || null,
+        stops,
+        recurrence,
+        recurrence_end_date: recurrenceEndDate,
+        series_number: 1,
         status: "matched",
         selected_runner_id: runnerId,
       })
@@ -282,6 +323,10 @@ export async function createErrand(formData: FormData) {
       dropoff_lat: dropoff?.lat ?? null,
       dropoff_lng: dropoff?.lng ?? null,
       payment_reference: paymentReference || null,
+      stops,
+      recurrence,
+      recurrence_end_date: recurrenceEndDate,
+      series_number: 1,
     })
     .select("id")
     .single<{ id: string }>();
@@ -683,7 +728,7 @@ export async function markDelivered(taskId: string, formData: FormData) {
   const { data: fullTask } = await db
     .from("tasks")
     .select(
-      "id, buyer_id, category, pickup_lat, pickup_lng, dropoff_lat, dropoff_lng, urgency, price, fee, status, selected_runner_id, accepted_at, completed_at",
+      "id, buyer_id, title, description, category, pickup_lat, pickup_lng, dropoff_lat, dropoff_lng, stops, recurrence, recurrence_end_date, parent_task_id, series_number, urgency, price, fee, status, selected_runner_id, accepted_at, completed_at",
     )
     .eq("id", taskId)
     .single<TaskRow>();
@@ -696,6 +741,10 @@ export async function markDelivered(taskId: string, formData: FormData) {
     if (fullTask.selected_runner_id) {
       await persistFraudFlags(db, fullTask.selected_runner_id, taskId, fraud);
     }
+  }
+
+  if (fullTask) {
+    await spawnNextRecurrence(db, fullTask);
   }
 
   await db.from("trust_events").insert({
@@ -722,6 +771,81 @@ export async function markDelivered(taskId: string, formData: FormData) {
 
   revalidatePath(`/app/errands/${taskId}`);
   revalidatePath("/app");
+}
+
+async function spawnNextRecurrence(
+  db: ReturnType<typeof getServiceClient>,
+  task: TaskRow,
+): Promise<string | null> {
+  if (
+    !task.recurrence ||
+    task.recurrence === "none" ||
+    !task.recurrence_end_date ||
+    !task.completed_at
+  ) {
+    return null;
+  }
+
+  const completedAt = new Date(task.completed_at);
+  const next = new Date(completedAt);
+  switch (task.recurrence) {
+    case "daily":
+      next.setUTCDate(completedAt.getUTCDate() + 1);
+      break;
+    case "weekly":
+      next.setUTCDate(completedAt.getUTCDate() + 7);
+      break;
+    case "monthly":
+      next.setUTCMonth(completedAt.getUTCMonth() + 1);
+      break;
+  }
+
+  const nextDateStr = next.toISOString().split("T")[0];
+  if (nextDateStr > task.recurrence_end_date) {
+    return null;
+  }
+
+  const { data: nextTask, error } = await db
+    .from("tasks")
+    .insert({
+      buyer_id: task.buyer_id,
+      title: task.title,
+      description: task.description,
+      category: task.category,
+      urgency: task.urgency,
+      price: task.price,
+      fee: task.fee,
+      pickup_lat: task.pickup_lat,
+      pickup_lng: task.pickup_lng,
+      dropoff_lat: task.dropoff_lat,
+      dropoff_lng: task.dropoff_lng,
+      stops: task.stops,
+      recurrence: task.recurrence,
+      recurrence_end_date: task.recurrence_end_date,
+      parent_task_id: task.parent_task_id ?? task.id,
+      series_number: (task.series_number ?? 1) + 1,
+      payment_reference: task.payment_reference,
+      status: "posted",
+    })
+    .select("id")
+    .single<{ id: string }>();
+  if (error || !nextTask) {
+    console.error("spawnNextRecurrence: failed to insert next task", error?.message);
+    return null;
+  }
+
+  try {
+    await generateMatchRun(nextTask.id);
+  } catch {
+    /* match is best-effort; task stays posted */
+  }
+
+  await createNotification(task.buyer_id, "recurring_scheduled", {
+    task_id: nextTask.id,
+    task_title: task.title,
+  });
+
+  return nextTask.id;
 }
 
 /** Buyer rates the runner after delivery; releases escrow, records the review,
