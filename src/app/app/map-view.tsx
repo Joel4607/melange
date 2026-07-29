@@ -8,7 +8,7 @@ export interface MapMarker {
   lat: number;
   lng: number;
   label: string;
-  kind: "pickup" | "dropoff" | "runner";
+  kind: "pickup" | "dropoff" | "runner" | "stop";
 }
 
 export interface LiveRunner {
@@ -83,7 +83,7 @@ export function MapView({
     const seen = new Set<string>();
     for (const m of markers) {
       if (liveRunner && m.kind === "runner") continue;
-      const key = m.kind === "runner" ? `runner:${m.label}` : m.kind;
+      const key = m.kind === "runner" ? `runner:${m.label}` : `${m.kind}:${m.lat}:${m.lng}:${m.label}`;
       seen.add(key);
       const existing = markerRefs.current.get(key);
       if (existing) {
@@ -168,8 +168,9 @@ export function MapView({
   return <div ref={containerRef} className={`w-full rounded-[1.25rem] ${className}`} />;
 }
 
-function markerIcon(kind: "pickup" | "dropoff" | "runner") {
-  const color = kind === "pickup" ? "#d9641c" : kind === "dropoff" ? "#133c21" : "#2563eb";
+function markerIcon(kind: "pickup" | "dropoff" | "runner" | "stop") {
+  const color =
+    kind === "pickup" ? "#d9641c" : kind === "dropoff" ? "#133c21" : kind === "stop" ? "#0ea5e9" : "#2563eb";
   return L.divIcon({
     className: "border-0",
     html: `<div style="height:24px;width:24px;border-radius:50%;border:2px solid #fff;background-color:${color};box-shadow:0 1px 3px rgba(0,0,0,0.3)" aria-hidden="true"></div>`,

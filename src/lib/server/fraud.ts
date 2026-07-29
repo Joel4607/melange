@@ -1,5 +1,5 @@
 import { type SupabaseClient } from "@supabase/supabase-js";
-import { evaluateFraud, haversineKm } from "@/lib/algorithm";
+import { evaluateFraud, taskFinalPoint, taskRouteDistance } from "@/lib/algorithm";
 import type { FraudContext, FraudResult } from "@/lib/algorithm";
 import type { ProofRow, TaskRow } from "./rows";
 
@@ -168,17 +168,18 @@ export async function evaluateTaskFraud(
       ? { lat: proof.gps_lat, lng: proof.gps_lng }
       : undefined;
 
-  const targetLat = task.dropoff_lat ?? task.pickup_lat;
-  const targetLng = task.dropoff_lng ?? task.pickup_lng;
-
-  const taskDistanceKm = haversineKm(
-    { lat: task.pickup_lat, lng: task.pickup_lng },
-    { lat: targetLat, lng: targetLng },
-  );
+  const pickup = { lat: task.pickup_lat, lng: task.pickup_lng };
+  const dropoff =
+    task.dropoff_lat != null && task.dropoff_lng != null
+      ? { lat: task.dropoff_lat, lng: task.dropoff_lng }
+      : null;
+  const stops = task.stops ?? undefined;
+  const finalPoint = taskFinalPoint(pickup, dropoff, stops);
+  const taskDistanceKm = taskRouteDistance(pickup, dropoff, stops);
 
   const ctx: FraudContext = {
     proofLocation,
-    taskLocation: { lat: targetLat, lng: targetLng },
+    taskLocation: finalPoint,
     taskDistanceKm,
     acceptedAt: task.accepted_at ? new Date(task.accepted_at).getTime() : undefined,
     completedAt: task.completed_at ? new Date(task.completed_at).getTime() : undefined,

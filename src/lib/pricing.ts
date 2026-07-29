@@ -1,5 +1,5 @@
 import type { GeoPoint, Urgency } from "@/lib/algorithm";
-import { haversineKm } from "@/lib/algorithm";
+import { routeDistance, taskRoutePoints } from "@/lib/algorithm";
 
 export interface FeeEstimate {
   distanceKm: number;
@@ -33,8 +33,10 @@ export function estimateErrandFee(
   pickup: GeoPoint,
   dropoff: GeoPoint | null,
   urgency: Urgency,
+  stops?: GeoPoint[],
 ): FeeEstimate {
-  const distanceKm = dropoff ? haversineKm(pickup, dropoff) : 0;
+  const points = taskRoutePoints(pickup, dropoff, stops);
+  const distanceKm = routeDistance(points);
   const fee = estimateFee(distanceKm, urgency);
   return {
     distanceKm,

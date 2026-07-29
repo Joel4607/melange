@@ -7,6 +7,7 @@ import {
   arbitrate,
   DEFAULT_FRAUD_CONFIG,
   haversineKm,
+  taskFinalPoint,
   type ArbitrationResult,
   type DisputeClaim,
   type DisputeContext,
@@ -117,7 +118,7 @@ async function loadTask(db: Db, taskId: string): Promise<TaskRow> {
   const { data: task, error: tErr } = await db
     .from("tasks")
     .select(
-      "id, buyer_id, title, category, pickup_lat, pickup_lng, dropoff_lat, dropoff_lng, urgency, price, fee, status, selected_runner_id, accepted_at, completed_at",
+      "id, buyer_id, title, description, category, pickup_lat, pickup_lng, dropoff_lat, dropoff_lng, stops, recurrence, recurrence_end_date, parent_task_id, series_number, urgency, price, fee, status, selected_runner_id, accepted_at, completed_at",
     )
     .eq("id", taskId)
     .single<TaskRow>();
@@ -186,12 +187,13 @@ async function settleDispute(
 
 function gpsMatch(proof: ProofRow | null, task: TaskRow): boolean | null {
   if (!proof || proof.gps_lat == null || proof.gps_lng == null) return null;
-  const targetLat = task.dropoff_lat ?? task.pickup_lat;
-  const targetLng = task.dropoff_lng ?? task.pickup_lng;
-  const d = haversineKm(
-    { lat: proof.gps_lat, lng: proof.gps_lng },
-    { lat: targetLat, lng: targetLng },
-  );
+  const pickup = { lat: task.pickup_lat, lng: task.pickup_lng };
+  const dropoff =
+    task.dropoff_lat != null && task.dropoff_lng != null
+      ? { lat: task.dropoff_lat, lng: task.dropoff_lng }
+      : null;
+  const finalPoint = taskFinalPoint(pickup, dropoff, task.stops ?? undefined);
+  const d = haversineKm({ lat: proof.gps_lat, lng: proof.gps_lng }, finalPoint);
   return d <= DEFAULT_FRAUD_CONFIG.gpsToleranceKm;
 }
 
