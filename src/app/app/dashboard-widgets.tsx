@@ -54,16 +54,16 @@ export function KpiCard({
   const bg = tone === "orange" ? "bg-orange/10" : "bg-green/10";
   const text = tone === "orange" ? "text-orange-deep" : "text-green-deep";
   return (
-    <div className="flex flex-col justify-between rounded-2xl border border-cream-deep bg-white p-5 shadow-sm">
-      <div className="flex items-center justify-between">
-        <p className="text-sm font-medium text-muted">{title}</p>
-        <span className={`grid h-9 w-9 place-items-center rounded-full ${bg} ${text}`}>
-          <Icon className="h-5 w-5" aria-hidden />
+    <div className="flex flex-col justify-between py-2">
+      <div className="flex items-center gap-2">
+        <span className={`grid h-8 w-8 place-items-center rounded-full ${bg} ${text}`}>
+          <Icon className="h-4 w-4" aria-hidden />
         </span>
+        <p className="text-sm font-medium text-muted">{title}</p>
       </div>
-      <div className="mt-4">
-        <p className="font-display text-2xl font-semibold text-ink">{value}</p>
-        {subtitle ? <p className="mt-1 text-xs text-muted">{subtitle}</p> : null}
+      <div className="mt-3">
+        <p className="font-display text-3xl font-semibold text-ink">{value}</p>
+        {subtitle ? <p className="mt-1 text-sm text-muted">{subtitle}</p> : null}
       </div>
     </div>
   );
@@ -143,18 +143,18 @@ export function Section({
   action?: { href: string; label: string };
 }) {
   return (
-    <div className="rounded-2xl border border-cream-deep bg-white p-5 shadow-sm">
-      <div className="flex items-center justify-between gap-3">
-        <p className="flex items-center gap-2 font-display font-semibold text-green-deep">
-          <Icon className="h-5 w-5 text-orange-deep" aria-hidden /> {title}
+    <div className="py-2">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <p className="flex items-center gap-2 font-display text-lg font-semibold text-ink">
+          <Icon className="h-5 w-5 text-green-soft" aria-hidden /> {title}
         </p>
         {action ? (
-          <Link href={action.href} className="shrink-0 text-xs font-medium text-green-deep hover:underline">
+          <Link href={action.href} className="shrink-0 text-sm font-medium text-green-deep hover:underline">
             {action.label}
           </Link>
         ) : null}
       </div>
-      <div className="mt-4">{children}</div>
+      <div>{children}</div>
     </div>
   );
 }
@@ -192,10 +192,10 @@ export function BuyerErrandList({ errands }: { errands: DashboardErrand[] }) {
           <li key={e.id}>
             <Link
               href={`/app/errands/${e.id}`}
-              className="flex items-center justify-between gap-4 rounded-xl px-2 py-3.5 transition hover:bg-cream/40"
+              className="group flex items-center justify-between gap-4 py-4 transition-opacity hover:opacity-70"
             >
               <span className="min-w-0">
-                <span className="block truncate font-medium text-ink">{e.title}</span>
+                <span className="block truncate font-medium text-ink group-hover:underline">{e.title}</span>
                 <span className="text-sm text-muted">
                   {e.category ?? "Errand"} · GHS {Number(e.price).toFixed(2)}
                 </span>
@@ -228,7 +228,7 @@ export function TaskCard({
       : Number(task.price).toFixed(2);
 
   return (
-    <div className="rounded-[1.25rem] border border-cream-deep/70 bg-cream/40 p-4 transition hover:border-green-soft/40">
+    <div className="border-b border-cream-deep/70 py-4 last:border-0">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <p className="truncate font-medium text-ink">{task.title}</p>
@@ -308,10 +308,10 @@ export function RunnerAvailabilityCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-cream-deep bg-white p-5 shadow-sm">
+    <div className="py-2">
       <div className="flex items-center justify-between">
-        <p className="flex items-center gap-2 font-display font-semibold text-green-deep">
-          <CircleCheck className="h-5 w-5 text-orange-deep" aria-hidden /> Availability
+        <p className="flex items-center gap-2 font-display font-semibold text-ink">
+          <CircleCheck className="h-5 w-5 text-green-soft" aria-hidden /> Availability
         </p>
         <span
           className={`inline-flex h-2.5 w-2.5 rounded-full ${available ? "bg-green" : "bg-cream-deep"}`}

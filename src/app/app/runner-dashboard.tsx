@@ -52,8 +52,8 @@ export function RunnerDashboard({
   const trustStars = profile ? (profile.trust_score * 5).toFixed(1) : "0.0";
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+    <div className="space-y-10">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
         <KpiCard
           title="Total earned"
           value={`GHS ${totalEarned.toFixed(2)}`}
@@ -71,8 +71,8 @@ export function RunnerDashboard({
         />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="space-y-6 lg:col-span-2">
+      <div className="grid gap-10 lg:grid-cols-3">
+        <div className="space-y-10 lg:col-span-2">
           <QuickActions role="runner" />
 
           <Section title="Offers" icon={Clock}>
@@ -118,7 +118,7 @@ export function RunnerDashboard({
           ) : null}
         </div>
 
-        <div className="space-y-6 lg:col-span-1">
+        <div className="space-y-10 lg:col-span-1">
           <RunnerAvailabilityCard available={available}>
             <AvailabilityToggle
               availableManual={profile?.available_manual ?? null}
@@ -138,20 +138,20 @@ export function RunnerDashboard({
           />
 
           {avgRating > 0 ? (
-            <div className="rounded-2xl border border-cream-deep bg-white p-5 shadow-sm">
-              <div className="flex items-center gap-2">
-                <Star className="h-5 w-5 text-orange-deep" aria-hidden />
-                <p className="font-display font-semibold text-green-deep">Average rating</p>
+            <div className="py-2">
+              <div className="flex items-center gap-2 mb-2">
+                <Star className="h-4 w-4 text-orange-deep" aria-hidden />
+                <p className="font-display text-lg font-semibold text-ink">Average rating</p>
               </div>
-              <p className="mt-2 font-display text-2xl font-semibold text-ink">
-                {avgRating.toFixed(1)} / 5
+              <p className="font-display text-3xl font-semibold text-ink">
+                {avgRating.toFixed(1)} <span className="text-xl text-muted">/ 5</span>
               </p>
             </div>
           ) : null}
 
           {profile?.capabilities && profile.capabilities.length > 0 ? (
-            <div className="rounded-2xl border border-cream-deep bg-white p-5 shadow-sm">
-              <p className="font-display font-semibold text-green-deep">Capabilities</p>
+            <div className="py-2">
+              <p className="font-display text-lg font-semibold text-ink">Capabilities</p>
               <div className="mt-3 flex flex-wrap gap-2">
                 {profile.capabilities.map((cap) => (
                   <span

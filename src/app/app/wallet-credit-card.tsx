@@ -33,14 +33,14 @@ export function WalletCreditCard({
   const holder = (name ?? "You").toUpperCase();
 
   return (
-    <div className="rounded-2xl border border-cream-deep bg-white p-5 shadow-sm">
-      <div className="flex items-center justify-between">
-        <p className="flex items-center gap-2 font-display font-semibold text-green-deep">
-          <WalletIcon className="h-5 w-5 text-orange-deep" aria-hidden /> Wallet
+    <div className="py-2">
+      <div className="mb-4 flex items-center justify-between">
+        <p className="flex items-center gap-2 font-display text-lg font-semibold text-ink">
+          <WalletIcon className="h-5 w-5 text-green-soft" aria-hidden /> Wallet
         </p>
         <Link
           href="/app/wallet"
-          className="text-xs font-medium text-green-deep hover:underline"
+          className="text-sm font-medium text-green-deep hover:underline"
         >
           Details
         </Link>

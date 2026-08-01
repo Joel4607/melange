@@ -10,9 +10,9 @@ export function VerificationCard({
 }) {
   if (verified) {
     return (
-      <div className="rounded-2xl border border-green/30 bg-green/5 p-5">
-        <p className="flex items-center gap-2 font-medium text-green-deep">
-          <ShieldCheck className="h-5 w-5 text-green-deep" aria-hidden /> Verified
+      <div className="py-2">
+        <p className="flex items-center gap-2 font-display text-lg font-semibold text-ink">
+          <ShieldCheck className="h-5 w-5 text-green-soft" aria-hidden /> Verified
         </p>
         <p className="mt-1 text-sm text-muted">Your identity has been verified.</p>
       </div>
@@ -21,8 +21,8 @@ export function VerificationCard({
 
   if (request?.status === "pending") {
     return (
-      <div className="rounded-2xl border border-cream-deep bg-white p-5 shadow-sm">
-        <p className="flex items-center gap-2 font-medium text-green-deep">
+      <div className="py-2">
+        <p className="flex items-center gap-2 font-display text-lg font-semibold text-ink">
           <Clock className="h-5 w-5 text-orange-deep" aria-hidden /> Verification pending
         </p>
         <p className="mt-1 text-sm text-muted">
@@ -35,8 +35,8 @@ export function VerificationCard({
 
   if (request?.status === "rejected") {
     return (
-      <div className="rounded-2xl border border-orange/15 bg-orange/5 p-5">
-        <p className="flex items-center gap-2 font-medium text-green-deep">
+      <div className="py-2">
+        <p className="flex items-center gap-2 font-display text-lg font-semibold text-ink">
           <XCircle className="h-5 w-5 text-orange-deep" aria-hidden /> Verification rejected
         </p>
         <p className="mt-1 text-sm text-muted">
@@ -44,7 +44,7 @@ export function VerificationCard({
         </p>
         <Link
           href="/app/verify"
-          className="mt-3 inline-block rounded-full border border-cream-deep bg-white px-4 py-2 text-sm font-medium text-green-deep transition hover:bg-cream/40"
+          className="mt-3 inline-block rounded-full border border-cream-deep px-4 py-2 text-sm font-medium text-green-deep transition hover:bg-cream/40"
         >
           Re-submit
         </Link>
@@ -53,16 +53,16 @@ export function VerificationCard({
   }
 
   return (
-    <div className="rounded-2xl border border-cream-deep bg-white p-5 shadow-sm">
-      <p className="flex items-center gap-2 font-medium text-green-deep">
-        <ShieldCheck className="h-5 w-5 text-orange-deep" aria-hidden /> Runner verification
+    <div className="py-2">
+      <p className="flex items-center gap-2 font-display text-lg font-semibold text-ink">
+        <ShieldCheck className="h-5 w-5 text-green-soft" aria-hidden /> Runner verification
       </p>
       <p className="mt-1 text-sm text-muted">
         Upload your Ghana Card and a selfie. An admin will review it and activate your runner account.
       </p>
       <Link
         href="/app/verify"
-        className="mt-3 inline-block rounded-full border border-cream-deep bg-white px-4 py-2 text-sm font-medium text-green-deep transition hover:bg-cream/40"
+        className="mt-3 inline-block rounded-full bg-green px-4 py-2 text-sm font-medium text-cream transition hover:bg-green-deep"
       >
         Verify now
       </Link>

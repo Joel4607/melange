@@ -26,21 +26,21 @@ export function BuyerDashboard({
   const completed = errands.filter((e) => ["completed", "resolved"].includes(e.status)).length;
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+    <div className="space-y-10">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <KpiCard title="Active errands" value={active} icon={Clock} tone="orange" />
         <KpiCard title="Completed" value={completed} icon={CheckCircle} tone="green" />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="space-y-6 lg:col-span-2">
+      <div className="grid gap-10 lg:grid-cols-3">
+        <div className="space-y-10 lg:col-span-2">
           <QuickActions role="buyer" />
           <Section title="Your errands" icon={Clock} action={{ href: "/app/post", label: "Post new" }}>
             <BuyerErrandList errands={errands} />
           </Section>
         </div>
 
-        <div className="space-y-6 lg:col-span-1">
+        <div className="space-y-10 lg:col-span-1">
           <WalletCreditCard wallet={wallet} name={profile?.name ?? null} />
           <VerificationCard
             verified={profile?.verified ?? false}
