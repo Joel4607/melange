@@ -27,9 +27,14 @@ export function BuyerDashboard({
 
   return (
     <div className="space-y-10">
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        <KpiCard title="Active errands" value={active} icon={Clock} tone="orange" />
-        <KpiCard title="Completed" value={completed} icon={CheckCircle} tone="green" />
+      <div className="grid gap-10 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:col-span-2">
+          <KpiCard title="Active errands" value={active} icon={Clock} tone="orange" />
+          <KpiCard title="Completed" value={completed} icon={CheckCircle} tone="green" />
+        </div>
+        <div className="lg:col-span-1">
+          <WalletCreditCard wallet={wallet} name={profile?.name ?? null} />
+        </div>
       </div>
 
       <div className="grid gap-10 lg:grid-cols-3">
@@ -41,7 +46,6 @@ export function BuyerDashboard({
         </div>
 
         <div className="space-y-10 lg:col-span-1">
-          <WalletCreditCard wallet={wallet} name={profile?.name ?? null} />
           <VerificationCard
             verified={profile?.verified ?? false}
             request={verificationRequest}

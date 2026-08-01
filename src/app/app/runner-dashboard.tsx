@@ -1,6 +1,5 @@
 import { Bike, Star, Wallet as WalletIcon, Clock, CheckCircle } from "lucide-react";
 import { WalletCreditCard } from "./wallet-credit-card";
-import { VerificationCard } from "./verification-card";
 import { AvailabilityToggle } from "./availability-toggle";
 import { LiveLocationUpdater } from "./live-location-updater";
 import {
@@ -53,22 +52,27 @@ export function RunnerDashboard({
 
   return (
     <div className="space-y-10">
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-        <KpiCard
-          title="Total earned"
-          value={`GHS ${totalEarned.toFixed(2)}`}
-          subtitle={`${completedCount} completed errands`}
-          icon={WalletIcon}
-          tone="green"
-        />
-        <KpiCard title="Trust score" value={`${trustStars} / 5`} icon={Star} tone="orange" />
-        <KpiCard
-          title="Active load"
-          value={active.length}
-          subtitle={available ? "Available for more" : "Go available to receive offers"}
-          icon={Bike}
-          tone="green"
-        />
+      <div className="grid gap-10 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-3 lg:col-span-2">
+          <KpiCard
+            title="Total earned"
+            value={`GHS ${totalEarned.toFixed(2)}`}
+            subtitle={`${completedCount} completed errands`}
+            icon={WalletIcon}
+            tone="green"
+          />
+          <KpiCard title="Trust score" value={`${trustStars} / 5`} icon={Star} tone="orange" />
+          <KpiCard
+            title="Active load"
+            value={active.length}
+            subtitle={available ? "Available for more" : "Go available to receive offers"}
+            icon={Bike}
+            tone="green"
+          />
+        </div>
+        <div className="lg:col-span-1">
+          <WalletCreditCard wallet={wallet} name={name ?? null} />
+        </div>
       </div>
 
       <div className="grid gap-10 lg:grid-cols-3">
@@ -129,13 +133,6 @@ export function RunnerDashboard({
             />
             <LiveLocationUpdater enabled={available || active.length > 0} />
           </RunnerAvailabilityCard>
-
-          <WalletCreditCard wallet={wallet} name={name ?? null} />
-
-          <VerificationCard
-            verified={profile?.verified ?? false}
-            request={verificationRequest ?? null}
-          />
 
           {avgRating > 0 ? (
             <div className="py-2">
