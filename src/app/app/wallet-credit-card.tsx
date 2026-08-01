@@ -33,8 +33,8 @@ export function WalletCreditCard({
   const holder = (name ?? "You").toUpperCase();
 
   return (
-    <div className="py-2">
-      <div className="mb-4 flex items-center justify-between">
+    <div className="rounded-[2rem] bg-cream/40 p-6">
+      <div className="mb-6 flex items-center justify-between">
         <p className="flex items-center gap-2 font-display text-lg font-semibold text-ink">
           <WalletIcon className="h-5 w-5 text-green-soft" aria-hidden /> Wallet
         </p>
@@ -46,7 +46,7 @@ export function WalletCreditCard({
         </Link>
       </div>
 
-      <div ref={ref} className="mt-4 flex justify-center">
+      <div ref={ref} className="flex justify-center">
         <CreditCard
           type="brand-dark"
           company="Mélange"
@@ -57,27 +57,27 @@ export function WalletCreditCard({
         />
       </div>
 
-      <div className="mt-5 grid grid-cols-2 gap-4">
+      <div className="mt-6 grid grid-cols-2 gap-4">
         <div>
-          <p className="text-xs text-muted">Available</p>
+          <p className="text-sm text-muted">Available</p>
           <p className="font-display text-xl font-semibold text-ink">GHS {balance}</p>
         </div>
         <div>
-          <p className="text-xs text-muted">In escrow</p>
+          <p className="text-sm text-muted">In escrow</p>
           <p className="font-display text-xl font-semibold text-ink">GHS {held}</p>
         </div>
       </div>
 
-      <div className="mt-4 flex gap-2">
+      <div className="mt-6 flex gap-3">
         <Link
           href="/app/wallet"
-          className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-green px-3 py-2 text-sm font-semibold text-cream transition hover:bg-green-deep"
+          className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-2xl bg-green px-3 py-3 text-sm font-semibold text-cream transition hover:bg-green-deep"
         >
           <Plus className="h-4 w-4" aria-hidden /> Top up
         </Link>
         <Link
           href="/app/wallet"
-          className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-cream-deep px-3 py-2 text-sm font-semibold text-green-deep transition hover:bg-cream/40"
+          className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-2xl bg-white px-3 py-3 text-sm font-semibold text-green-deep transition hover:bg-cream-deep/40"
         >
           Wallet <ArrowUpRight className="h-4 w-4" aria-hidden />
         </Link>

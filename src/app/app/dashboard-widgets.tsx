@@ -54,7 +54,7 @@ export function KpiCard({
   const bg = tone === "orange" ? "bg-orange/10" : "bg-green/10";
   const text = tone === "orange" ? "text-orange-deep" : "text-green-deep";
   return (
-    <div className="flex flex-col justify-between py-2">
+    <div className="flex flex-col py-2">
       <div className="flex items-center gap-2">
         <span className={`grid h-8 w-8 place-items-center rounded-full ${bg} ${text}`}>
           <Icon className="h-4 w-4" aria-hidden />
