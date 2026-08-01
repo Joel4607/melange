@@ -13,6 +13,7 @@ const csp = [
 ].join(" ");
 
 const nextConfig: NextConfig = {
+  turbopack: { root: "./" },
   async headers() {
     const headers = [
       { key: "X-Frame-Options", value: "DENY" },
