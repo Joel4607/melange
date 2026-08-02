@@ -31,10 +31,7 @@ export default async function PostErrandPage({
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [preselectedRunner, { data: buyer }] = await Promise.all([
-    runnerId ? loadRunner(runnerId) : Promise.resolve(undefined),
-    supabase.from("profiles").select("verified").eq("id", user.id).maybeSingle<{ verified: boolean }>(),
-  ]);
+  const preselectedRunner = runnerId ? await loadRunner(runnerId) : undefined;
 
   return (
     <div className="flex min-h-dvh flex-col bg-cream">
@@ -64,7 +61,6 @@ export default async function PostErrandPage({
           <PostForm
             preselectedRunner={preselectedRunner}
             defaultCategory={category}
-            verified={buyer?.verified ?? false}
           />
         </div>
       </main>

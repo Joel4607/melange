@@ -37,7 +37,6 @@ type Recurrence = (typeof RECURRENCE_OPTIONS)[number]["value"];
 export function PostForm({
   preselectedRunner,
   defaultCategory,
-  verified,
 }: {
   preselectedRunner?: {
     id: string;
@@ -46,7 +45,6 @@ export function PostForm({
     capabilities: string[] | null;
   };
   defaultCategory?: string;
-  verified: boolean;
 }) {
   const [coords, setCoords] = useState<{ lat: string; lng: string }>({
     lat: "",
@@ -147,24 +145,6 @@ export function PostForm({
         </div>
       ) : null}
 
-      {!verified ? (
-        <div className="rounded-2xl border border-orange/15 bg-orange/5 p-5 text-sm">
-          <p className="flex items-center gap-2 font-medium text-orange-deep">
-            <ShieldAlert className="h-5 w-5" aria-hidden />
-            Identity verification required
-          </p>
-          <p className="mt-1 text-muted">
-            Complete identity verification to post errands and build trust with
-            runners.
-          </p>
-          <Link
-            href="/app/verify"
-            className="mt-2 inline-block font-semibold text-green-deep underline transition hover:text-green"
-          >
-            Verify now
-          </Link>
-        </div>
-      ) : null}
 
       <Field label="What do you need run?">
         <input
@@ -448,10 +428,9 @@ export function PostForm({
       ) : null}
 
       <Submit
-        disabled={!hasLocation || priceNum <= fee || !verified}
+        disabled={!hasLocation || priceNum <= fee}
         preselectedRunner={preselectedRunner}
         canPay={priceNum > fee}
-        verified={verified}
       />
     </form>
   );
@@ -461,11 +440,9 @@ function Submit({
   disabled,
   preselectedRunner,
   canPay,
-  verified,
 }: {
   disabled: boolean;
   canPay: boolean;
-  verified: boolean;
   preselectedRunner?: { name: string | null };
 }) {
   const { pending } = useFormStatus();
@@ -480,8 +457,6 @@ function Submit({
         <>
           <LoaderCircle className="h-5 w-5 animate-spin" aria-hidden /> Sending request…
         </>
-      ) : !verified ? (
-        "Verify to post errands"
       ) : preselectedRunner ? (
         `Request ${runnerName}`
       ) : !canPay ? (

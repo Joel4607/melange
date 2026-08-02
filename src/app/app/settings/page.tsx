@@ -9,7 +9,6 @@ import { updateNotificationPreferences, updateProfile } from "../actions";
 import { AvailabilityToggle } from "../availability-toggle";
 import { CapabilitiesEditor } from "../capabilities-editor";
 import { ScheduleEditor } from "../schedule-editor";
-import { VerificationCard } from "../verification-card";
 
 export const metadata: Metadata = {
   title: "Settings — Mélange",
@@ -110,11 +109,6 @@ export default async function SettingsPage() {
       <main className="mx-auto w-full max-w-2xl flex-1 px-5 py-10">
         <h1 className="font-display text-fluid-h2 font-semibold text-green-deep">Settings</h1>
 
-        {role === "runner" ? (
-          <div className="mt-6">
-            <VerificationCard verified={profile?.verified ?? false} request={latestVerification ?? null} />
-          </div>
-        ) : null}
 
         <section className="mt-5 rounded-2xl border border-cream-deep bg-white p-6 shadow-sm">
           <p className="flex items-center gap-2 font-display text-lg font-semibold text-green-deep">
@@ -200,6 +194,91 @@ export default async function SettingsPage() {
             ) : null}
           </div>
         </section>
+
+        {/* Identity Verification — runners only */}
+        {role === "runner" ? (
+          <section className="mt-5 rounded-2xl border border-cream-deep bg-white p-6 shadow-sm">
+            <p className="flex items-center gap-2 font-display text-lg font-semibold text-green-deep">
+              <ShieldCheck className="h-5 w-5 text-orange-deep" aria-hidden /> Identity verification
+            </p>
+
+            {profile?.verified ? (
+              /* ✅ Verified */
+              <div className="mt-4">
+                <div className="flex items-center gap-3 rounded-2xl bg-green/10 p-4">
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-green text-cream">
+                    <ShieldCheck className="h-5 w-5" aria-hidden />
+                  </span>
+                  <div>
+                    <p className="font-semibold text-green-deep">Identity verified</p>
+                    <p className="text-sm text-muted">Your Ghana Card has been reviewed and approved.</p>
+                  </div>
+                </div>
+              </div>
+            ) : latestVerification?.status === "pending" ? (
+              /* 🕐 Pending review */
+              <div className="mt-4">
+                <div className="flex items-center gap-3 rounded-2xl bg-orange/10 p-4">
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-orange/20 text-orange-deep">
+                    <Clock className="h-5 w-5" aria-hidden />
+                  </span>
+                  <div>
+                    <p className="font-semibold text-ink">Under review</p>
+                    <p className="text-sm text-muted">
+                      Submitted {new Date(latestVerification.created_at).toLocaleDateString()}. We&apos;ll notify you once approved.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : latestVerification?.status === "rejected" ? (
+              /* ❌ Rejected — invite to re-submit */
+              <div className="mt-4 space-y-4">
+                <div className="flex items-center gap-3 rounded-2xl bg-orange/10 p-4">
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-orange/20 text-orange-deep">
+                    <XCircle className="h-5 w-5" aria-hidden />
+                  </span>
+                  <div>
+                    <p className="font-semibold text-ink">Submission rejected</p>
+                    <p className="text-sm text-muted">Your last submission wasn&apos;t accepted. Submit a clearer ID photo.</p>
+                  </div>
+                </div>
+                <Link
+                  href="/app/verify"
+                  className="inline-flex items-center gap-2 rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-cream transition hover:bg-green-deep"
+                >
+                  <ShieldCheck className="h-4 w-4" aria-hidden /> Re-submit ID
+                </Link>
+              </div>
+            ) : (
+              /* 🔓 Not yet started */
+              <div className="mt-4 space-y-4">
+                <p className="text-sm text-muted">
+                  Verify your identity to go live and start receiving errands. You&apos;ll need your Ghana Card and a selfie — takes about 2 minutes.
+                </p>
+                <ul className="space-y-2 text-sm text-ink">
+                  {[
+                    "Upload your Ghana Card (front & back)",
+                    "Take a quick selfie to match your ID",
+                    "An admin reviews it — usually within 24 hours",
+                  ].map((step) => (
+                    <li key={step} className="flex items-center gap-2">
+                      <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-green text-cream">
+                        <ShieldCheck className="h-3 w-3" aria-hidden />
+                      </span>
+                      {step}
+                    </li>
+                  ))}
+                </ul>
+                <Link
+                  href="/app/verify"
+                  className="inline-flex items-center gap-2 rounded-full bg-orange px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-deep"
+                >
+                  <ShieldCheck className="h-4 w-4" aria-hidden /> Start verification
+                </Link>
+              </div>
+            )}
+          </section>
+        ) : null}
 
         <section className="mt-5 rounded-2xl border border-cream-deep bg-white p-6 shadow-sm">
           <p className="flex items-center gap-2 font-display text-lg font-semibold text-green-deep">
