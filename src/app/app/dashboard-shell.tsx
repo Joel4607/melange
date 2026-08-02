@@ -52,7 +52,7 @@ export function DashboardShell({
   const items = navItems(role);
 
   return (
-    <div className="flex min-h-dvh bg-cream">
+    <div className="flex h-dvh overflow-hidden bg-cream">
       {/* Mobile overlay */}
       {open ? (
         <div
@@ -64,7 +64,7 @@ export function DashboardShell({
 
       {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 transform border-r border-cream-deep bg-white p-6 shadow-lg transition-transform lg:static lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 w-64 shrink-0 transform border-r border-cream-deep bg-white p-6 shadow-lg transition-transform lg:relative lg:translate-x-0 ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -111,8 +111,8 @@ export function DashboardShell({
         </div>
       </aside>
 
-      {/* Main area */}
-      <div className="flex flex-1 flex-col">
+      {/* Main area — scrolls independently of the sidebar */}
+      <div className="flex flex-1 flex-col overflow-y-auto">
         <header className="sticky top-0 z-30 border-b border-cream-deep/70 bg-cream/90 px-5 py-4 backdrop-blur">
           <div className="mx-auto flex max-w-7xl items-center justify-between">
             <div className="flex items-center gap-3">

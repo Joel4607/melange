@@ -1,18 +1,15 @@
 import { Clock, CheckCircle, Wallet as WalletIcon } from "lucide-react";
 import { WalletCreditCard } from "./wallet-credit-card";
-import { VerificationCard } from "./verification-card";
 import { StatCard, QuickActions, Section, BuyerErrandList, type DashboardErrand } from "./dashboard-widgets";
 
 export function BuyerDashboard({
   errands,
   wallet,
   profile,
-  verificationRequest,
 }: {
   errands: DashboardErrand[];
   wallet: { balance: string; held: string } | null;
   profile: { name: string | null; verified: boolean } | null;
-  verificationRequest: { id: string; status: "pending" | "approved" | "rejected"; created_at: string } | null;
 }) {
   const active = errands.filter((e) =>
     ["posted", "matched", "accepted", "in_progress", "disputed"].includes(e.status),
@@ -66,15 +63,9 @@ export function BuyerDashboard({
           </div>
         </div>
 
-        {/* Sidebar — wallet + verification */}
+        {/* Sidebar — wallet only */}
         <div className="space-y-6 lg:col-span-1">
           <WalletCreditCard wallet={wallet} name={profile?.name} />
-          <div className="rounded-[2rem] border border-cream-deep bg-white p-6 shadow-sm">
-            <VerificationCard
-              verified={profile?.verified ?? false}
-              request={verificationRequest}
-            />
-          </div>
         </div>
       </div>
     </div>

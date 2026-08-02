@@ -161,7 +161,6 @@ export default async function AppHome() {
           errands={errands ?? []}
           wallet={wallet ?? null}
           profile={profile ?? null}
-          verificationRequest={verificationRequest ?? null}
         />
       ) : (
         <RunnerDashboard
@@ -170,7 +169,6 @@ export default async function AppHome() {
           avgRating={avgRating}
           totalEarned={totalEarned}
           completedCount={completedTasks.length}
-          verificationRequest={verificationRequest ?? null}
           name={profile?.name ?? null}
           wallet={wallet ?? null}
         />

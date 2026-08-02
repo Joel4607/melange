@@ -2,7 +2,6 @@ import { Bike, Star, Wallet as WalletIcon, CheckCircle } from "lucide-react";
 import { WalletCreditCard } from "./wallet-credit-card";
 import { AvailabilityToggle } from "./availability-toggle";
 import { LiveLocationUpdater } from "./live-location-updater";
-import { VerificationCard } from "./verification-card";
 import {
   StatCard,
   QuickActions,
@@ -29,7 +28,6 @@ interface RunnerDashboardProps {
   avgRating: number;
   totalEarned: number;
   completedCount: number;
-  verificationRequest: { id: string; status: "pending" | "approved" | "rejected"; created_at: string } | null;
   name: string | null;
   wallet: { balance: string; held: string } | null;
 }
@@ -40,7 +38,6 @@ export function RunnerDashboard({
   avgRating,
   totalEarned,
   completedCount,
-  verificationRequest,
   name,
   wallet,
 }: RunnerDashboardProps) {
@@ -174,14 +171,6 @@ export function RunnerDashboard({
               </div>
             </div>
           ) : null}
-
-          {/* Verification */}
-          <div className="rounded-[2rem] border border-cream-deep bg-white p-6 shadow-sm">
-            <VerificationCard
-              verified={profile?.verified ?? false}
-              request={verificationRequest}
-            />
-          </div>
         </div>
       </div>
     </div>
