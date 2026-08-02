@@ -56,9 +56,9 @@ export default async function AppHome() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("name, phone, verified, is_admin")
+    .select("name, phone, is_admin")
     .eq("id", user.id)
-    .maybeSingle<{ name: string | null; phone: string | null; verified: boolean; is_admin: boolean }>();
+    .maybeSingle<{ name: string | null; phone: string | null; is_admin: boolean }>();
 
   if (profile?.is_admin) redirect("/admin");
 
@@ -119,13 +119,17 @@ export default async function AppHome() {
     .limit(10)
     .returns<NotificationSummary[]>();
 
-  const { data: verificationRequest } = await supabase
-    .from("verification_requests")
-    .select("id, status, created_at")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle<{ id: string; status: "pending" | "approved" | "rejected"; created_at: string }>();
+  // Verification is runner-only — fetch only when needed.
+  const { data: verificationRequest } =
+    role === "runner"
+      ? await supabase
+          .from("verification_requests")
+          .select("id, status, created_at")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle<{ id: string; status: "pending" | "approved" | "rejected"; created_at: string }>()
+      : { data: null };
 
   const { data: wallet } = await supabase
     .from("wallets")
@@ -160,7 +164,7 @@ export default async function AppHome() {
         <BuyerDashboard
           errands={errands ?? []}
           wallet={wallet ?? null}
-          profile={profile ?? null}
+          name={profile?.name ?? null}
         />
       ) : (
         <RunnerDashboard

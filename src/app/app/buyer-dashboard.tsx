@@ -5,11 +5,11 @@ import { StatCard, QuickActions, Section, BuyerErrandList, type DashboardErrand 
 export function BuyerDashboard({
   errands,
   wallet,
-  profile,
+  name,
 }: {
   errands: DashboardErrand[];
   wallet: { balance: string; held: string } | null;
-  profile: { name: string | null; verified: boolean } | null;
+  name: string | null;
 }) {
   const active = errands.filter((e) =>
     ["posted", "matched", "accepted", "in_progress", "disputed"].includes(e.status),
@@ -65,7 +65,7 @@ export function BuyerDashboard({
 
         {/* Sidebar — wallet only */}
         <div className="space-y-6 lg:col-span-1">
-          <WalletCreditCard wallet={wallet} name={profile?.name} />
+          <WalletCreditCard wallet={wallet} name={name} />
         </div>
       </div>
     </div>
