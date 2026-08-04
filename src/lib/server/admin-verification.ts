@@ -23,10 +23,11 @@ export async function approveVerificationCore(requestId: string, adminId: string
   if (!updated) return false;
 
   await db.from("profiles").update({ verified: true }).eq("id", updated.user_id);
-  await db
-    .from("runner_profile")
-    .update({ verified: true, updated_at: now })
-    .eq("user_id", updated.user_id);
+  await db.from("runner_profile").upsert({
+    user_id: updated.user_id,
+    verified: true,
+    updated_at: now,
+  });
 
   await logAdminAction(adminId, "verification_approve", requestId, { user_id: updated.user_id });
   return true;
@@ -54,10 +55,11 @@ export async function rejectVerificationCore(requestId: string, adminId: string)
   if (!updated) return false;
 
   await db.from("profiles").update({ verified: false }).eq("id", updated.user_id);
-  await db
-    .from("runner_profile")
-    .update({ verified: false, updated_at: now })
-    .eq("user_id", updated.user_id);
+  await db.from("runner_profile").upsert({
+    user_id: updated.user_id,
+    verified: false,
+    updated_at: now,
+  });
 
   await logAdminAction(adminId, "verification_reject", requestId, { user_id: updated.user_id });
   return true;
