@@ -47,6 +47,7 @@ export function RunnerDashboard({
   const completed = tasks.filter((t) => t.status === "completed" || t.status === "resolved");
 
   const trustStars = profile ? (profile.trust_score * 5).toFixed(1) : "—";
+  const isVerified = profile?.verified ?? false;
 
   return (
     <div className="space-y-8">
@@ -147,7 +148,7 @@ export function RunnerDashboard({
               scheduledHours={profile?.scheduled_hours ?? null}
               lat={profile?.current_lat ?? null}
               lng={profile?.current_lng ?? null}
-              verified={profile?.verified ?? false}
+              verified={isVerified}
             />
             <LiveLocationUpdater enabled={available || active.length > 0} />
           </RunnerAvailabilityCard>

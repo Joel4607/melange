@@ -416,7 +416,7 @@ export default async function SettingsPage() {
                 scheduledHours={runnerProfile?.scheduled_hours ?? null}
                 lat={runnerProfile?.current_lat ?? null}
                 lng={runnerProfile?.current_lng ?? null}
-                verified={runnerProfile?.verified ?? profile?.verified ?? false}
+                verified={runnerProfile?.verified || profile?.verified || false}
               />
               <ScheduleEditor initialSchedule={runnerProfile?.scheduled_hours ?? null} />
               <CapabilitiesEditor capabilities={runnerProfile?.capabilities ?? null} />
