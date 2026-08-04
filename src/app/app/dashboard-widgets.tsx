@@ -1,13 +1,5 @@
 import Link from "next/link";
-import {
-  PackageCheck,
-  Plus,
-  Users,
-  ArrowRight,
-  Clock,
-  CircleCheck,
-  type LucideIcon,
-} from "lucide-react";
+import { PackageCheck, ArrowRight, type LucideIcon } from "lucide-react";
 import { acceptOffer, declineOffer, markPickedUp, cancelRunnerErrand } from "./actions";
 import { MarkDeliveredForm } from "./mark-delivered-form";
 
@@ -311,34 +303,7 @@ export function TaskActions({ taskId, status }: { taskId: string; status: string
   return null;
 }
 
-/* ------------------------------------------------------------------ */
-/* Runner availability card wrapper                                     */
-/* ------------------------------------------------------------------ */
 
-export function RunnerAvailabilityCard({
-  available,
-  children,
-}: {
-  available: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="rounded-[2rem] border border-cream-deep bg-white p-6 shadow-sm">
-      <div className="mb-1 flex items-center gap-2">
-        <CircleCheck className="h-5 w-5 text-green-soft" aria-hidden />
-        <h2 className="font-display text-lg font-semibold text-ink">Availability</h2>
-        <span
-          className={`ml-auto inline-flex h-2.5 w-2.5 rounded-full ${available ? "bg-green" : "bg-cream-deep"}`}
-          aria-hidden
-        />
-      </div>
-      <p className="mb-4 text-sm text-muted">
-        {available ? "You're live and visible to buyers." : "You're offline — buyers can't see you."}
-      </p>
-      {children}
-    </div>
-  );
-}
 
 /* ------------------------------------------------------------------ */
 /* Kept for backward-compat (errands/[id]/page.tsx imports this)        */

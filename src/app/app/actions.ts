@@ -564,21 +564,51 @@ export async function acceptOffer(taskId: string) {
 
 export async function claimTask(taskId: string) {
   const runnerId = await requireVerifiedRunner();
-  await requireActiveRunner(runnerId);
   const db = getServiceClient();
+
+  const { data: runner } = await db
+    .from("runner_profile")
+    .select("status, available_manual, scheduled_hours, capabilities")
+    .eq("user_id", runnerId)
+    .maybeSingle<{
+      status: string;
+      available_manual: boolean | null;
+      scheduled_hours: TimeRange[] | null;
+      capabilities: string[] | null;
+    }>();
+  if (!runner || runner.status !== "active") {
+    throw new Error("Runner account is not active");
+  }
+
   const { data: task } = await db
     .from("tasks")
-    .select("id, buyer_id, title, price, status, selected_runner_id")
+    .select("id, buyer_id, title, price, category, status, selected_runner_id")
     .eq("id", taskId)
     .maybeSingle<{
       id: string;
       buyer_id: string;
       title: string;
       price: string;
+      category: string | null;
       status: string;
       selected_runner_id: string | null;
     }>();
   if (!task || task.status !== "posted" || task.selected_runner_id) return;
+  if (task.buyer_id === runnerId) throw new Error("You cannot claim your own errand");
+
+  const available = isRunnerAvailable(runner.available_manual, runner.scheduled_hours);
+  if (!available) {
+    throw new Error("You must be available to claim errands");
+  }
+
+  if (
+    task.category &&
+    runner.capabilities &&
+    runner.capabilities.length > 0 &&
+    !runner.capabilities.includes(task.category)
+  ) {
+    throw new Error("This errand is outside your capabilities");
+  }
 
   const price = Number(task.price);
   const { data: wallet } = await db
@@ -1147,6 +1177,7 @@ export async function raiseDispute(taskId: string, formData: FormData) {
 /** Update the runner's accepted task categories. */
 export async function updateCapabilities(formData: FormData) {
   const runnerId = await requireRunnerId();
+  await requireActiveRunner(runnerId);
   const capabilities = formData.getAll("capabilities").map(String);
   const supabase = await createClient();
   await supabase.from("runner_profile").upsert(

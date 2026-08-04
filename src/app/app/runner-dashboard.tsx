@@ -1,6 +1,5 @@
 import { Bike, Star, Wallet as WalletIcon, CheckCircle } from "lucide-react";
 import { WalletCreditCard } from "./wallet-credit-card";
-import { AvailabilityToggle } from "./availability-toggle";
 import { LiveLocationUpdater } from "./live-location-updater";
 import {
   StatCard,
@@ -9,19 +8,13 @@ import {
   Empty,
   TaskCard,
   TaskActions,
-  RunnerAvailabilityCard,
   type DashboardTask,
 } from "./dashboard-widgets";
 
 interface RunnerDashboardProps {
   profile: {
     is_available: boolean;
-    available_manual: boolean | null;
-    scheduled_hours: { day: number; start: string; end: string }[] | null;
-    current_lat: number | null;
-    current_lng: number | null;
     trust_score: number;
-    verified: boolean;
     capabilities: string[] | null;
   } | null;
   tasks: DashboardTask[];
@@ -47,7 +40,6 @@ export function RunnerDashboard({
   const completed = tasks.filter((t) => t.status === "completed" || t.status === "resolved");
 
   const trustStars = profile ? (profile.trust_score * 5).toFixed(1) : "—";
-  const isVerified = profile?.verified ?? false;
 
   return (
     <div className="space-y-8">
@@ -106,7 +98,11 @@ export function RunnerDashboard({
               {active.length === 0 ? (
                 <Empty
                   icon={CheckCircle}
-                  action={{ href: "/app/feed", label: "Browse errands" }}
+                  action={
+                    available
+                      ? { href: "/app/feed", label: "Browse errands" }
+                      : { href: "/app/settings", label: "Set availability" }
+                  }
                 >
                   {available
                     ? "No active jobs — offers will appear here when matched."
@@ -141,17 +137,8 @@ export function RunnerDashboard({
         {/* Sidebar — 1/3 */}
         <div className="space-y-6 lg:col-span-1">
 
-          {/* Availability + location */}
-          <RunnerAvailabilityCard available={available}>
-            <AvailabilityToggle
-              availableManual={profile?.available_manual ?? null}
-              scheduledHours={profile?.scheduled_hours ?? null}
-              lat={profile?.current_lat ?? null}
-              lng={profile?.current_lng ?? null}
-              verified={isVerified}
-            />
-            <LiveLocationUpdater enabled={available || active.length > 0} />
-          </RunnerAvailabilityCard>
+          {/* Live location tracking */}
+          <LiveLocationUpdater enabled={available || active.length > 0} />
 
           {/* Wallet */}
           <WalletCreditCard wallet={wallet} name={name} />

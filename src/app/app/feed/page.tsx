@@ -41,19 +41,27 @@ export default async function FeedPage() {
   if (role !== "runner") redirect("/app");
 
   const db = getServiceClient();
-  const { data: profile } = await db
-    .from("runner_profile")
-    .select("current_lat, current_lng, capabilities, available_manual, scheduled_hours, verified")
-    .eq("user_id", user.id)
-    .maybeSingle<{
-      current_lat: number | null;
-      current_lng: number | null;
-      capabilities: string[] | null;
-      available_manual: boolean | null;
-      scheduled_hours: { day: number; start: string; end: string }[] | null;
-      verified: boolean;
-    }>();
+  const [{ data: profile }, { data: userProfile }] = await Promise.all([
+    db
+      .from("runner_profile")
+      .select("current_lat, current_lng, capabilities, available_manual, scheduled_hours, verified")
+      .eq("user_id", user.id)
+      .maybeSingle<{
+        current_lat: number | null;
+        current_lng: number | null;
+        capabilities: string[] | null;
+        available_manual: boolean | null;
+        scheduled_hours: { day: number; start: string; end: string }[] | null;
+        verified: boolean;
+      }>(),
+    db
+      .from("profiles")
+      .select("verified")
+      .eq("id", user.id)
+      .maybeSingle<{ verified: boolean }>(),
+  ]);
 
+  const verified = profile?.verified || userProfile?.verified || false;
   const available = profile ? isRunnerAvailable(profile.available_manual, profile.scheduled_hours) : false;
 
   const { data: tasks } = await db
@@ -120,7 +128,7 @@ export default async function FeedPage() {
           Browse posted errands near you and claim one to start.
         </p>
 
-        {!profile?.verified ? (
+        {!verified ? (
           <div className="mt-6 flex items-start gap-3 rounded-2xl border border-orange/15 bg-orange/5 p-4 text-sm">
             <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-orange-deep" aria-hidden />
             <p className="text-orange-deep">
@@ -185,7 +193,7 @@ export default async function FeedPage() {
                         </p>
                       ) : null}
                     </div>
-                    {capable && available && profile?.verified ? (
+                    {capable && available && verified ? (
                       <form action={claimTask.bind(null, task.id)}>
                         <button
                           type="submit"
