@@ -24,14 +24,7 @@ interface ErrandSummary {
 
 interface RunnerProfileSummary {
   is_available: boolean;
-  available_manual: boolean | null;
-  scheduled_hours: { day: number; start: string; end: string }[] | null;
-  current_lat: number | null;
-  current_lng: number | null;
-  active_load: number;
   trust_score: number;
-  verified: boolean;
-  status: string;
   capabilities: string[] | null;
 }
 
@@ -89,9 +82,7 @@ export default async function AppHome() {
     const [{ data: rp }, { data: rt }, { data: rr }] = await Promise.all([
       db
         .from("runner_profile")
-        .select(
-          "is_available, available_manual, scheduled_hours, current_lat, current_lng, active_load, trust_score, verified, status, capabilities",
-        )
+        .select("is_available, trust_score, capabilities")
         .eq("user_id", user.id)
         .maybeSingle<RunnerProfileSummary>(),
       db
@@ -118,18 +109,6 @@ export default async function AppHome() {
     .order("created_at", { ascending: false })
     .limit(10)
     .returns<NotificationSummary[]>();
-
-  // Verification is runner-only — fetch only when needed.
-  const { data: verificationRequest } =
-    role === "runner"
-      ? await supabase
-          .from("verification_requests")
-          .select("id, status, created_at")
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle<{ id: string; status: "pending" | "approved" | "rejected"; created_at: string }>()
-      : { data: null };
 
   const { data: wallet } = await supabase
     .from("wallets")
