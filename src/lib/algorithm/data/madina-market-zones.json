@@ -1,0 +1,42 @@
+{
+  "market": "Madina Market, Accra",
+  "note": "Hand-digitised 12-node zone graph for academic demonstration. Node positions are conceptual (grid units), not GPS coordinates. Walking times (seconds) assume 0.8 m/s through a crowded market.",
+  "calibration": "Spatial layout inferred from satellite imagery and UG Legon student field observations, August 2026.",
+  "nodes": [
+    { "id": "entrance", "label": "Main Entrance / Taxi Drop-off", "categories": [], "gridX": 2, "gridY": 0 },
+    { "id": "zone-a",   "label": "Zone A — Tomatoes & Pepper",       "categories": ["tomatoes", "pepper", "chilli", "fresh tomatoes"], "gridX": 1, "gridY": 1 },
+    { "id": "zone-b",   "label": "Zone B — Onions & Garlic",          "categories": ["onions", "garlic", "ginger", "shallots"], "gridX": 3, "gridY": 1 },
+    { "id": "zone-c",   "label": "Zone C — Leafy Vegetables",         "categories": ["kontomire", "spinach", "cabbage", "lettuce", "garden eggs"], "gridX": 0, "gridY": 2 },
+    { "id": "zone-d",   "label": "Zone D — Fruits & Plantain",        "categories": ["plantain", "banana", "oranges", "watermelon", "pineapple", "avocado"], "gridX": 2, "gridY": 2 },
+    { "id": "zone-e",   "label": "Zone E — Cereals & Grains",         "categories": ["rice", "maize", "beans", "millet", "groundnuts"], "gridX": 4, "gridY": 2 },
+    { "id": "zone-f",   "label": "Zone F — Palm Oil & Cooking Oils",  "categories": ["palm oil", "cooking oil", "margarine", "coconut oil"], "gridX": 0, "gridY": 3 },
+    { "id": "zone-g",   "label": "Zone G — Smoked Fish & Protein",    "categories": ["fish", "smoked fish", "herrings", "shrimps", "crayfish", "tuna"], "gridX": 2, "gridY": 3 },
+    { "id": "zone-h",   "label": "Zone H — Toiletries & Personal",    "categories": ["soap", "shampoo", "tissue", "detergent", "toothpaste", "lotion"], "gridX": 4, "gridY": 3 },
+    { "id": "zone-i",   "label": "Zone I — Provisions & Canned Goods","categories": ["tin tomatoes", "sardines", "milk", "sugar", "tea", "coffee", "biscuits"], "gridX": 4, "gridY": 4 },
+    { "id": "zone-j",   "label": "Zone J — Spices & Seasonings",      "categories": ["maggi", "spices", "salt", "pepper dried", "dawadawa", "selim"], "gridX": 2, "gridY": 4 },
+    { "id": "zone-k",   "label": "Zone K — Root Vegetables & Tubers", "categories": ["yam", "cassava", "cocoyam", "potatoes", "sweet potatoes"], "gridX": 0, "gridY": 4 }
+  ],
+  "edges": [
+    { "from": "entrance", "to": "zone-a", "walkSeconds": 45 },
+    { "from": "entrance", "to": "zone-b", "walkSeconds": 50 },
+    { "from": "entrance", "to": "zone-d", "walkSeconds": 60 },
+    { "from": "zone-a",   "to": "zone-b", "walkSeconds": 55 },
+    { "from": "zone-a",   "to": "zone-c", "walkSeconds": 50 },
+    { "from": "zone-a",   "to": "zone-d", "walkSeconds": 45 },
+    { "from": "zone-b",   "to": "zone-d", "walkSeconds": 50 },
+    { "from": "zone-b",   "to": "zone-e", "walkSeconds": 65 },
+    { "from": "zone-c",   "to": "zone-d", "walkSeconds": 60 },
+    { "from": "zone-c",   "to": "zone-f", "walkSeconds": 40 },
+    { "from": "zone-d",   "to": "zone-e", "walkSeconds": 65 },
+    { "from": "zone-d",   "to": "zone-g", "walkSeconds": 55 },
+    { "from": "zone-e",   "to": "zone-h", "walkSeconds": 45 },
+    { "from": "zone-f",   "to": "zone-g", "walkSeconds": 60 },
+    { "from": "zone-f",   "to": "zone-k", "walkSeconds": 45 },
+    { "from": "zone-g",   "to": "zone-h", "walkSeconds": 60 },
+    { "from": "zone-g",   "to": "zone-j", "walkSeconds": 50 },
+    { "from": "zone-h",   "to": "zone-i", "walkSeconds": 40 },
+    { "from": "zone-i",   "to": "zone-j", "walkSeconds": 45 },
+    { "from": "zone-j",   "to": "zone-k", "walkSeconds": 55 },
+    { "from": "zone-k",   "to": "zone-c", "walkSeconds": 45 }
+  ]
+}
