@@ -16,6 +16,9 @@ function runner(
     trust: 0.5,
     activeLoad: 0,
     available: true,
+    active: true,
+    verified: true,
+    fraudAction: "clear",
     ...over,
   };
 }
@@ -69,7 +72,7 @@ describe("rankRunners", () => {
       runner("a", { location: { lat: 5.9, lng: -0.4 }, activeLoad: 3 }),
     ]);
     const c = ranked[0].components;
-    for (const v of [c.proximity, c.trust, c.availability, c.urgencyFit]) {
+    for (const v of [c.proximity, c.trust, c.capacity, c.urgencyFit]) {
       expect(v).toBeGreaterThanOrEqual(0);
       expect(v).toBeLessThanOrEqual(1);
     }
@@ -88,14 +91,57 @@ describe("rankRunners", () => {
 
     const proximityHeavy = rankRunners(baseTask, candidates, {
       ...DEFAULT_MATCH_CONFIG,
-      weights: { proximity: 0.8, trust: 0.1, availability: 0.05, urgency: 0.05 },
+      weights: { proximity: 0.8, trust: 0.1, capacity: 0.05, urgency: 0.05 },
     });
     const trustHeavy = rankRunners(baseTask, candidates, {
       ...DEFAULT_MATCH_CONFIG,
-      weights: { proximity: 0.1, trust: 0.8, availability: 0.05, urgency: 0.05 },
+      weights: { proximity: 0.1, trust: 0.8, capacity: 0.05, urgency: 0.05 },
     });
 
     expect(proximityHeavy[0].runnerId).toBe("close");
     expect(trustHeavy[0].runnerId).toBe("far");
+  });
+
+  it.each([
+    ["inactive", { active: false }],
+    ["unverified", { verified: false }],
+    ["fraud-excluded", { fraudAction: "exclude" as const }],
+    ["unlocated", { location: null }],
+  ])("excludes %s candidates before scoring", (_label, override) => {
+    const ranked = rankRunners(baseTask, [runner("eligible"), runner("blocked", override)]);
+    expect(ranked.map((result) => result.runnerId)).toEqual(["eligible"]);
+  });
+
+  it("uses an estimated pickup-time urgency signal", () => {
+    const candidate = runner("runner", {
+      location: { lat: 5.69, lng: -0.187 },
+      activeLoad: 2,
+    });
+    const express = rankRunners({ ...baseTask, urgency: "express" }, [candidate])[0];
+    const low = rankRunners({ ...baseTask, urgency: "low" }, [candidate])[0];
+
+    expect(express.components.estimatedPickupMinutes).toBeGreaterThan(0);
+    expect(express.components.urgencyFit).toBeLessThan(low.components.urgencyFit);
+  });
+
+  it("breaks exact ties deterministically by runner id", () => {
+    const ranked = rankRunners(baseTask, [runner("runner-b"), runner("runner-a")]);
+    expect(ranked.map((result) => result.runnerId)).toEqual(["runner-a", "runner-b"]);
+  });
+
+  it("rejects invalid matcher configuration", () => {
+    expect(() =>
+      rankRunners(baseTask, [runner("runner")], {
+        ...DEFAULT_MATCH_CONFIG,
+        weights: { proximity: 1, trust: 1, capacity: 0, urgency: 0 },
+      }),
+    ).toThrow(/sum to 1/i);
+  });
+
+  it("does not mutate the candidate array", () => {
+    const candidates = [runner("runner-b"), runner("runner-a")];
+    const snapshot = structuredClone(candidates);
+    rankRunners(baseTask, candidates);
+    expect(candidates).toEqual(snapshot);
   });
 });

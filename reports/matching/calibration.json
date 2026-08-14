@@ -1,0 +1,2235 @@
+{
+  "acceptanceCriteria": {
+    "beatsStrongestSingleByFivePercent": true,
+    "ndcgAtLeast085": true,
+    "noWorseThanCurrent": true,
+    "regretAtMost010": true,
+    "urgencySliceNonRegression": true,
+    "weightStabilityAtLeast075": true,
+    "zeroEligibilityViolations": true
+  },
+  "algorithmVersion": "matching-v2",
+  "bootstrapSeed": 20260816,
+  "config": {
+    "algorithmVersion": "matching-v2",
+    "assumedTravelSpeedKmh": 20,
+    "configVersion": "matching-v2-calibrated",
+    "delayMinutesPerActiveTask": 8,
+    "distanceScaleKm": 3,
+    "urgencyTargetMinutes": {
+      "express": 15,
+      "low": 60,
+      "normal": 35
+    },
+    "weights": {
+      "capacity": 0.1,
+      "proximity": 0,
+      "trust": 0.25,
+      "urgency": 0.65
+    }
+  },
+  "configVersion": "matching-v2-calibrated",
+  "evaluationVersion": "matching-evaluation-v1",
+  "generatedAt": "deterministic",
+  "generatorSeed": 20260814,
+  "generatorVersion": "matching-generator-v1",
+  "pairedDifferences": [
+    {
+      "baseline": "random-eligible",
+      "interval": {
+        "lower": 0.0746,
+        "upper": 0.0968
+      },
+      "meanDifference": 0.0848
+    },
+    {
+      "baseline": "nearest-eligible",
+      "interval": {
+        "lower": 0.03,
+        "upper": 0.0482
+      },
+      "meanDifference": 0.0392
+    },
+    {
+      "baseline": "highest-trust",
+      "interval": {
+        "lower": 0.0494,
+        "upper": 0.0688
+      },
+      "meanDifference": 0.0592
+    },
+    {
+      "baseline": "equal-weight",
+      "interval": {
+        "lower": -0.0008,
+        "upper": 0.0066
+      },
+      "meanDifference": 0.003
+    },
+    {
+      "baseline": "current-config",
+      "interval": {
+        "lower": 0.0084,
+        "upper": 0.0206
+      },
+      "meanDifference": 0.0146
+    }
+  ],
+  "scenarioCount": 5000,
+  "strategies": [
+    {
+      "metrics": {
+        "acceptanceRate": 0.5168,
+        "cancellationRate": 0.1104,
+        "coldStartExposure": 0.2568,
+        "completionRate": 0.258,
+        "disputeRate": 0.0226,
+        "eligibilityViolations": 0,
+        "meanDistanceKm": 6.23934874632577,
+        "meanPickupMinutes": 31.840988313227868,
+        "ndcgAt5": 0.872630635618439,
+        "normalizedRegret": 0.32204983634283246,
+        "scenarios": 5000,
+        "selectionConcentration": 0.02141088,
+        "successfulOnTimeInterval": {
+          "lower": 0.1806,
+          "upper": 0.2024
+        },
+        "successfulOnTimeRate": 0.1922,
+        "topThreeOracleCoverage": 0.9222
+      },
+      "name": "random-eligible",
+      "slices": {
+        "activeLoad": [
+          {
+            "key": "load-0",
+            "metrics": {
+              "acceptanceRate": 0.7521008403361344,
+              "cancellationRate": 0.09138655462184873,
+              "coldStartExposure": 0.25,
+              "completionRate": 0.421218487394958,
+              "disputeRate": 0.038865546218487396,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 6.056325198689347,
+              "meanPickupMinutes": 18.809361055452634,
+              "ndcgAt5": 0.9463476109330796,
+              "normalizedRegret": 0.1130086589474535,
+              "scenarios": 952,
+              "selectionConcentration": 0.02164836522844432,
+              "successfulOnTimeRate": 0.35714285714285715,
+              "topThreeOracleCoverage": 0.9821428571428571
+            }
+          },
+          {
+            "key": "load-1-2",
+            "metrics": {
+              "acceptanceRate": 0.5751243781094527,
+              "cancellationRate": 0.11940298507462686,
+              "coldStartExposure": 0.2626865671641791,
+              "completionRate": 0.29054726368159206,
+              "disputeRate": 0.025870646766169153,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 6.306402836594919,
+              "meanPickupMinutes": 28.818038652156492,
+              "ndcgAt5": 0.8928683634204292,
+              "normalizedRegret": 0.26427889540826877,
+              "scenarios": 2010,
+              "selectionConcentration": 0.02184153857577783,
+              "successfulOnTimeRate": 0.20696517412935322,
+              "topThreeOracleCoverage": 0.9437810945273631
+            }
+          },
+          {
+            "key": "load-3-plus",
+            "metrics": {
+              "acceptanceRate": 0.3493621197252208,
+              "cancellationRate": 0.11040235525024533,
+              "coldStartExposure": 0.25417075564278707,
+              "completionRate": 0.14965652600588814,
+              "disputeRate": 0.011776251226692836,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 6.2587107168404525,
+              "meanPickupMinutes": 40.909799877582834,
+              "ndcgAt5": 0.818235938179017,
+              "normalizedRegret": 0.47667534770636244,
+              "scenarios": 2038,
+              "selectionConcentration": 0.02170391607543042,
+              "successfulOnTimeRate": 0.10058881256133465,
+              "topThreeOracleCoverage": 0.8729146221786065
+            }
+          }
+        ],
+        "candidatePool": [
+          {
+            "key": "large-9-12",
+            "metrics": {
+              "acceptanceRate": 0.503725782414307,
+              "cancellationRate": 0.09836065573770492,
+              "coldStartExposure": 0.2503725782414307,
+              "completionRate": 0.26130153999006456,
+              "disputeRate": 0.025832091405861898,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 6.227286802729728,
+              "meanPickupMinutes": 32.00704831227625,
+              "ndcgAt5": 0.8262287281949009,
+              "normalizedRegret": 0.41515700198747707,
+              "scenarios": 2013,
+              "selectionConcentration": 0.0219968614339629,
+              "successfulOnTimeRate": 0.19870839542970692,
+              "topThreeOracleCoverage": 0.8499751614505713
+            }
+          },
+          {
+            "key": "medium-6-8",
+            "metrics": {
+              "acceptanceRate": 0.520949720670391,
+              "cancellationRate": 0.12011173184357542,
+              "coldStartExposure": 0.2506983240223464,
+              "completionRate": 0.2388268156424581,
+              "disputeRate": 0.019553072625698324,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 6.245359944254416,
+              "meanPickupMinutes": 31.972277202859193,
+              "ndcgAt5": 0.8757048423622205,
+              "normalizedRegret": 0.3274903033759573,
+              "scenarios": 1432,
+              "selectionConcentration": 0.022124972691239343,
+              "successfulOnTimeRate": 0.1738826815642458,
+              "topThreeOracleCoverage": 0.9462290502793296
+            }
+          },
+          {
+            "key": "small-3-5",
+            "metrics": {
+              "acceptanceRate": 0.5299035369774919,
+              "cancellationRate": 0.11704180064308682,
+              "coldStartExposure": 0.2707395498392283,
+              "completionRate": 0.27138263665594853,
+              "disputeRate": 0.02122186495176849,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 6.249427625441569,
+              "meanPickupMinutes": 31.5051140572558,
+              "ndcgAt5": 0.9298684334232515,
+              "normalizedRegret": 0.19650933908617269,
+              "scenarios": 1555,
+              "selectionConcentration": 0.02138315360676586,
+              "successfulOnTimeRate": 0.20064308681672025,
+              "topThreeOracleCoverage": 0.9935691318327974
+            }
+          }
+        ],
+        "category": [
+          {
+            "key": "Deliveries",
+            "metrics": {
+              "acceptanceRate": 0.5329280648429585,
+              "cancellationRate": 0.09827760891590678,
+              "coldStartExposure": 0.2887537993920973,
+              "completionRate": 0.2684903748733536,
+              "disputeRate": 0.020263424518743668,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 6.079554881765135,
+              "meanPickupMinutes": 31.46425040061337,
+              "ndcgAt5": 0.8534737484380838,
+              "normalizedRegret": 0.36101831128952067,
+              "scenarios": 987,
+              "selectionConcentration": 0.02992601899670386,
+              "successfulOnTimeRate": 0.19959473150962512,
+              "topThreeOracleCoverage": 0.894630192502533
+            }
+          },
+          {
+            "key": "Food & Catering",
+            "metrics": {
+              "acceptanceRate": 0.5149700598802395,
+              "cancellationRate": 0.1217564870259481,
+              "coldStartExposure": 0.23952095808383234,
+              "completionRate": 0.250499001996008,
+              "disputeRate": 0.023952095808383235,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 6.194058898603898,
+              "meanPickupMinutes": 31.491299876243506,
+              "ndcgAt5": 0.8365932542010412,
+              "normalizedRegret": 0.3913607864999886,
+              "scenarios": 1002,
+              "selectionConcentration": 0.029541714973247108,
+              "successfulOnTimeRate": 0.18163672654690619,
+              "topThreeOracleCoverage": 0.8493013972055888
+            }
+          },
+          {
+            "key": "Grocery Shopping",
+            "metrics": {
+              "acceptanceRate": 0.515181194906954,
+              "cancellationRate": 0.12047012732615084,
+              "coldStartExposure": 0.28697355533790403,
+              "completionRate": 0.2624877571008815,
+              "disputeRate": 0.030362389813907934,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 6.330529947985737,
+              "meanPickupMinutes": 31.370369703743528,
+              "ndcgAt5": 0.9015663228890667,
+              "normalizedRegret": 0.2650528254595086,
+              "scenarios": 1021,
+              "selectionConcentration": 0.031283305242215134,
+              "successfulOnTimeRate": 0.1909892262487757,
+              "topThreeOracleCoverage": 0.9725759059745348
+            }
+          },
+          {
+            "key": "Market Runs",
+            "metrics": {
+              "acceptanceRate": 0.5367063492063492,
+              "cancellationRate": 0.12301587301587301,
+              "coldStartExposure": 0.22420634920634921,
+              "completionRate": 0.25892857142857145,
+              "disputeRate": 0.021825396825396824,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 6.239141155988315,
+              "meanPickupMinutes": 31.87464909341146,
+              "ndcgAt5": 0.8973163982158451,
+              "normalizedRegret": 0.2698070004913425,
+              "scenarios": 1008,
+              "selectionConcentration": 0.0308445137314185,
+              "successfulOnTimeRate": 0.20238095238095238,
+              "topThreeOracleCoverage": 0.9623015873015873
+            }
+          },
+          {
+            "key": "Pharmacy Pickups",
+            "metrics": {
+              "acceptanceRate": 0.48370672097759676,
+              "cancellationRate": 0.08757637474541752,
+              "coldStartExposure": 0.24439918533604887,
+              "completionRate": 0.2494908350305499,
+              "disputeRate": 0.016293279022403257,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 6.351579108753512,
+              "meanPickupMinutes": 33.03121200718634,
+              "ndcgAt5": 0.8732321818768312,
+              "normalizedRegret": 0.32504705611912943,
+              "scenarios": 982,
+              "selectionConcentration": 0.030668115695554617,
+              "successfulOnTimeRate": 0.18635437881873726,
+              "topThreeOracleCoverage": 0.9307535641547862
+            }
+          }
+        ],
+        "distance": [
+          {
+            "key": "far-5km-plus",
+            "metrics": {
+              "acceptanceRate": 0.45707656612529,
+              "cancellationRate": 0.09247596950613192,
+              "coldStartExposure": 0.26019224395094465,
+              "completionRate": 0.23964202850513755,
+              "disputeRate": 0.021876035797149487,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 8.257109860503721,
+              "meanPickupMinutes": 38.19914503267944,
+              "ndcgAt5": 0.841953979123184,
+              "normalizedRegret": 0.402927566126849,
+              "scenarios": 3017,
+              "selectionConcentration": 0.021522388489312965,
+              "successfulOnTimeRate": 0.1561153463705668,
+              "topThreeOracleCoverage": 0.9018892940006629
+            }
+          },
+          {
+            "key": "mid-2-5km",
+            "metrics": {
+              "acceptanceRate": 0.5958775765146783,
+              "cancellationRate": 0.13554028732042472,
+              "coldStartExposure": 0.2535915053091818,
+              "completionRate": 0.2767020612117427,
+              "disputeRate": 0.019987507807620236,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 3.608443290323844,
+              "meanPickupMinutes": 23.583030067018854,
+              "ndcgAt5": 0.9135839935349518,
+              "normalizedRegret": 0.21348028477458675,
+              "scenarios": 1601,
+              "selectionConcentration": 0.02194170492286793,
+              "successfulOnTimeRate": 0.23735165521549031,
+              "topThreeOracleCoverage": 0.9475327920049968
+            }
+          },
+          {
+            "key": "near-under-2km",
+            "metrics": {
+              "acceptanceRate": 0.6570680628272252,
+              "cancellationRate": 0.14659685863874344,
+              "coldStartExposure": 0.24345549738219896,
+              "completionRate": 0.32460732984293195,
+              "disputeRate": 0.03926701570680628,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 1.3296481012582526,
+              "meanPickupMinutes": 16.23479022316261,
+              "ndcgAt5": 0.9432723807018075,
+              "normalizedRegret": 0.1383109392286445,
+              "scenarios": 382,
+              "selectionConcentration": 0.023066801896877823,
+              "successfulOnTimeRate": 0.2879581151832461,
+              "topThreeOracleCoverage": 0.9764397905759162
+            }
+          }
+        ],
+        "urgency": [
+          {
+            "key": "express",
+            "metrics": {
+              "acceptanceRate": 0.3487241798298906,
+              "cancellationRate": 0.06986634264884568,
+              "coldStartExposure": 0.2496962332928311,
+              "completionRate": 0.17861482381530985,
+              "disputeRate": 0.012150668286755772,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 6.262679906968482,
+              "meanPickupMinutes": 31.821253931172052,
+              "ndcgAt5": 0.8134491223341594,
+              "normalizedRegret": 0.4377462254849078,
+              "scenarios": 1646,
+              "selectionConcentration": 0.021460767219475325,
+              "successfulOnTimeRate": 0.05164034021871203,
+              "topThreeOracleCoverage": 0.9173754556500607
+            }
+          },
+          {
+            "key": "low",
+            "metrics": {
+              "acceptanceRate": 0.6243961352657005,
+              "cancellationRate": 0.1431159420289855,
+              "coldStartExposure": 0.27294685990338163,
+              "completionRate": 0.3073671497584541,
+              "disputeRate": 0.025966183574879228,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 6.129758946724664,
+              "meanPickupMinutes": 31.491960649777848,
+              "ndcgAt5": 0.9234512447561343,
+              "normalizedRegret": 0.21583366816912336,
+              "scenarios": 1656,
+              "selectionConcentration": 0.02198928213027141,
+              "successfulOnTimeRate": 0.29830917874396135,
+              "topThreeOracleCoverage": 0.9329710144927537
+            }
+          },
+          {
+            "key": "normal",
+            "metrics": {
+              "acceptanceRate": 0.574793875147232,
+              "cancellationRate": 0.11778563015312132,
+              "coldStartExposure": 0.2479387514723204,
+              "completionRate": 0.2868080094228504,
+              "disputeRate": 0.02944640753828033,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 6.323611183146486,
+              "meanPickupMinutes": 32.20051281472198,
+              "ndcgAt5": 0.8804361963568915,
+              "normalizedRegret": 0.31348547707770075,
+              "scenarios": 1698,
+              "selectionConcentration": 0.021889536779222007,
+              "successfulOnTimeRate": 0.2249705535924617,
+              "topThreeOracleCoverage": 0.9163722025912838
+            }
+          }
+        ]
+      }
+    },
+    {
+      "metrics": {
+        "acceptanceRate": 0.578,
+        "cancellationRate": 0.1208,
+        "coldStartExposure": 0.2644,
+        "completionRate": 0.2914,
+        "disputeRate": 0.027,
+        "eligibilityViolations": 0,
+        "meanDistanceKm": 4.292829916698818,
+        "meanPickupMinutes": 25.727876587982948,
+        "ndcgAt5": 0.9320874235633393,
+        "normalizedRegret": 0.1851367433125754,
+        "scenarios": 5000,
+        "selectionConcentration": 0.021316399999999996,
+        "successfulOnTimeInterval": {
+          "lower": 0.2272,
+          "upper": 0.2478
+        },
+        "successfulOnTimeRate": 0.2378,
+        "topThreeOracleCoverage": 0.9674
+      },
+      "name": "nearest-eligible",
+      "slices": {
+        "activeLoad": [
+          {
+            "key": "load-0",
+            "metrics": {
+              "acceptanceRate": 0.7767393561786086,
+              "cancellationRate": 0.0893042575285566,
+              "coldStartExposure": 0.2481827622014538,
+              "completionRate": 0.43821391484942884,
+              "disputeRate": 0.036344755970924195,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 4.3077264272382605,
+              "meanPickupMinutes": 13.347620183173134,
+              "ndcgAt5": 0.982793849504165,
+              "normalizedRegret": 0.03588252168337369,
+              "scenarios": 963,
+              "selectionConcentration": 0.02215838571269904,
+              "successfulOnTimeRate": 0.3987538940809969,
+              "topThreeOracleCoverage": 0.9968847352024922
+            }
+          },
+          {
+            "key": "load-1-2",
+            "metrics": {
+              "acceptanceRate": 0.6359561752988048,
+              "cancellationRate": 0.12350597609561753,
+              "coldStartExposure": 0.26195219123505975,
+              "completionRate": 0.33217131474103584,
+              "disputeRate": 0.0348605577689243,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 4.32489407471172,
+              "meanPickupMinutes": 22.56086179978216,
+              "ndcgAt5": 0.9561515154120631,
+              "normalizedRegret": 0.11522614353559221,
+              "scenarios": 2008,
+              "selectionConcentration": 0.021753126934493106,
+              "successfulOnTimeRate": 0.2644422310756972,
+              "topThreeOracleCoverage": 0.9885458167330677
+            }
+          },
+          {
+            "key": "load-3-plus",
+            "metrics": {
+              "acceptanceRate": 0.4263183834401183,
+              "cancellationRate": 0.1330704780680138,
+              "coldStartExposure": 0.2745194677180877,
+              "completionRate": 0.18137013307047806,
+              "disputeRate": 0.014785608674223755,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 4.254027467739046,
+              "meanPickupMinutes": 34.73800601752393,
+              "ndcgAt5": 0.8842062088697744,
+              "normalizedRegret": 0.32516251944914676,
+              "scenarios": 2029,
+              "selectionConcentration": 0.0216479091614177,
+              "successfulOnTimeRate": 0.1350418925579103,
+              "topThreeOracleCoverage": 0.9324790537210449
+            }
+          }
+        ],
+        "candidatePool": [
+          {
+            "key": "large-9-12",
+            "metrics": {
+              "acceptanceRate": 0.5946348733233979,
+              "cancellationRate": 0.11475409836065574,
+              "coldStartExposure": 0.2563338301043219,
+              "completionRate": 0.31097863884749133,
+              "disputeRate": 0.030799801291604572,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 3.696890024754803,
+              "meanPickupMinutes": 24.03046076216301,
+              "ndcgAt5": 0.9051331390739487,
+              "normalizedRegret": 0.24842965855536614,
+              "scenarios": 2013,
+              "selectionConcentration": 0.02197909317207648,
+              "successfulOnTimeRate": 0.2608047690014903,
+              "topThreeOracleCoverage": 0.9364133134624938
+            }
+          },
+          {
+            "key": "medium-6-8",
+            "metrics": {
+              "acceptanceRate": 0.5705307262569832,
+              "cancellationRate": 0.13058659217877094,
+              "coldStartExposure": 0.25837988826815644,
+              "completionRate": 0.2723463687150838,
+              "disputeRate": 0.023743016759776536,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 4.264565671420616,
+              "meanPickupMinutes": 25.738004523762616,
+              "ndcgAt5": 0.936127004488555,
+              "normalizedRegret": 0.17940104675664734,
+              "scenarios": 1432,
+              "selectionConcentration": 0.02185090977185481,
+              "successfulOnTimeRate": 0.22486033519553073,
+              "topThreeOracleCoverage": 0.9762569832402235
+            }
+          },
+          {
+            "key": "small-3-5",
+            "metrics": {
+              "acceptanceRate": 0.5633440514469453,
+              "cancellationRate": 0.11961414790996784,
+              "coldStartExposure": 0.28038585209003214,
+              "completionRate": 0.28360128617363345,
+              "disputeRate": 0.02508038585209003,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 5.0903227795423565,
+              "meanPickupMinutes": 27.915911863441902,
+              "ndcgAt5": 0.9632606034940419,
+              "normalizedRegret": 0.10848393243434434,
+              "scenarios": 1555,
+              "selectionConcentration": 0.02137240102976603,
+              "successfulOnTimeRate": 0.21993569131832796,
+              "topThreeOracleCoverage": 0.9993569131832798
+            }
+          }
+        ],
+        "category": [
+          {
+            "key": "Deliveries",
+            "metrics": {
+              "acceptanceRate": 0.5876393110435664,
+              "cancellationRate": 0.11347517730496454,
+              "coldStartExposure": 0.3049645390070922,
+              "completionRate": 0.292806484295846,
+              "disputeRate": 0.028368794326241134,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 4.048596470321391,
+              "meanPickupMinutes": 25.042873137329057,
+              "ndcgAt5": 0.9212406754894739,
+              "normalizedRegret": 0.21442003819958105,
+              "scenarios": 987,
+              "selectionConcentration": 0.031059292586809884,
+              "successfulOnTimeRate": 0.24518743667679838,
+              "topThreeOracleCoverage": 0.9493414387031408
+            }
+          },
+          {
+            "key": "Food & Catering",
+            "metrics": {
+              "acceptanceRate": 0.5958083832335329,
+              "cancellationRate": 0.1377245508982036,
+              "coldStartExposure": 0.25848303393213573,
+              "completionRate": 0.30538922155688625,
+              "disputeRate": 0.02594810379241517,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 3.817495630226385,
+              "meanPickupMinutes": 23.539450142055404,
+              "ndcgAt5": 0.9131440838331388,
+              "normalizedRegret": 0.22480792849713202,
+              "scenarios": 1002,
+              "selectionConcentration": 0.029744901414735393,
+              "successfulOnTimeRate": 0.24850299401197604,
+              "topThreeOracleCoverage": 0.9421157684630739
+            }
+          },
+          {
+            "key": "Grocery Shopping",
+            "metrics": {
+              "acceptanceRate": 0.545543584720862,
+              "cancellationRate": 0.11263467189030363,
+              "coldStartExposure": 0.2742409402546523,
+              "completionRate": 0.267384916748286,
+              "disputeRate": 0.031341821743388835,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 4.701343326447309,
+              "meanPickupMinutes": 26.73921842526481,
+              "ndcgAt5": 0.9470520948475798,
+              "normalizedRegret": 0.15250440229464077,
+              "scenarios": 1021,
+              "selectionConcentration": 0.03114324935416011,
+              "successfulOnTimeRate": 0.21939275220372184,
+              "topThreeOracleCoverage": 0.9843290891283056
+            }
+          },
+          {
+            "key": "Market Runs",
+            "metrics": {
+              "acceptanceRate": 0.5714285714285714,
+              "cancellationRate": 0.13690476190476192,
+              "coldStartExposure": 0.22123015873015872,
+              "completionRate": 0.28075396825396826,
+              "disputeRate": 0.022817460317460316,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 4.575810351288853,
+              "meanPickupMinutes": 27.051607732834256,
+              "ndcgAt5": 0.9411661853021464,
+              "normalizedRegret": 0.1628826621602971,
+              "scenarios": 1008,
+              "selectionConcentration": 0.030862229150919636,
+              "successfulOnTimeRate": 0.2261904761904762,
+              "topThreeOracleCoverage": 0.9851190476190477
+            }
+          },
+          {
+            "key": "Pharmacy Pickups",
+            "metrics": {
+              "acceptanceRate": 0.5906313645621182,
+              "cancellationRate": 0.10285132382892057,
+              "coldStartExposure": 0.2637474541751528,
+              "completionRate": 0.31160896130346233,
+              "disputeRate": 0.026476578411405296,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 4.308111889407542,
+              "meanPickupMinutes": 26.2390789247851,
+              "ndcgAt5": 0.937440423099644,
+              "normalizedRegret": 0.17199681904822342,
+              "scenarios": 982,
+              "selectionConcentration": 0.031460380536002426,
+              "successfulOnTimeRate": 0.2505091649694501,
+              "topThreeOracleCoverage": 0.9755600814663951
+            }
+          }
+        ],
+        "distance": [
+          {
+            "key": "far-5km-plus",
+            "metrics": {
+              "acceptanceRate": 0.4844984802431611,
+              "cancellationRate": 0.09483282674772037,
+              "coldStartExposure": 0.2662613981762918,
+              "completionRate": 0.2547112462006079,
+              "disputeRate": 0.023100303951367782,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 7.210370406508112,
+              "meanPickupMinutes": 34.61285520897334,
+              "ndcgAt5": 0.944878149230634,
+              "normalizedRegret": 0.1564943249318987,
+              "scenarios": 1645,
+              "selectionConcentration": 0.021561885052798834,
+              "successfulOnTimeRate": 0.1829787234042553,
+              "topThreeOracleCoverage": 0.9872340425531915
+            }
+          },
+          {
+            "key": "mid-2-5km",
+            "metrics": {
+              "acceptanceRate": 0.6065173116089613,
+              "cancellationRate": 0.129938900203666,
+              "coldStartExposure": 0.25865580448065173,
+              "completionRate": 0.2965376782077393,
+              "disputeRate": 0.026883910386965377,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 3.4279359033106447,
+              "meanPickupMinutes": 23.175118688867965,
+              "ndcgAt5": 0.9245328384402082,
+              "normalizedRegret": 0.20462802106401068,
+              "scenarios": 2455,
+              "selectionConcentration": 0.021723984884748276,
+              "successfulOnTimeRate": 0.24887983706720979,
+              "topThreeOracleCoverage": 0.9608961303462322
+            }
+          },
+          {
+            "key": "near-under-2km",
+            "metrics": {
+              "acceptanceRate": 0.6711111111111111,
+              "cancellationRate": 0.14333333333333334,
+              "coldStartExposure": 0.27666666666666667,
+              "completionRate": 0.34444444444444444,
+              "disputeRate": 0.034444444444444444,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 1.3194529135118156,
+              "meanPickupMinutes": 16.45146637775822,
+              "ndcgAt5": 0.9293160488462275,
+              "normalizedRegret": 0.1843208448197302,
+              "scenarios": 900,
+              "selectionConcentration": 0.02169629629629629,
+              "successfulOnTimeRate": 0.30777777777777776,
+              "topThreeOracleCoverage": 0.9488888888888889
+            }
+          }
+        ],
+        "urgency": [
+          {
+            "key": "express",
+            "metrics": {
+              "acceptanceRate": 0.4416767922235723,
+              "cancellationRate": 0.09781287970838397,
+              "coldStartExposure": 0.2533414337788578,
+              "completionRate": 0.21567436208991494,
+              "disputeRate": 0.01761846901579587,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 4.260039167444725,
+              "meanPickupMinutes": 25.584935396089122,
+              "ndcgAt5": 0.9103038783049568,
+              "normalizedRegret": 0.23065268150149118,
+              "scenarios": 1646,
+              "selectionConcentration": 0.02147479289975772,
+              "successfulOnTimeRate": 0.08930741190765493,
+              "topThreeOracleCoverage": 0.9732685297691372
+            }
+          },
+          {
+            "key": "low",
+            "metrics": {
+              "acceptanceRate": 0.657608695652174,
+              "cancellationRate": 0.13647342995169082,
+              "coldStartExposure": 0.28140096618357485,
+              "completionRate": 0.33695652173913043,
+              "disputeRate": 0.0320048309178744,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 4.331956760409627,
+              "meanPickupMinutes": 25.933373590011353,
+              "ndcgAt5": 0.947600554274379,
+              "normalizedRegret": 0.15398491498722802,
+              "scenarios": 1656,
+              "selectionConcentration": 0.02204470932810568,
+              "successfulOnTimeRate": 0.3333333333333333,
+              "topThreeOracleCoverage": 0.961352657004831
+            }
+          },
+          {
+            "key": "normal",
+            "metrics": {
+              "acceptanceRate": 0.6325088339222615,
+              "cancellationRate": 0.12779740871613662,
+              "coldStartExposure": 0.2585394581861013,
+              "completionRate": 0.32037691401649,
+              "disputeRate": 0.03121319199057715,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 4.286457431473356,
+              "meanPickupMinutes": 25.666026273788525,
+              "ndcgAt5": 0.9380744500873822,
+              "normalizedRegret": 0.17139598562577826,
+              "scenarios": 1698,
+              "selectionConcentration": 0.02158085241280187,
+              "successfulOnTimeRate": 0.28857479387514723,
+              "topThreeOracleCoverage": 0.9676089517078916
+            }
+          }
+        ]
+      }
+    },
+    {
+      "metrics": {
+        "acceptanceRate": 0.534,
+        "cancellationRate": 0.1154,
+        "coldStartExposure": 0.0914,
+        "completionRate": 0.2896,
+        "disputeRate": 0.0202,
+        "eligibilityViolations": 0,
+        "meanDistanceKm": 6.288609364622572,
+        "meanPickupMinutes": 31.429191323332844,
+        "ndcgAt5": 0.8916539096473365,
+        "normalizedRegret": 0.27737556988680306,
+        "scenarios": 5000,
+        "selectionConcentration": 0.029216080000000002,
+        "successfulOnTimeInterval": {
+          "lower": 0.2068,
+          "upper": 0.2296
+        },
+        "successfulOnTimeRate": 0.2178,
+        "topThreeOracleCoverage": 0.9414
+      },
+      "name": "highest-trust",
+      "slices": {
+        "activeLoad": [
+          {
+            "key": "load-0",
+            "metrics": {
+              "acceptanceRate": 0.7619047619047619,
+              "cancellationRate": 0.09417989417989418,
+              "coldStartExposure": 0.08677248677248678,
+              "completionRate": 0.4687830687830688,
+              "disputeRate": 0.02857142857142857,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 6.189060614194916,
+              "meanPickupMinutes": 18.825547721595843,
+              "ndcgAt5": 0.9611546621502832,
+              "normalizedRegret": 0.08166720525929765,
+              "scenarios": 945,
+              "selectionConcentration": 0.030463872791915102,
+              "successfulOnTimeRate": 0.3968253968253968,
+              "topThreeOracleCoverage": 0.9841269841269841
+            }
+          },
+          {
+            "key": "load-1-2",
+            "metrics": {
+              "acceptanceRate": 0.5893306492199295,
+              "cancellationRate": 0.12078510317060896,
+              "coldStartExposure": 0.09159536990437846,
+              "completionRate": 0.32964267740312025,
+              "disputeRate": 0.026170105686965275,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 6.314498943141944,
+              "meanPickupMinutes": 27.959418253507792,
+              "ndcgAt5": 0.9175061374882186,
+              "normalizedRegret": 0.20117364226044795,
+              "scenarios": 1987,
+              "selectionConcentration": 0.03077198569767404,
+              "successfulOnTimeRate": 0.24157020634121792,
+              "topThreeOracleCoverage": 0.9713135379969804
+            }
+          },
+          {
+            "key": "load-3-plus",
+            "metrics": {
+              "acceptanceRate": 0.3766924564796905,
+              "cancellationRate": 0.11992263056092843,
+              "coldStartExposure": 0.09332688588007737,
+              "completionRate": 0.16924564796905223,
+              "disputeRate": 0.010638297872340425,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 6.309223956806393,
+              "meanPickupMinutes": 40.52246129111994,
+              "ndcgAt5": 0.8350549793595651,
+              "normalizedRegret": 0.44002432944510156,
+              "scenarios": 2068,
+              "selectionConcentration": 0.028458896550176027,
+              "successfulOnTimeRate": 0.11315280464216634,
+              "topThreeOracleCoverage": 0.8931334622823984
+            }
+          }
+        ],
+        "candidatePool": [
+          {
+            "key": "large-9-12",
+            "metrics": {
+              "acceptanceRate": 0.5345255837059115,
+              "cancellationRate": 0.10581222056631892,
+              "coldStartExposure": 0.040238450074515646,
+              "completionRate": 0.3075012419274714,
+              "disputeRate": 0.02334823646299056,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 6.23082382796309,
+              "meanPickupMinutes": 31.202853872237974,
+              "ndcgAt5": 0.8555289581770937,
+              "normalizedRegret": 0.3550902492160902,
+              "scenarios": 2013,
+              "selectionConcentration": 0.03589065510347669,
+              "successfulOnTimeRate": 0.23348236462990563,
+              "topThreeOracleCoverage": 0.8822652757078987
+            }
+          },
+          {
+            "key": "medium-6-8",
+            "metrics": {
+              "acceptanceRate": 0.5230446927374302,
+              "cancellationRate": 0.12779329608938547,
+              "coldStartExposure": 0.07681564245810056,
+              "completionRate": 0.26606145251396646,
+              "disputeRate": 0.01606145251396648,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 6.321907151241031,
+              "meanPickupMinutes": 31.668567044225853,
+              "ndcgAt5": 0.8894756952036337,
+              "normalizedRegret": 0.2916549532433626,
+              "scenarios": 1432,
+              "selectionConcentration": 0.02965633875347211,
+              "successfulOnTimeRate": 0.1962290502793296,
+              "topThreeOracleCoverage": 0.9636871508379888
+            }
+          },
+          {
+            "key": "small-3-5",
+            "metrics": {
+              "acceptanceRate": 0.5434083601286174,
+              "cancellationRate": 0.11639871382636656,
+              "coldStartExposure": 0.17106109324758842,
+              "completionRate": 0.2881028938906752,
+              "disputeRate": 0.019935691318327974,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 6.332750750383296,
+              "meanPickupMinutes": 31.501751617053095,
+              "ndcgAt5": 0.9404247973598685,
+              "normalizedRegret": 0.16362140496304187,
+              "scenarios": 1555,
+              "selectionConcentration": 0.023959636480185276,
+              "successfulOnTimeRate": 0.21736334405144694,
+              "topThreeOracleCoverage": 0.997427652733119
+            }
+          }
+        ],
+        "category": [
+          {
+            "key": "Deliveries",
+            "metrics": {
+              "acceptanceRate": 0.5319148936170213,
+              "cancellationRate": 0.10030395136778116,
+              "coldStartExposure": 0.08713272543059777,
+              "completionRate": 0.292806484295846,
+              "disputeRate": 0.016210739614994935,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 6.263541840709142,
+              "meanPickupMinutes": 31.77364992421858,
+              "ndcgAt5": 0.8701190747688046,
+              "normalizedRegret": 0.31732824278674676,
+              "scenarios": 987,
+              "selectionConcentration": 0.04598072818987261,
+              "successfulOnTimeRate": 0.2127659574468085,
+              "topThreeOracleCoverage": 0.9199594731509625
+            }
+          },
+          {
+            "key": "Food & Catering",
+            "metrics": {
+              "acceptanceRate": 0.5548902195608783,
+              "cancellationRate": 0.1277445109780439,
+              "coldStartExposure": 0.04790419161676647,
+              "completionRate": 0.3033932135728543,
+              "disputeRate": 0.018962075848303395,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 6.279078003833369,
+              "meanPickupMinutes": 29.659356744377423,
+              "ndcgAt5": 0.8703575283688815,
+              "normalizedRegret": 0.315473887485823,
+              "scenarios": 1002,
+              "selectionConcentration": 0.05393604009545782,
+              "successfulOnTimeRate": 0.22654690618762474,
+              "topThreeOracleCoverage": 0.8982035928143712
+            }
+          },
+          {
+            "key": "Grocery Shopping",
+            "metrics": {
+              "acceptanceRate": 0.5190989226248776,
+              "cancellationRate": 0.11459353574926542,
+              "coldStartExposure": 0.13124387855044076,
+              "completionRate": 0.2713026444662096,
+              "disputeRate": 0.02840352595494613,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 6.160547873129152,
+              "meanPickupMinutes": 30.813842697576906,
+              "ndcgAt5": 0.9210770321324003,
+              "normalizedRegret": 0.21552278844117148,
+              "scenarios": 1021,
+              "selectionConcentration": 0.036177587028906194,
+              "successfulOnTimeRate": 0.21155729676787463,
+              "topThreeOracleCoverage": 0.9784524975514202
+            }
+          },
+          {
+            "key": "Market Runs",
+            "metrics": {
+              "acceptanceRate": 0.5426587301587301,
+              "cancellationRate": 0.13095238095238096,
+              "coldStartExposure": 0.0992063492063492,
+              "completionRate": 0.2916666666666667,
+              "disputeRate": 0.021825396825396824,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 6.388249579344131,
+              "meanPickupMinutes": 31.81003101268861,
+              "ndcgAt5": 0.9105819753953006,
+              "normalizedRegret": 0.2414232227822875,
+              "scenarios": 1008,
+              "selectionConcentration": 0.04404840639959686,
+              "successfulOnTimeRate": 0.21825396825396826,
+              "topThreeOracleCoverage": 0.9652777777777778
+            }
+          },
+          {
+            "key": "Pharmacy Pickups",
+            "metrics": {
+              "acceptanceRate": 0.5213849287169042,
+              "cancellationRate": 0.10285132382892057,
+              "coldStartExposure": 0.09063136456211812,
+              "completionRate": 0.2892057026476578,
+              "disputeRate": 0.015274949083503055,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 6.354399095772054,
+              "meanPickupMinutes": 33.13772304335837,
+              "ndcgAt5": 0.8850076344283238,
+              "normalizedRegret": 0.29955871993861505,
+              "scenarios": 982,
+              "selectionConcentration": 0.04590573292793709,
+              "successfulOnTimeRate": 0.219959266802444,
+              "topThreeOracleCoverage": 0.9439918533604889
+            }
+          }
+        ],
+        "distance": [
+          {
+            "key": "far-5km-plus",
+            "metrics": {
+              "acceptanceRate": 0.469761359921543,
+              "cancellationRate": 0.09807126511932004,
+              "coldStartExposure": 0.09251389342922524,
+              "completionRate": 0.2615233736515201,
+              "disputeRate": 0.016672115070284408,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 8.296664656974018,
+              "meanPickupMinutes": 37.51269481567854,
+              "ndcgAt5": 0.8637947661222184,
+              "normalizedRegret": 0.3533560430866575,
+              "scenarios": 3059,
+              "selectionConcentration": 0.02958135848739634,
+              "successfulOnTimeRate": 0.17227852239293887,
+              "topThreeOracleCoverage": 0.9218698921216084
+            }
+          },
+          {
+            "key": "mid-2-5km",
+            "metrics": {
+              "acceptanceRate": 0.6262167423750811,
+              "cancellationRate": 0.14081765087605452,
+              "coldStartExposure": 0.08890330953926022,
+              "completionRate": 0.32770927968851393,
+              "disputeRate": 0.022063595068137574,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 3.5879717798576096,
+              "meanPickupMinutes": 23.198703591958655,
+              "ndcgAt5": 0.9298175810335014,
+              "normalizedRegret": 0.1731483165057882,
+              "scenarios": 1541,
+              "selectionConcentration": 0.02957239309195634,
+              "successfulOnTimeRate": 0.2790395846852693,
+              "topThreeOracleCoverage": 0.9714471122647631
+            }
+          },
+          {
+            "key": "near-under-2km",
+            "metrics": {
+              "acceptanceRate": 0.67,
+              "cancellationRate": 0.15,
+              "coldStartExposure": 0.0925,
+              "completionRate": 0.3575,
+              "disputeRate": 0.04,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 1.3362128116719063,
+              "meanPickupMinutes": 16.613552350737187,
+              "ndcgAt5": 0.9576811657404763,
+              "normalizedRegret": 0.09785039474127848,
+              "scenarios": 400,
+              "selectionConcentration": 0.029975000000000005,
+              "successfulOnTimeRate": 0.33,
+              "topThreeOracleCoverage": 0.975
+            }
+          }
+        ],
+        "urgency": [
+          {
+            "key": "express",
+            "metrics": {
+              "acceptanceRate": 0.3602673147023086,
+              "cancellationRate": 0.08323207776427703,
+              "coldStartExposure": 0.0850546780072904,
+              "completionRate": 0.18955042527339003,
+              "disputeRate": 0.012150668286755772,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 6.336378994048814,
+              "meanPickupMinutes": 31.597883955752994,
+              "ndcgAt5": 0.8260106602799743,
+              "normalizedRegret": 0.42265893941529764,
+              "scenarios": 1646,
+              "selectionConcentration": 0.030074011300269137,
+              "successfulOnTimeRate": 0.05224787363304982,
+              "topThreeOracleCoverage": 0.9295261239368166
+            }
+          },
+          {
+            "key": "low",
+            "metrics": {
+              "acceptanceRate": 0.6304347826086957,
+              "cancellationRate": 0.13103864734299517,
+              "coldStartExposure": 0.10446859903381643,
+              "completionRate": 0.34299516908212563,
+              "disputeRate": 0.022946859903381644,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 6.256342487735251,
+              "meanPickupMinutes": 31.20648713948037,
+              "ndcgAt5": 0.9461293395597311,
+              "normalizedRegret": 0.15559292390238677,
+              "scenarios": 1656,
+              "selectionConcentration": 0.029102925389157264,
+              "successfulOnTimeRate": 0.33756038647342995,
+              "topThreeOracleCoverage": 0.9589371980676329
+            }
+          },
+          {
+            "key": "normal",
+            "metrics": {
+              "acceptanceRate": 0.6083627797408716,
+              "cancellationRate": 0.13133097762073026,
+              "coldStartExposure": 0.08480565371024736,
+              "completionRate": 0.33451118963486454,
+              "disputeRate": 0.025323910482921083,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 6.2737714011890064,
+              "meanPickupMinutes": 31.482860378395255,
+              "ndcgAt5": 0.9021589017107993,
+              "normalizedRegret": 0.25531175098591474,
+              "scenarios": 1698,
+              "selectionConcentration": 0.02986261117839736,
+              "successfulOnTimeRate": 0.26148409893992935,
+              "topThreeOracleCoverage": 0.9358068315665489
+            }
+          }
+        ]
+      }
+    },
+    {
+      "metrics": {
+        "acceptanceRate": 0.6256,
+        "cancellationRate": 0.1154,
+        "coldStartExposure": 0.1992,
+        "completionRate": 0.3366,
+        "disputeRate": 0.0264,
+        "eligibilityViolations": 0,
+        "meanDistanceKm": 5.280191694078208,
+        "meanPickupMinutes": 24.481309508165726,
+        "ndcgAt5": 0.9699619657919814,
+        "normalizedRegret": 0.08446419355895433,
+        "scenarios": 5000,
+        "selectionConcentration": 0.022111920000000004,
+        "successfulOnTimeInterval": {
+          "lower": 0.2626,
+          "upper": 0.287
+        },
+        "successfulOnTimeRate": 0.274,
+        "topThreeOracleCoverage": 0.9918
+      },
+      "name": "equal-weight",
+      "slices": {
+        "activeLoad": [
+          {
+            "key": "load-0",
+            "metrics": {
+              "acceptanceRate": 0.7479166666666667,
+              "cancellationRate": 0.09583333333333334,
+              "coldStartExposure": 0.22083333333333333,
+              "completionRate": 0.434375,
+              "disputeRate": 0.03177083333333333,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 5.684693772184459,
+              "meanPickupMinutes": 17.651521315065352,
+              "ndcgAt5": 0.9709168549981708,
+              "normalizedRegret": 0.08069681163114709,
+              "scenarios": 1920,
+              "selectionConcentration": 0.021886935763888882,
+              "successfulOnTimeRate": 0.3692708333333333,
+              "topThreeOracleCoverage": 0.9880208333333333
+            }
+          },
+          {
+            "key": "load-1-2",
+            "metrics": {
+              "acceptanceRate": 0.6354112100576218,
+              "cancellationRate": 0.12467260345730749,
+              "coldStartExposure": 0.18648507071765322,
+              "completionRate": 0.3363017286537454,
+              "disputeRate": 0.029334730225248823,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 5.105086322493535,
+              "meanPickupMinutes": 24.127284571828174,
+              "ndcgAt5": 0.9778765941682365,
+              "normalizedRegret": 0.06076854530578035,
+              "scenarios": 1909,
+              "selectionConcentration": 0.023309124625680622,
+              "successfulOnTimeRate": 0.2645364064955474,
+              "topThreeOracleCoverage": 0.997904662126768
+            }
+          },
+          {
+            "key": "load-3-plus",
+            "metrics": {
+              "acceptanceRate": 0.40905209222886424,
+              "cancellationRate": 0.13236549957301452,
+              "coldStartExposure": 0.18445772843723313,
+              "completionRate": 0.17677198975234842,
+              "disputeRate": 0.012809564474807857,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 4.902422406624045,
+              "meanPickupMinutes": 36.2567381454169,
+              "ndcgAt5": 0.9554936371445258,
+              "normalizedRegret": 0.1292706545467415,
+              "scenarios": 1171,
+              "selectionConcentration": 0.0231505621550114,
+              "successfulOnTimeRate": 0.1332194705380017,
+              "topThreeOracleCoverage": 0.9880444064901793
+            }
+          }
+        ],
+        "candidatePool": [
+          {
+            "key": "large-9-12",
+            "metrics": {
+              "acceptanceRate": 0.6502732240437158,
+              "cancellationRate": 0.10432190760059612,
+              "coldStartExposure": 0.18032786885245902,
+              "completionRate": 0.3691008445106806,
+              "disputeRate": 0.028315946348733235,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 4.931428266639188,
+              "meanPickupMinutes": 21.811855687798023,
+              "ndcgAt5": 0.9617295891694326,
+              "normalizedRegret": 0.10467721462217061,
+              "scenarios": 2013,
+              "selectionConcentration": 0.023170060281296256,
+              "successfulOnTimeRate": 0.31296572280178836,
+              "topThreeOracleCoverage": 0.9836065573770492
+            }
+          },
+          {
+            "key": "medium-6-8",
+            "metrics": {
+              "acceptanceRate": 0.6201117318435754,
+              "cancellationRate": 0.12779329608938547,
+              "coldStartExposure": 0.1829608938547486,
+              "completionRate": 0.31564245810055863,
+              "disputeRate": 0.025139664804469275,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 5.289562522253466,
+              "meanPickupMinutes": 24.89836002103003,
+              "ndcgAt5": 0.9665481353981402,
+              "normalizedRegret": 0.0948975289251613,
+              "scenarios": 1432,
+              "selectionConcentration": 0.022634086014793543,
+              "successfulOnTimeRate": 0.25558659217877094,
+              "topThreeOracleCoverage": 0.9951117318435754
+            }
+          },
+          {
+            "key": "small-3-5",
+            "metrics": {
+              "acceptanceRate": 0.5987138263665595,
+              "cancellationRate": 0.11832797427652733,
+              "coldStartExposure": 0.23858520900321542,
+              "completionRate": 0.31382636655948554,
+              "disputeRate": 0.02508038585209003,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 5.723048127189355,
+              "meanPickupMinutes": 27.552945653489523,
+              "ndcgAt5": 0.98376285277922,
+              "normalizedRegret": 0.04868969346592337,
+              "scenarios": 1555,
+              "selectionConcentration": 0.02158166272060876,
+              "successfulOnTimeRate": 0.2405144694533762,
+              "topThreeOracleCoverage": 0.9993569131832798
+            }
+          }
+        ],
+        "category": [
+          {
+            "key": "Deliveries",
+            "metrics": {
+              "acceptanceRate": 0.646403242147923,
+              "cancellationRate": 0.09422492401215805,
+              "coldStartExposure": 0.24316109422492402,
+              "completionRate": 0.3576494427558257,
+              "disputeRate": 0.02634245187436677,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 5.1337755687679625,
+              "meanPickupMinutes": 23.406078065522365,
+              "ndcgAt5": 0.9642818674000766,
+              "normalizedRegret": 0.09757807815238095,
+              "scenarios": 987,
+              "selectionConcentration": 0.03173268703890187,
+              "successfulOnTimeRate": 0.2998986828774063,
+              "topThreeOracleCoverage": 0.9868287740628167
+            }
+          },
+          {
+            "key": "Food & Catering",
+            "metrics": {
+              "acceptanceRate": 0.653692614770459,
+              "cancellationRate": 0.12375249500998003,
+              "coldStartExposure": 0.17365269461077845,
+              "completionRate": 0.36826347305389223,
+              "disputeRate": 0.0249500998003992,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 5.006634541716551,
+              "meanPickupMinutes": 21.615859832409228,
+              "ndcgAt5": 0.9671097992371132,
+              "normalizedRegret": 0.08996961691476986,
+              "scenarios": 1002,
+              "selectionConcentration": 0.03229070800514741,
+              "successfulOnTimeRate": 0.29740518962075846,
+              "topThreeOracleCoverage": 0.9870259481037924
+            }
+          },
+          {
+            "key": "Grocery Shopping",
+            "metrics": {
+              "acceptanceRate": 0.5886385896180215,
+              "cancellationRate": 0.11851126346718903,
+              "coldStartExposure": 0.23604309500489715,
+              "completionRate": 0.2938295788442703,
+              "disputeRate": 0.03232125367286973,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 5.470524179490314,
+              "meanPickupMinutes": 25.864498624007336,
+              "ndcgAt5": 0.9756135842611959,
+              "normalizedRegret": 0.0714034675304591,
+              "scenarios": 1021,
+              "selectionConcentration": 0.030076522316370893,
+              "successfulOnTimeRate": 0.23898139079333985,
+              "topThreeOracleCoverage": 0.9951028403525954
+            }
+          },
+          {
+            "key": "Market Runs",
+            "metrics": {
+              "acceptanceRate": 0.6111111111111112,
+              "cancellationRate": 0.14186507936507936,
+              "coldStartExposure": 0.15575396825396826,
+              "completionRate": 0.3115079365079365,
+              "disputeRate": 0.020833333333333332,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 5.4594195376228685,
+              "meanPickupMinutes": 26.076012859242624,
+              "ndcgAt5": 0.9762816341899726,
+              "normalizedRegret": 0.067441129611342,
+              "scenarios": 1008,
+              "selectionConcentration": 0.03381283068783069,
+              "successfulOnTimeRate": 0.2509920634920635,
+              "topThreeOracleCoverage": 0.9970238095238095
+            }
+          },
+          {
+            "key": "Pharmacy Pickups",
+            "metrics": {
+              "acceptanceRate": 0.6293279022403259,
+              "cancellationRate": 0.09775967413441955,
+              "coldStartExposure": 0.18737270875763748,
+              "completionRate": 0.3533604887983707,
+              "disputeRate": 0.0274949083503055,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 5.324617201663601,
+              "meanPickupMinutes": 25.410776864415553,
+              "ndcgAt5": 0.9662181773994446,
+              "normalizedRegret": 0.09671919502336093,
+              "scenarios": 982,
+              "selectionConcentration": 0.033646367818285144,
+              "successfulOnTimeRate": 0.28411405295315684,
+              "topThreeOracleCoverage": 0.9928716904276986
+            }
+          }
+        ],
+        "distance": [
+          {
+            "key": "far-5km-plus",
+            "metrics": {
+              "acceptanceRate": 0.5593077247783875,
+              "cancellationRate": 0.10088644997889405,
+              "coldStartExposure": 0.18953144786829887,
+              "completionRate": 0.31152384972562264,
+              "disputeRate": 0.024905023216547067,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 7.884410924757796,
+              "meanPickupMinutes": 31.752597173817133,
+              "ndcgAt5": 0.9597003340701907,
+              "normalizedRegret": 0.1133994260233634,
+              "scenarios": 2369,
+              "selectionConcentration": 0.022760394792665416,
+              "successfulOnTimeRate": 0.22034613761080624,
+              "topThreeOracleCoverage": 0.988602785985648
+            }
+          },
+          {
+            "key": "mid-2-5km",
+            "metrics": {
+              "acceptanceRate": 0.6746680286006129,
+              "cancellationRate": 0.12308478038815117,
+              "coldStartExposure": 0.1976506639427988,
+              "completionRate": 0.35188968335035753,
+              "disputeRate": 0.02502553626149132,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 3.4921943263209547,
+              "meanPickupMinutes": 19.316517289011546,
+              "ndcgAt5": 0.9794794244248545,
+              "normalizedRegret": 0.05633382053415926,
+              "scenarios": 1958,
+              "selectionConcentration": 0.022420263740804077,
+              "successfulOnTimeRate": 0.30949948927477017,
+              "topThreeOracleCoverage": 0.9964249233912156
+            }
+          },
+          {
+            "key": "near-under-2km",
+            "metrics": {
+              "acceptanceRate": 0.7161961367013373,
+              "cancellationRate": 0.14413075780089152,
+              "coldStartExposure": 0.237741456166419,
+              "completionRate": 0.3803863298662704,
+              "disputeRate": 0.03566121842496285,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 1.3151151540913137,
+              "meanPickupMinutes": 13.912190169645188,
+              "ndcgAt5": 0.9783937957262105,
+              "normalizedRegret": 0.06445186766647794,
+              "scenarios": 673,
+              "selectionConcentration": 0.022102801984416984,
+              "successfulOnTimeRate": 0.35958395245170877,
+              "topThreeOracleCoverage": 0.9895988112927192
+            }
+          }
+        ],
+        "urgency": [
+          {
+            "key": "express",
+            "metrics": {
+              "acceptanceRate": 0.5054678007290401,
+              "cancellationRate": 0.10145808019441069,
+              "coldStartExposure": 0.19380315917375457,
+              "completionRate": 0.26366950182260024,
+              "disputeRate": 0.014580801944106925,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 5.2820648687456595,
+              "meanPickupMinutes": 24.56980355897813,
+              "ndcgAt5": 0.9529336060534205,
+              "normalizedRegret": 0.1262821110890103,
+              "scenarios": 1646,
+              "selectionConcentration": 0.022649259074984225,
+              "successfulOnTimeRate": 0.11360874848116646,
+              "topThreeOracleCoverage": 0.9896719319562576
+            }
+          },
+          {
+            "key": "low",
+            "metrics": {
+              "acceptanceRate": 0.696256038647343,
+              "cancellationRate": 0.12016908212560387,
+              "coldStartExposure": 0.2071256038647343,
+              "completionRate": 0.3810386473429952,
+              "disputeRate": 0.03321256038647343,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 5.310841329694617,
+              "meanPickupMinutes": 24.749631550248917,
+              "ndcgAt5": 0.980838100191592,
+              "normalizedRegret": 0.05890541272467755,
+              "scenarios": 1656,
+              "selectionConcentration": 0.022554493687133893,
+              "successfulOnTimeRate": 0.3743961352657005,
+              "topThreeOracleCoverage": 0.9915458937198067
+            }
+          },
+          {
+            "key": "normal",
+            "metrics": {
+              "acceptanceRate": 0.6731448763250883,
+              "cancellationRate": 0.12426383981154299,
+              "coldStartExposure": 0.1967020023557126,
+              "completionRate": 0.36395759717314485,
+              "disputeRate": 0.03121319199057715,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 5.248484366585064,
+              "meanPickupMinutes": 24.133840421400738,
+              "ndcgAt5": 0.9758617311417465,
+              "normalizedRegret": 0.06885350381047949,
+              "scenarios": 1698,
+              "selectionConcentration": 0.022531877730469295,
+              "successfulOnTimeRate": 0.33156654888103654,
+              "topThreeOracleCoverage": 0.9941107184923439
+            }
+          }
+        ]
+      }
+    },
+    {
+      "metrics": {
+        "acceptanceRate": 0.6124,
+        "cancellationRate": 0.1192,
+        "coldStartExposure": 0.1726,
+        "completionRate": 0.3244,
+        "disputeRate": 0.0256,
+        "eligibilityViolations": 0,
+        "meanDistanceKm": 5.016422596898673,
+        "meanPickupMinutes": 25.019511672622688,
+        "ndcgAt5": 0.9587181789129298,
+        "normalizedRegret": 0.11435286599960184,
+        "scenarios": 5000,
+        "selectionConcentration": 0.022861040000000006,
+        "successfulOnTimeInterval": {
+          "lower": 0.2498,
+          "upper": 0.2758
+        },
+        "successfulOnTimeRate": 0.2624,
+        "topThreeOracleCoverage": 0.9852
+      },
+      "name": "current-config",
+      "slices": {
+        "activeLoad": [
+          {
+            "key": "load-0",
+            "metrics": {
+              "acceptanceRate": 0.750906892382104,
+              "cancellationRate": 0.09552599758162031,
+              "coldStartExposure": 0.18198307134220074,
+              "completionRate": 0.4371221281741233,
+              "disputeRate": 0.03083434099153567,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 5.479955017309433,
+              "meanPickupMinutes": 17.001122343540057,
+              "ndcgAt5": 0.9733638770239444,
+              "normalizedRegret": 0.06758913327103393,
+              "scenarios": 1654,
+              "selectionConcentration": 0.022519150379644665,
+              "successfulOnTimeRate": 0.37726723095526,
+              "topThreeOracleCoverage": 0.9909310761789601
+            }
+          },
+          {
+            "key": "load-1-2",
+            "metrics": {
+              "acceptanceRate": 0.6404736275565124,
+              "cancellationRate": 0.12378902045209902,
+              "coldStartExposure": 0.16630785791173305,
+              "completionRate": 0.33745963401506995,
+              "disputeRate": 0.030139935414424113,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 4.91446954719972,
+              "meanPickupMinutes": 23.71536912683568,
+              "ndcgAt5": 0.972875563384891,
+              "normalizedRegret": 0.07183293735138964,
+              "scenarios": 1858,
+              "selectionConcentration": 0.024048683666245286,
+              "successfulOnTimeRate": 0.26318622174381057,
+              "topThreeOracleCoverage": 0.9973089343379978
+            }
+          },
+          {
+            "key": "load-3-plus",
+            "metrics": {
+              "acceptanceRate": 0.42338709677419356,
+              "cancellationRate": 0.13978494623655913,
+              "coldStartExposure": 0.1700268817204301,
+              "completionRate": 0.1827956989247312,
+              "disputeRate": 0.014112903225806451,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 4.628483176859191,
+              "meanPickupMinutes": 35.56085092018642,
+              "ndcgAt5": 0.9247609174717162,
+              "normalizedRegret": 0.21942628089303523,
+              "scenarios": 1488,
+              "selectionConcentration": 0.02351698895826107,
+              "successfulOnTimeRate": 0.13373655913978494,
+              "topThreeOracleCoverage": 0.9637096774193549
+            }
+          }
+        ],
+        "candidatePool": [
+          {
+            "key": "large-9-12",
+            "metrics": {
+              "acceptanceRate": 0.6368604073522106,
+              "cancellationRate": 0.11276701440635867,
+              "coldStartExposure": 0.14356681569796323,
+              "completionRate": 0.35866865375062096,
+              "disputeRate": 0.029309488325881768,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 4.56670532235774,
+              "meanPickupMinutes": 22.58252991703289,
+              "ndcgAt5": 0.9468629277057835,
+              "normalizedRegret": 0.14255176752088022,
+              "scenarios": 2013,
+              "selectionConcentration": 0.024545619889002654,
+              "successfulOnTimeRate": 0.3005464480874317,
+              "topThreeOracleCoverage": 0.9706905116741182
+            }
+          },
+          {
+            "key": "medium-6-8",
+            "metrics": {
+              "acceptanceRate": 0.604050279329609,
+              "cancellationRate": 0.13128491620111732,
+              "coldStartExposure": 0.15712290502793297,
+              "completionRate": 0.29608938547486036,
+              "disputeRate": 0.02164804469273743,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 5.024788889530563,
+              "meanPickupMinutes": 25.30460223977665,
+              "ndcgAt5": 0.9564658952049241,
+              "normalizedRegret": 0.12208231957879553,
+              "scenarios": 1432,
+              "selectionConcentration": 0.023506015729846123,
+              "successfulOnTimeRate": 0.23952513966480446,
+              "topThreeOracleCoverage": 0.9902234636871509
+            }
+          },
+          {
+            "key": "small-3-5",
+            "metrics": {
+              "acceptanceRate": 0.5884244372990354,
+              "cancellationRate": 0.11639871382636656,
+              "coldStartExposure": 0.22443729903536977,
+              "completionRate": 0.30610932475884245,
+              "disputeRate": 0.024437299035369776,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 5.590892270597728,
+              "meanPickupMinutes": 27.911726837791633,
+              "ndcgAt5": 0.9761393306491664,
+              "normalizedRegret": 0.07073037964092713,
+              "scenarios": 1555,
+              "selectionConcentration": 0.021920782456757066,
+              "successfulOnTimeRate": 0.23408360128617364,
+              "topThreeOracleCoverage": 0.9993569131832798
+            }
+          }
+        ],
+        "category": [
+          {
+            "key": "Deliveries",
+            "metrics": {
+              "acceptanceRate": 0.624113475177305,
+              "cancellationRate": 0.09827760891590678,
+              "coldStartExposure": 0.19959473150962512,
+              "completionRate": 0.3363728470111449,
+              "disputeRate": 0.02634245187436677,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 4.872561000988112,
+              "meanPickupMinutes": 24.475168029377393,
+              "ndcgAt5": 0.9482168691356557,
+              "normalizedRegret": 0.14007129182837394,
+              "scenarios": 987,
+              "selectionConcentration": 0.03333405189448648,
+              "successfulOnTimeRate": 0.2847011144883485,
+              "topThreeOracleCoverage": 0.977710233029382
+            }
+          },
+          {
+            "key": "Food & Catering",
+            "metrics": {
+              "acceptanceRate": 0.6516966067864272,
+              "cancellationRate": 0.12974051896207583,
+              "coldStartExposure": 0.14271457085828343,
+              "completionRate": 0.3602794411177645,
+              "disputeRate": 0.022954091816367265,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 4.66223711066918,
+              "meanPickupMinutes": 22.495478926455775,
+              "ndcgAt5": 0.9509307754487889,
+              "normalizedRegret": 0.13270519133187728,
+              "scenarios": 1002,
+              "selectionConcentration": 0.0351412942577918,
+              "successfulOnTimeRate": 0.2874251497005988,
+              "topThreeOracleCoverage": 0.9740518962075848
+            }
+          },
+          {
+            "key": "Grocery Shopping",
+            "metrics": {
+              "acceptanceRate": 0.5778648383937316,
+              "cancellationRate": 0.12634671890303623,
+              "coldStartExposure": 0.21351616062683643,
+              "completionRate": 0.28305582761998044,
+              "disputeRate": 0.02742409402546523,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 5.308629471411513,
+              "meanPickupMinutes": 26.063263738684498,
+              "ndcgAt5": 0.9704468660180087,
+              "normalizedRegret": 0.08633936347510827,
+              "scenarios": 1021,
+              "selectionConcentration": 0.03015902099015676,
+              "successfulOnTimeRate": 0.23016650342801176,
+              "topThreeOracleCoverage": 0.9951028403525954
+            }
+          },
+          {
+            "key": "Market Runs",
+            "metrics": {
+              "acceptanceRate": 0.5962301587301587,
+              "cancellationRate": 0.1388888888888889,
+              "coldStartExposure": 0.1388888888888889,
+              "completionRate": 0.30257936507936506,
+              "disputeRate": 0.021825396825396824,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 5.261322324749965,
+              "meanPickupMinutes": 26.39555594875156,
+              "ndcgAt5": 0.9659320510255814,
+              "normalizedRegret": 0.0939018927138087,
+              "scenarios": 1008,
+              "selectionConcentration": 0.03522612748803224,
+              "successfulOnTimeRate": 0.2400793650793651,
+              "topThreeOracleCoverage": 0.9910714285714286
+            }
+          },
+          {
+            "key": "Pharmacy Pickups",
+            "metrics": {
+              "acceptanceRate": 0.6130346232179226,
+              "cancellationRate": 0.10183299389002037,
+              "coldStartExposure": 0.1680244399185336,
+              "completionRate": 0.3411405295315682,
+              "disputeRate": 0.029531568228105907,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 4.967220059030996,
+              "meanPickupMinutes": 25.644383869929644,
+              "ndcgAt5": 0.9576196029428652,
+              "normalizedRegret": 0.11989589132918309,
+              "scenarios": 982,
+              "selectionConcentration": 0.035069126144324954,
+              "successfulOnTimeRate": 0.2708757637474542,
+              "topThreeOracleCoverage": 0.9877800407331976
+            }
+          }
+        ],
+        "distance": [
+          {
+            "key": "far-5km-plus",
+            "metrics": {
+              "acceptanceRate": 0.54182156133829,
+              "cancellationRate": 0.1008364312267658,
+              "coldStartExposure": 0.15427509293680297,
+              "completionRate": 0.30157992565055763,
+              "disputeRate": 0.02184014869888476,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 7.892584000604181,
+              "meanPickupMinutes": 32.909446291101226,
+              "ndcgAt5": 0.953224290878482,
+              "normalizedRegret": 0.12837442032548932,
+              "scenarios": 2152,
+              "selectionConcentration": 0.024275421152278164,
+              "successfulOnTimeRate": 0.20910780669144982,
+              "topThreeOracleCoverage": 0.9888475836431226
+            }
+          },
+          {
+            "key": "mid-2-5km",
+            "metrics": {
+              "acceptanceRate": 0.6565853658536586,
+              "cancellationRate": 0.12926829268292683,
+              "coldStartExposure": 0.16634146341463416,
+              "completionRate": 0.3351219512195122,
+              "disputeRate": 0.024878048780487806,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 3.4409986815833045,
+              "meanPickupMinutes": 20.513386563130247,
+              "ndcgAt5": 0.9651105842169475,
+              "normalizedRegret": 0.09499752510852615,
+              "scenarios": 2050,
+              "selectionConcentration": 0.02314622248661512,
+              "successfulOnTimeRate": 0.29121951219512193,
+              "topThreeOracleCoverage": 0.9882926829268293
+            }
+          },
+          {
+            "key": "near-under-2km",
+            "metrics": {
+              "acceptanceRate": 0.6892230576441103,
+              "cancellationRate": 0.14285714285714285,
+              "coldStartExposure": 0.23809523809523808,
+              "completionRate": 0.3583959899749373,
+              "disputeRate": 0.03759398496240601,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 1.3072993959240717,
+              "meanPickupMinutes": 15.31828006296569,
+              "ndcgAt5": 0.9571121841471293,
+              "normalizedRegret": 0.1262627205326781,
+              "scenarios": 798,
+              "selectionConcentration": 0.02176807934623526,
+              "successfulOnTimeRate": 0.33208020050125314,
+              "topThreeOracleCoverage": 0.9674185463659147
+            }
+          }
+        ],
+        "urgency": [
+          {
+            "key": "express",
+            "metrics": {
+              "acceptanceRate": 0.48784933171324424,
+              "cancellationRate": 0.10206561360874848,
+              "coldStartExposure": 0.16767922235722965,
+              "completionRate": 0.2515188335358445,
+              "disputeRate": 0.01701093560145808,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 4.966267446762625,
+              "meanPickupMinutes": 25.010382357704824,
+              "ndcgAt5": 0.9384040078808135,
+              "normalizedRegret": 0.16352505538732334,
+              "scenarios": 1646,
+              "selectionConcentration": 0.023500396410016403,
+              "successfulOnTimeRate": 0.10753341433778858,
+              "topThreeOracleCoverage": 0.9817739975698664
+            }
+          },
+          {
+            "key": "low",
+            "metrics": {
+              "acceptanceRate": 0.6878019323671497,
+              "cancellationRate": 0.12439613526570048,
+              "coldStartExposure": 0.1823671497584541,
+              "completionRate": 0.3713768115942029,
+              "disputeRate": 0.03140096618357488,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 5.1031091306216405,
+              "meanPickupMinutes": 25.246778312659476,
+              "ndcgAt5": 0.9733525485467726,
+              "normalizedRegret": 0.08035845248743176,
+              "scenarios": 1656,
+              "selectionConcentration": 0.023257543933347335,
+              "successfulOnTimeRate": 0.36594202898550726,
+              "topThreeOracleCoverage": 0.9891304347826086
+            }
+          },
+          {
+            "key": "normal",
+            "metrics": {
+              "acceptanceRate": 0.6595995288574794,
+              "cancellationRate": 0.13074204946996468,
+              "coldStartExposure": 0.16784452296819788,
+              "completionRate": 0.3492343934040047,
+              "disputeRate": 0.028268551236749116,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 4.980499438641126,
+              "meanPickupMinutes": 24.806716205281038,
+              "ndcgAt5": 0.9641378546521623,
+              "normalizedRegret": 0.09984010100782527,
+              "scenarios": 1698,
+              "selectionConcentration": 0.023142309735974274,
+              "successfulOnTimeRate": 0.3115429917550059,
+              "topThreeOracleCoverage": 0.9846878680800942
+            }
+          }
+        ]
+      }
+    },
+    {
+      "metrics": {
+        "acceptanceRate": 0.6284,
+        "cancellationRate": 0.115,
+        "coldStartExposure": 0.1946,
+        "completionRate": 0.3394,
+        "disputeRate": 0.0272,
+        "eligibilityViolations": 0,
+        "meanDistanceKm": 5.348317552992674,
+        "meanPickupMinutes": 24.371281137546916,
+        "ndcgAt5": 0.9725735751805112,
+        "normalizedRegret": 0.07764451376885396,
+        "scenarios": 5000,
+        "selectionConcentration": 0.02213816,
+        "successfulOnTimeInterval": {
+          "lower": 0.2646,
+          "upper": 0.289
+        },
+        "successfulOnTimeRate": 0.277,
+        "topThreeOracleCoverage": 0.9938
+      },
+      "name": "proposed-config",
+      "slices": {
+        "activeLoad": [
+          {
+            "key": "load-0",
+            "metrics": {
+              "acceptanceRate": 0.7512038523274478,
+              "cancellationRate": 0.09470304975922954,
+              "coldStartExposure": 0.21669341894060995,
+              "completionRate": 0.43980738362760835,
+              "disputeRate": 0.03317281968967362,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 5.494561718150167,
+              "meanPickupMinutes": 17.099591613695633,
+              "ndcgAt5": 0.975176170525556,
+              "normalizedRegret": 0.07095604226256645,
+              "scenarios": 1869,
+              "selectionConcentration": 0.02190136669910147,
+              "successfulOnTimeRate": 0.37720706260032105,
+              "topThreeOracleCoverage": 0.9887640449438202
+            }
+          },
+          {
+            "key": "load-1-2",
+            "metrics": {
+              "acceptanceRate": 0.6347909658817876,
+              "cancellationRate": 0.12542047092743874,
+              "coldStartExposure": 0.18644882268140317,
+              "completionRate": 0.33349351273426237,
+              "disputeRate": 0.029312830370014416,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 5.233672128324541,
+              "meanPickupMinutes": 24.504433604268733,
+              "ndcgAt5": 0.9764064540708244,
+              "normalizedRegret": 0.06549129484323926,
+              "scenarios": 2081,
+              "selectionConcentration": 0.023080381502535118,
+              "successfulOnTimeRate": 0.26141278231619414,
+              "topThreeOracleCoverage": 0.9956751561749159
+            }
+          },
+          {
+            "key": "load-3-plus",
+            "metrics": {
+              "acceptanceRate": 0.39714285714285713,
+              "cancellationRate": 0.13047619047619047,
+              "coldStartExposure": 0.17142857142857143,
+              "completionRate": 0.17238095238095238,
+              "disputeRate": 0.012380952380952381,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 5.315219252092735,
+              "meanPickupMinutes": 37.050992982146994,
+              "ndcgAt5": 0.96034455454181,
+              "normalizedRegret": 0.11363651551119255,
+              "scenarios": 1050,
+              "selectionConcentration": 0.023878458049886624,
+              "successfulOnTimeRate": 0.1295238095238095,
+              "topThreeOracleCoverage": 0.9990476190476191
+            }
+          }
+        ],
+        "candidatePool": [
+          {
+            "key": "large-9-12",
+            "metrics": {
+              "acceptanceRate": 0.6532538499751614,
+              "cancellationRate": 0.10283159463487332,
+              "coldStartExposure": 0.17287630402384502,
+              "completionRate": 0.3740685543964232,
+              "disputeRate": 0.029806259314456036,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 5.032241922795625,
+              "meanPickupMinutes": 21.66536078763169,
+              "ndcgAt5": 0.9655945240653384,
+              "normalizedRegret": 0.09550707629635005,
+              "scenarios": 2013,
+              "selectionConcentration": 0.02329345098884079,
+              "successfulOnTimeRate": 0.31892697466467956,
+              "topThreeOracleCoverage": 0.9880774962742176
+            }
+          },
+          {
+            "key": "medium-6-8",
+            "metrics": {
+              "acceptanceRate": 0.6256983240223464,
+              "cancellationRate": 0.12779329608938547,
+              "coldStartExposure": 0.17458100558659218,
+              "completionRate": 0.32122905027932963,
+              "disputeRate": 0.025139664804469275,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 5.372432015864286,
+              "meanPickupMinutes": 24.796496268735996,
+              "ndcgAt5": 0.9697595004409323,
+              "normalizedRegret": 0.08528218482285908,
+              "scenarios": 1432,
+              "selectionConcentration": 0.02269553072625698,
+              "successfulOnTimeRate": 0.2604748603351955,
+              "topThreeOracleCoverage": 0.9958100558659218
+            }
+          },
+          {
+            "key": "small-3-5",
+            "metrics": {
+              "acceptanceRate": 0.5987138263665595,
+              "cancellationRate": 0.1189710610932476,
+              "coldStartExposure": 0.24115755627009647,
+              "completionRate": 0.3112540192926045,
+              "disputeRate": 0.02572347266881029,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 5.735281111034189,
+              "meanPickupMinutes": 27.482605636914602,
+              "ndcgAt5": 0.9841996748087518,
+              "normalizedRegret": 0.04748728977066422,
+              "scenarios": 1555,
+              "selectionConcentration": 0.0215179743799175,
+              "successfulOnTimeRate": 0.2379421221864952,
+              "topThreeOracleCoverage": 0.9993569131832798
+            }
+          }
+        ],
+        "category": [
+          {
+            "key": "Deliveries",
+            "metrics": {
+              "acceptanceRate": 0.6534954407294833,
+              "cancellationRate": 0.09625126646403243,
+              "coldStartExposure": 0.24012158054711247,
+              "completionRate": 0.3637284701114488,
+              "disputeRate": 0.025329280648429583,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 5.2086149067893075,
+              "meanPickupMinutes": 23.332781327365606,
+              "ndcgAt5": 0.9672202139076841,
+              "normalizedRegret": 0.09157565492148512,
+              "scenarios": 987,
+              "selectionConcentration": 0.031387777685391346,
+              "successfulOnTimeRate": 0.3029381965552178,
+              "topThreeOracleCoverage": 0.9878419452887538
+            }
+          },
+          {
+            "key": "Food & Catering",
+            "metrics": {
+              "acceptanceRate": 0.6516966067864272,
+              "cancellationRate": 0.11976047904191617,
+              "coldStartExposure": 0.16666666666666666,
+              "completionRate": 0.3652694610778443,
+              "disputeRate": 0.02694610778443114,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 5.1262326244908865,
+              "meanPickupMinutes": 21.731251224322207,
+              "ndcgAt5": 0.9667203951850849,
+              "normalizedRegret": 0.09220068315809335,
+              "scenarios": 1002,
+              "selectionConcentration": 0.03263333612216685,
+              "successfulOnTimeRate": 0.29241516966067865,
+              "topThreeOracleCoverage": 0.9910179640718563
+            }
+          },
+          {
+            "key": "Grocery Shopping",
+            "metrics": {
+              "acceptanceRate": 0.5905974534769833,
+              "cancellationRate": 0.12047012732615084,
+              "coldStartExposure": 0.22820763956904996,
+              "completionRate": 0.2957884427032321,
+              "disputeRate": 0.03330068560235064,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 5.48778072544567,
+              "meanPickupMinutes": 25.68530924622359,
+              "ndcgAt5": 0.9794979826384329,
+              "normalizedRegret": 0.05966471475728095,
+              "scenarios": 1021,
+              "selectionConcentration": 0.030320181190110516,
+              "successfulOnTimeRate": 0.24583741429970618,
+              "topThreeOracleCoverage": 0.9960822722820764
+            }
+          },
+          {
+            "key": "Market Runs",
+            "metrics": {
+              "acceptanceRate": 0.6091269841269841,
+              "cancellationRate": 0.14087301587301587,
+              "coldStartExposure": 0.15674603174603174,
+              "completionRate": 0.3125,
+              "disputeRate": 0.021825396825396824,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 5.555619819274784,
+              "meanPickupMinutes": 25.93069966001281,
+              "ndcgAt5": 0.9778799193567872,
+              "normalizedRegret": 0.06390006072389703,
+              "scenarios": 1008,
+              "selectionConcentration": 0.03409430901990426,
+              "successfulOnTimeRate": 0.25496031746031744,
+              "topThreeOracleCoverage": 0.998015873015873
+            }
+          },
+          {
+            "key": "Pharmacy Pickups",
+            "metrics": {
+              "acceptanceRate": 0.6384928716904277,
+              "cancellationRate": 0.09674134419551934,
+              "coldStartExposure": 0.18126272912423624,
+              "completionRate": 0.3615071283095723,
+              "disputeRate": 0.028513238289205704,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 5.357546704392554,
+              "meanPickupMinutes": 25.141945817888878,
+              "ndcgAt5": 0.9712803358602133,
+              "normalizedRegret": 0.08159203455751773,
+              "scenarios": 982,
+              "selectionConcentration": 0.03324816140633232,
+              "successfulOnTimeRate": 0.29022403258655805,
+              "topThreeOracleCoverage": 0.9959266802443992
+            }
+          }
+        ],
+        "distance": [
+          {
+            "key": "far-5km-plus",
+            "metrics": {
+              "acceptanceRate": 0.5538836925579503,
+              "cancellationRate": 0.09963399755998373,
+              "coldStartExposure": 0.18218788125254168,
+              "completionRate": 0.3082553883692558,
+              "disputeRate": 0.024400162667751118,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 7.754869837557495,
+              "meanPickupMinutes": 31.6289240662016,
+              "ndcgAt5": 0.9600503464828558,
+              "normalizedRegret": 0.112625936793892,
+              "scenarios": 2459,
+              "selectionConcentration": 0.02260595523395397,
+              "successfulOnTimeRate": 0.22041480276535177,
+              "topThreeOracleCoverage": 0.9898332655551036
+            }
+          },
+          {
+            "key": "mid-2-5km",
+            "metrics": {
+              "acceptanceRate": 0.6903787103377687,
+              "cancellationRate": 0.12589559877175024,
+              "coldStartExposure": 0.19907881269191402,
+              "completionRate": 0.3602865916069601,
+              "disputeRate": 0.02712384851586489,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 3.5268968511181606,
+              "meanPickupMinutes": 18.83385479050825,
+              "ndcgAt5": 0.9835315982902197,
+              "normalizedRegret": 0.04680946611142057,
+              "scenarios": 1954,
+              "selectionConcentration": 0.022473387398392292,
+              "successfulOnTimeRate": 0.3162743091095189,
+              "topThreeOracleCoverage": 0.9984646878198568
+            }
+          },
+          {
+            "key": "near-under-2km",
+            "metrics": {
+              "acceptanceRate": 0.7342419080068143,
+              "cancellationRate": 0.14310051107325383,
+              "coldStartExposure": 0.23168654173764908,
+              "completionRate": 0.40034071550255534,
+              "disputeRate": 0.039182282793867124,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 1.3301642032787582,
+              "meanPickupMinutes": 12.401242160633457,
+              "ndcgAt5": 0.9885576334618658,
+              "normalizedRegret": 0.033747348358388086,
+              "scenarios": 587,
+              "selectionConcentration": 0.022268399072464445,
+              "successfulOnTimeRate": 0.3833049403747871,
+              "topThreeOracleCoverage": 0.9948892674616695
+            }
+          }
+        ],
+        "urgency": [
+          {
+            "key": "express",
+            "metrics": {
+              "acceptanceRate": 0.5133657351154314,
+              "cancellationRate": 0.10085054678007291,
+              "coldStartExposure": 0.18408262454434993,
+              "completionRate": 0.26974483596597815,
+              "disputeRate": 0.016403402187120292,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 5.397355961117371,
+              "meanPickupMinutes": 24.64526569349487,
+              "ndcgAt5": 0.9533148666818255,
+              "normalizedRegret": 0.1259349693182441,
+              "scenarios": 1646,
+              "selectionConcentration": 0.022852262342229545,
+              "successfulOnTimeRate": 0.11786148238153099,
+              "topThreeOracleCoverage": 0.9927095990279465
+            }
+          },
+          {
+            "key": "low",
+            "metrics": {
+              "acceptanceRate": 0.6938405797101449,
+              "cancellationRate": 0.11896135265700483,
+              "coldStartExposure": 0.20471014492753623,
+              "completionRate": 0.3804347826086957,
+              "disputeRate": 0.034420289855072464,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 5.378842733305253,
+              "meanPickupMinutes": 24.55508701064085,
+              "ndcgAt5": 0.9842702999860076,
+              "normalizedRegret": 0.04863389809309966,
+              "scenarios": 1656,
+              "selectionConcentration": 0.02253844897197135,
+              "successfulOnTimeRate": 0.3756038647342995,
+              "topThreeOracleCoverage": 0.9939613526570048
+            }
+          },
+          {
+            "key": "normal",
+            "metrics": {
+              "acceptanceRate": 0.6760895170789164,
+              "cancellationRate": 0.1248527679623086,
+              "coldStartExposure": 0.19493521790341578,
+              "completionRate": 0.3669022379269729,
+              "disputeRate": 0.030624263839811542,
+              "eligibilityViolations": 0,
+              "meanDistanceKm": 5.271010769499835,
+              "meanPickupMinutes": 23.926427718858058,
+              "ndcgAt5": 0.9798350933848273,
+              "normalizedRegret": 0.05912595648072254,
+              "scenarios": 1698,
+              "selectionConcentration": 0.022539508130538108,
+              "successfulOnTimeRate": 0.33510011778563015,
+              "topThreeOracleCoverage": 0.9946996466431095
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "urgencyTargets": {
+    "express": 15,
+    "low": 60,
+    "normal": 35
+  },
+  "weightPerturbationStability": 0.9945
+}

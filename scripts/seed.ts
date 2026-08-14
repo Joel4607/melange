@@ -84,7 +84,8 @@ async function main() {
   console.log("task posted", task.id);
 
   // 1. Match.
-  const ranked = await generateMatchRun(task.id);
+  const matchOutcome = await generateMatchRun(task.id);
+  const ranked = matchOutcome.results;
   console.log("ranked runners:");
   for (const m of ranked) {
     console.log(
