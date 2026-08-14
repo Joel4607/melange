@@ -1,7 +1,7 @@
 # Makola-Matrix Removal Design
 
-**Date:** 2026-08-14  
-**Status:** Proposed  
+**Date:** 2026-08-14
+**Status:** Accepted
 **Scope:** Complete removal of the Makola-Matrix feature from Melange
 
 ## Goal
