@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { useFormStatus } from "react-dom";
-import Link from "next/link";
-import { LoaderCircle, MapPin, Navigation, Plus, Star, Trash2, User, ShieldAlert } from "lucide-react";
+import { LoaderCircle, MapPin, Navigation, Plus, Star, Trash2, User } from "lucide-react";
 import type { Urgency } from "@/lib/algorithm";
 import { estimateErrandFee } from "@/lib/pricing";
 import { createErrand } from "../actions";

@@ -4,8 +4,21 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getServiceClient } from "@/lib/supabase/service";
-import { generateMatchRun, offerToTopCandidate, refreshTrustScore } from "@/lib/server/matching";
-import { hasLedgerEntry, holdFunds, releaseFunds, refund, topUp } from "@/lib/server/escrow";
+import {
+  declineAndOfferNextCandidate,
+  finalizeSelfClaim,
+  generateMatchRun,
+  offerToTopCandidate,
+  recordMatchOutcomeEvent,
+  refreshTrustScore,
+} from "@/lib/server/matching";
+import {
+  cancelTaskWithRefund,
+  hasLedgerEntry,
+  holdFunds,
+  releaseFunds,
+  topUp,
+} from "@/lib/server/escrow";
 import { resolveDispute } from "@/lib/server/disputes";
 import {
   clearRunnerPresence,
@@ -139,7 +152,7 @@ async function ownedTask(taskId: string, userId: string) {
   const db = getServiceClient();
   const { data: task } = await db
     .from("tasks")
-    .select("id, buyer_id, title, price, status, selected_runner_id")
+    .select("id, buyer_id, title, price, status, active_match_run_id, selected_runner_id")
     .eq("id", taskId)
     .maybeSingle<{
       id: string;
@@ -147,6 +160,7 @@ async function ownedTask(taskId: string, userId: string) {
       title: string;
       price: string;
       status: string;
+      active_match_run_id: string | null;
       selected_runner_id: string | null;
     }>();
   if (!task || task.buyer_id !== userId) {
@@ -349,7 +363,7 @@ export async function createErrand(formData: FormData) {
 export async function rematch(taskId: string) {
   const userId = await requireUserId();
   await ownedTask(taskId, userId);
-  await generateMatchRun(taskId);
+  await generateMatchRun(taskId, "manual");
   revalidatePath(`/app/errands/${taskId}`);
 }
 
@@ -362,54 +376,14 @@ export async function payIntoEscrow(taskId: string) {
   const userId = await requireUserId();
   const task = await ownedTask(taskId, userId);
   if (
-    (task.status !== "posted" && task.status !== "matched") ||
+    task.status !== "matched" ||
     task.selected_runner_id
   ) {
     return;
   }
+  if (!task.active_match_run_id) throw new Error("No active match is available");
 
-  const db = getServiceClient();
-  const { data: run } = await db
-    .from("match_runs")
-    .select("id")
-    .eq("task_id", taskId)
-    .order("generated_at", { ascending: false })
-    .limit(1)
-    .maybeSingle<{ id: string }>();
-  if (!run) throw new Error("No runner matched yet");
-
-  const { data: candidate } = await db
-    .from("match_candidates")
-    .select("runner_id")
-    .eq("match_run_id", run.id)
-    .order("rank", { ascending: true })
-    .limit(1)
-    .maybeSingle<{ runner_id: string }>();
-  if (!candidate) throw new Error("No runner matched yet");
-
-  const price = Number(task.price);
-  const { data: wallet } = await db
-    .from("wallets")
-    .select("balance")
-    .eq("user_id", userId)
-    .maybeSingle<{ balance: string }>();
-  const balance = wallet ? Number(wallet.balance) : 0;
-  if (balance < price) {
-    await topUp(userId, price - balance);
-  }
-
-  const { data: updated } = await db
-    .from("tasks")
-    .update({ status: "matched" })
-    .eq("id", taskId)
-    .in("status", ["posted", "matched"])
-    .is("selected_runner_id", null)
-    .select("id")
-    .maybeSingle<{ id: string }>();
-  if (!updated) return;
-
-  await holdFunds(taskId);
-  await offerToTopCandidate(taskId);
+  await offerToTopCandidate(taskId, true);
 
   revalidatePath(`/app/errands/${taskId}`);
   revalidatePath("/app");
@@ -523,12 +497,13 @@ export async function acceptOffer(taskId: string) {
   const db = getServiceClient();
   const task = await assignedTask(taskId, runnerId);
   if (task.status !== "matched") return;
+  const acceptedAt = new Date();
 
   const { data: updated } = await db
     .from("tasks")
     .update({
       status: "accepted",
-      accepted_at: new Date().toISOString(),
+      accepted_at: acceptedAt.toISOString(),
     })
     .eq("id", taskId)
     .eq("status", "matched")
@@ -536,6 +511,7 @@ export async function acceptOffer(taskId: string) {
     .select("id")
     .maybeSingle<{ id: string }>();
   if (!updated) return;
+  await recordMatchOutcomeEvent(taskId, runnerId, "accepted", { occurredAt: acceptedAt });
   await db.from("trust_events").insert({
     runner_id: runnerId,
     type: "responsiveness",
@@ -610,28 +586,9 @@ export async function claimTask(taskId: string) {
     throw new Error("This errand is outside your capabilities");
   }
 
-  const price = Number(task.price);
-  const { data: wallet } = await db
-    .from("wallets")
-    .select("balance")
-    .eq("user_id", task.buyer_id)
-    .maybeSingle<{ balance: string }>();
-  const balance = wallet ? Number(wallet.balance) : 0;
-  if (balance < price) {
-    await topUp(task.buyer_id, price - balance);
-  }
+  const outcome = await finalizeSelfClaim(taskId, runnerId);
+  if (outcome.status !== "matched") return;
 
-  const { data: updated } = await db
-    .from("tasks")
-    .update({ status: "matched", selected_runner_id: runnerId })
-    .eq("id", taskId)
-    .eq("status", "posted")
-    .is("selected_runner_id", null)
-    .select("id")
-    .maybeSingle<{ id: string }>();
-  if (!updated) return;
-
-  await holdFunds(taskId);
   await acceptOffer(taskId);
 
   revalidatePath("/app/feed");
@@ -645,21 +602,8 @@ export async function declineOffer(taskId: string) {
   const task = await assignedTask(taskId, runnerId);
   if (task.status !== "matched") return;
 
-  const declined = Array.from(
-    new Set([...(task.declined_runner_ids ?? []), runnerId]),
-  );
-  const { data: updated } = await db
-    .from("tasks")
-    .update({
-      declined_runner_ids: declined,
-      selected_runner_id: null,
-    })
-    .eq("id", taskId)
-    .eq("status", "matched")
-    .eq("selected_runner_id", runnerId)
-    .select("id")
-    .maybeSingle<{ id: string }>();
-  if (!updated) return;
+  const decline = await declineAndOfferNextCandidate(taskId, runnerId);
+  if (decline.status === "not_matchable") return;
 
   await db.from("trust_events").insert({
     runner_id: runnerId,
@@ -667,8 +611,6 @@ export async function declineOffer(taskId: string) {
     value: 0,
   });
   await refreshTrustScore(runnerId);
-
-  await offerToTopCandidate(taskId);
 
   revalidatePath(`/app/errands/${taskId}`);
   revalidatePath("/app");
@@ -679,6 +621,7 @@ export async function markPickedUp(taskId: string) {
   const db = getServiceClient();
   const task = await assignedTask(taskId, runnerId);
   if (task.status !== "accepted") return;
+  const pickedUpAt = new Date();
 
   const { data: updated } = await db
     .from("tasks")
@@ -689,6 +632,9 @@ export async function markPickedUp(taskId: string) {
     .select("id")
     .maybeSingle<{ id: string }>();
   if (!updated) return;
+  await recordMatchOutcomeEvent(taskId, runnerId, "picked_up", {
+    occurredAt: pickedUpAt,
+  });
 
   await createNotification(task.buyer_id, "picked_up", {
     task_id: taskId,
@@ -704,6 +650,7 @@ export async function markDelivered(taskId: string, formData: FormData) {
   const db = getServiceClient();
   const task = await assignedTask(taskId, runnerId);
   if (task.status !== "accepted" && task.status !== "in_progress") return;
+  const completedAt = new Date();
 
   const photo = assertImageFile(formData.get("photo"), "delivery");
   const gpsLatRaw = formData.get("gps_lat");
@@ -744,7 +691,7 @@ export async function markDelivered(taskId: string, formData: FormData) {
     .from("tasks")
     .update({
       status: "completed",
-      completed_at: new Date().toISOString(),
+      completed_at: completedAt.toISOString(),
     })
     .eq("id", taskId)
     .in("status", ["accepted", "in_progress"])
@@ -752,6 +699,9 @@ export async function markDelivered(taskId: string, formData: FormData) {
     .select("id")
     .maybeSingle<{ id: string }>();
   if (!updated) return;
+  await recordMatchOutcomeEvent(taskId, runnerId, "completed", {
+    occurredAt: completedAt,
+  });
 
   // Run fraud detection on the delivery proof before the completed event is
   // folded into the runner's trust score.
@@ -1063,18 +1013,11 @@ export async function cancelErrand(taskId: string) {
   const task = await ownedTask(taskId, userId);
   if (task.status !== "posted" && task.status !== "matched") return;
 
-  await refund(taskId);
-  const db = getServiceClient();
-  const { data: updated } = await db
-    .from("tasks")
-    .update({ status: "cancelled" })
-    .eq("id", taskId)
-    .in("status", ["posted", "matched"])
-    .select("id, selected_runner_id")
-    .maybeSingle<{ id: string; selected_runner_id: string | null }>();
-  if (!updated) return;
-  if (updated.selected_runner_id) {
-    await createNotification(updated.selected_runner_id, "buyer_cancelled", {
+  const cancelled = await cancelTaskWithRefund(taskId, userId, "buyer");
+  if (!cancelled) return;
+  if (cancelled.selected_runner_id) {
+    await recordMatchOutcomeEvent(taskId, cancelled.selected_runner_id, "cancelled");
+    await createNotification(cancelled.selected_runner_id, "buyer_cancelled", {
       task_id: taskId,
       task_title: task.title,
     });
@@ -1091,29 +1034,22 @@ export async function cancelRunnerErrand(taskId: string) {
   const task = await assignedTask(taskId, runnerId);
   if (task.status !== "accepted" && task.status !== "in_progress") return;
 
-  await refund(taskId);
-  const { data: updated } = await db
-    .from("tasks")
-    .update({ status: "cancelled" })
-    .eq("id", taskId)
-    .in("status", ["accepted", "in_progress"])
-    .eq("selected_runner_id", runnerId)
-    .select("id, buyer_id, title")
-    .maybeSingle<{ id: string; buyer_id: string; title: string }>();
-  if (!updated) return;
+  const cancelled = await cancelTaskWithRefund(taskId, runnerId, "runner");
+  if (!cancelled) return;
+  await recordMatchOutcomeEvent(taskId, runnerId, "cancelled");
   await db.from("trust_events").insert({
     runner_id: runnerId,
     type: "cancelled",
     value: 1,
   });
 
-  const cancelFraud = await evaluateCancellationFraud(db, runnerId, updated.buyer_id, Date.now());
+  const cancelFraud = await evaluateCancellationFraud(db, runnerId, cancelled.buyer_id, Date.now());
   await persistFraudFlags(db, runnerId, taskId, cancelFraud);
 
   await refreshTrustScore(runnerId);
-  await createNotification(updated.buyer_id, "runner_cancelled", {
+  await createNotification(cancelled.buyer_id, "runner_cancelled", {
     task_id: taskId,
-    task_title: updated.title,
+    task_title: cancelled.task_title,
   });
 
   const { data: profile } = await db
@@ -1153,6 +1089,10 @@ export async function raiseDispute(taskId: string, formData: FormData) {
     throw new Error(insertError.message);
   }
   if (!inserted?.length) return;
+
+  if (task.selected_runner_id) {
+    await recordMatchOutcomeEvent(taskId, task.selected_runner_id, "disputed");
+  }
 
   const result = await resolveDispute(inserted[0].id);
 

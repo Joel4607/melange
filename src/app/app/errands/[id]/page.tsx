@@ -86,7 +86,7 @@ export default async function ErrandPage({
   const { data: task } = await db
     .from("tasks")
     .select(
-      "id, buyer_id, title, description, category, urgency, price, fee, payment_reference, status, selected_runner_id, pickup_lat, pickup_lng, dropoff_lat, dropoff_lng, stops, recurrence, recurrence_end_date, parent_task_id, series_number, created_at, accepted_at, completed_at",
+      "id, buyer_id, title, description, category, urgency, price, fee, payment_reference, status, active_match_run_id, selected_runner_id, pickup_lat, pickup_lng, dropoff_lat, dropoff_lng, stops, recurrence, recurrence_end_date, parent_task_id, series_number, created_at, accepted_at, completed_at",
     )
     .eq("id", id)
     .maybeSingle<{
@@ -100,6 +100,7 @@ export default async function ErrandPage({
       fee: string;
       payment_reference: string | null;
       status: TaskStatus;
+      active_match_run_id: string | null;
       selected_runner_id: string | null;
       pickup_lat: number;
       pickup_lng: number;
@@ -129,26 +130,17 @@ export default async function ErrandPage({
 
   if (!isBuyer && !isRunner && !isAdmin) notFound();
 
-  // Top-ranked candidate from the latest match run.
-  const { data: run } = await db
-    .from("match_runs")
-    .select("id")
-    .eq("task_id", task.id)
-    .order("generated_at", { ascending: false })
-    .limit(1)
-    .maybeSingle<{ id: string }>();
-
   let candidate: {
     runner_id: string;
     match_score: number;
     trust: number;
     distance_km: number;
   } | null = null;
-  if (run) {
+  if (task.active_match_run_id) {
     const { data } = await db
       .from("match_candidates")
       .select("runner_id, match_score, trust, distance_km")
-      .eq("match_run_id", run.id)
+      .eq("match_run_id", task.active_match_run_id)
       .order("rank", { ascending: true })
       .limit(1)
       .maybeSingle<{
@@ -374,12 +366,12 @@ export default async function ErrandPage({
               </span>
             </div>
           </section>
-        ) : (
+        ) : task.status === "posted" ? (
           <section className="mt-6 rounded-[1.5rem] border border-cream-deep bg-white p-6 text-center shadow-sm">
             <Clock className="mx-auto h-6 w-6 text-orange-deep" aria-hidden />
             <p className="mt-2 font-medium text-green-deep">Finding a runner…</p>
             <p className="mt-1 text-sm text-muted">
-              No runners were available just now. Try again in a moment.
+              This errand is still posted for available runners. You can also retry matching now.
             </p>
             <form action={rematch.bind(null, task.id)} className="mt-4">
               <button
@@ -390,7 +382,7 @@ export default async function ErrandPage({
               </button>
             </form>
           </section>
-        )}
+        ) : null}
 
         {/* Escrow + price */}
         <section className="mt-5 rounded-[1.5rem] border border-cream-deep bg-white p-6 shadow-sm">

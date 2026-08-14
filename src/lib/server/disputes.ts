@@ -1,7 +1,7 @@
 import { getServiceClient } from "@/lib/supabase/service";
 import { releaseFunds, refund } from "./escrow";
 import { evaluateTaskFraud, hasActiveFraudFlag, persistFraudFlags } from "./fraud";
-import { refreshTrustScore } from "./matching";
+import { recordMatchOutcomeEvent, refreshTrustScore } from "./matching";
 import { createNotification } from "./notifications";
 import {
   arbitrate,
@@ -174,6 +174,12 @@ async function settleDispute(
     .maybeSingle<{ id: string }>();
   if (!resolvedTask) return;
 
+  if (task.selected_runner_id) {
+    await recordMatchOutcomeEvent(task.id, task.selected_runner_id, "resolved", {
+      resolution,
+    });
+  }
+
   const payload = {
     task_id: task.id,
     task_title: task.title,
@@ -206,5 +212,4 @@ function classifyClaim(reason: string): DisputeClaim {
   if (r.includes("damaged") || r.includes("broken")) return "damaged";
   return "other";
 }
-
 

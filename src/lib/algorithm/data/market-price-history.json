@@ -1,0 +1,3409 @@
+{
+  "generated": "2026-07-27T00:00:00.000Z",
+  "prngSeed": 1337,
+  "note": "Simulated 104-week price history for Madina Market, Accra. Calibrated against Ghana Statistical Service CPI food sub-indices and UG Legon student field observations.",
+  "items": [
+    {
+      "key": "tomatoes",
+      "label": "Tomatoes",
+      "unit": "per kg",
+      "minGHS": 3,
+      "maxGHS": 18
+    },
+    {
+      "key": "onions",
+      "label": "Onions",
+      "unit": "per kg",
+      "minGHS": 4,
+      "maxGHS": 15
+    },
+    {
+      "key": "pepper",
+      "label": "Pepper (Scotch Bonnet)",
+      "unit": "per cup",
+      "minGHS": 3,
+      "maxGHS": 20
+    },
+    {
+      "key": "plantain",
+      "label": "Plantain",
+      "unit": "per finger",
+      "minGHS": 1,
+      "maxGHS": 5
+    },
+    {
+      "key": "yam",
+      "label": "Yam",
+      "unit": "per kg",
+      "minGHS": 6,
+      "maxGHS": 25
+    },
+    {
+      "key": "rice",
+      "label": "Rice (local)",
+      "unit": "per kg",
+      "minGHS": 8,
+      "maxGHS": 14
+    },
+    {
+      "key": "palm_oil",
+      "label": "Palm Oil",
+      "unit": "per 750 ml bottle",
+      "minGHS": 12,
+      "maxGHS": 28
+    },
+    {
+      "key": "smoked_fish",
+      "label": "Smoked Fish (herrings)",
+      "unit": "per piece",
+      "minGHS": 5,
+      "maxGHS": 20
+    }
+  ],
+  "history": {
+    "tomatoes": [
+      {
+        "weekStart": "2024-08-05",
+        "priceGHS": 4.12
+      },
+      {
+        "weekStart": "2024-08-12",
+        "priceGHS": 4.15
+      },
+      {
+        "weekStart": "2024-08-19",
+        "priceGHS": 7.4
+      },
+      {
+        "weekStart": "2024-08-26",
+        "priceGHS": 6.53
+      },
+      {
+        "weekStart": "2024-09-02",
+        "priceGHS": 6.46
+      },
+      {
+        "weekStart": "2024-09-09",
+        "priceGHS": 6.2
+      },
+      {
+        "weekStart": "2024-09-16",
+        "priceGHS": 6.96
+      },
+      {
+        "weekStart": "2024-09-23",
+        "priceGHS": 7.08
+      },
+      {
+        "weekStart": "2024-09-30",
+        "priceGHS": 7.06
+      },
+      {
+        "weekStart": "2024-10-07",
+        "priceGHS": 9.15
+      },
+      {
+        "weekStart": "2024-10-14",
+        "priceGHS": 9.77
+      },
+      {
+        "weekStart": "2024-10-21",
+        "priceGHS": 7.3
+      },
+      {
+        "weekStart": "2024-10-28",
+        "priceGHS": 8.69
+      },
+      {
+        "weekStart": "2024-11-04",
+        "priceGHS": 10.47
+      },
+      {
+        "weekStart": "2024-11-11",
+        "priceGHS": 9.46
+      },
+      {
+        "weekStart": "2024-11-18",
+        "priceGHS": 12.59
+      },
+      {
+        "weekStart": "2024-11-25",
+        "priceGHS": 11.37
+      },
+      {
+        "weekStart": "2024-12-02",
+        "priceGHS": 16.95
+      },
+      {
+        "weekStart": "2024-12-09",
+        "priceGHS": 15.39
+      },
+      {
+        "weekStart": "2024-12-16",
+        "priceGHS": 12.52
+      },
+      {
+        "weekStart": "2024-12-23",
+        "priceGHS": 13.12
+      },
+      {
+        "weekStart": "2024-12-30",
+        "priceGHS": 13.17
+      },
+      {
+        "weekStart": "2025-01-06",
+        "priceGHS": 16.02
+      },
+      {
+        "weekStart": "2025-01-13",
+        "priceGHS": 15.17
+      },
+      {
+        "weekStart": "2025-01-20",
+        "priceGHS": 15.81
+      },
+      {
+        "weekStart": "2025-01-27",
+        "priceGHS": 17.49
+      },
+      {
+        "weekStart": "2025-02-03",
+        "priceGHS": 16.41
+      },
+      {
+        "weekStart": "2025-02-10",
+        "priceGHS": 13.6
+      },
+      {
+        "weekStart": "2025-02-17",
+        "priceGHS": 13.24
+      },
+      {
+        "weekStart": "2025-02-24",
+        "priceGHS": 16.14
+      },
+      {
+        "weekStart": "2025-03-03",
+        "priceGHS": 11.46
+      },
+      {
+        "weekStart": "2025-03-10",
+        "priceGHS": 14.41
+      },
+      {
+        "weekStart": "2025-03-17",
+        "priceGHS": 11.55
+      },
+      {
+        "weekStart": "2025-03-24",
+        "priceGHS": 14.71
+      },
+      {
+        "weekStart": "2025-03-31",
+        "priceGHS": 10.68
+      },
+      {
+        "weekStart": "2025-04-07",
+        "priceGHS": 10.84
+      },
+      {
+        "weekStart": "2025-04-14",
+        "priceGHS": 10.16
+      },
+      {
+        "weekStart": "2025-04-21",
+        "priceGHS": 9.91
+      },
+      {
+        "weekStart": "2025-04-28",
+        "priceGHS": 9.31
+      },
+      {
+        "weekStart": "2025-05-05",
+        "priceGHS": 6.36
+      },
+      {
+        "weekStart": "2025-05-12",
+        "priceGHS": 7.05
+      },
+      {
+        "weekStart": "2025-05-19",
+        "priceGHS": 7.63
+      },
+      {
+        "weekStart": "2025-05-26",
+        "priceGHS": 8.01
+      },
+      {
+        "weekStart": "2025-06-02",
+        "priceGHS": 7.19
+      },
+      {
+        "weekStart": "2025-06-09",
+        "priceGHS": 5.74
+      },
+      {
+        "weekStart": "2025-06-16",
+        "priceGHS": 7.2
+      },
+      {
+        "weekStart": "2025-06-23",
+        "priceGHS": 6.53
+      },
+      {
+        "weekStart": "2025-06-30",
+        "priceGHS": 6.68
+      },
+      {
+        "weekStart": "2025-07-07",
+        "priceGHS": 7.66
+      },
+      {
+        "weekStart": "2025-07-14",
+        "priceGHS": 8.18
+      },
+      {
+        "weekStart": "2025-07-21",
+        "priceGHS": 6.75
+      },
+      {
+        "weekStart": "2025-07-28",
+        "priceGHS": 3.38
+      },
+      {
+        "weekStart": "2025-08-04",
+        "priceGHS": 3.99
+      },
+      {
+        "weekStart": "2025-08-11",
+        "priceGHS": 4.51
+      },
+      {
+        "weekStart": "2025-08-18",
+        "priceGHS": 3.81
+      },
+      {
+        "weekStart": "2025-08-25",
+        "priceGHS": 3.83
+      },
+      {
+        "weekStart": "2025-09-01",
+        "priceGHS": 5.56
+      },
+      {
+        "weekStart": "2025-09-08",
+        "priceGHS": 5.93
+      },
+      {
+        "weekStart": "2025-09-15",
+        "priceGHS": 5.4
+      },
+      {
+        "weekStart": "2025-09-22",
+        "priceGHS": 5.02
+      },
+      {
+        "weekStart": "2025-09-29",
+        "priceGHS": 5.03
+      },
+      {
+        "weekStart": "2025-10-06",
+        "priceGHS": 10.15
+      },
+      {
+        "weekStart": "2025-10-13",
+        "priceGHS": 9.13
+      },
+      {
+        "weekStart": "2025-10-20",
+        "priceGHS": 9.05
+      },
+      {
+        "weekStart": "2025-10-27",
+        "priceGHS": 9.44
+      },
+      {
+        "weekStart": "2025-11-03",
+        "priceGHS": 11.39
+      },
+      {
+        "weekStart": "2025-11-10",
+        "priceGHS": 8.68
+      },
+      {
+        "weekStart": "2025-11-17",
+        "priceGHS": 9.33
+      },
+      {
+        "weekStart": "2025-11-24",
+        "priceGHS": 9.79
+      },
+      {
+        "weekStart": "2025-12-01",
+        "priceGHS": 16.45
+      },
+      {
+        "weekStart": "2025-12-08",
+        "priceGHS": 13.25
+      },
+      {
+        "weekStart": "2025-12-15",
+        "priceGHS": 13.56
+      },
+      {
+        "weekStart": "2025-12-22",
+        "priceGHS": 14.83
+      },
+      {
+        "weekStart": "2025-12-29",
+        "priceGHS": 15.25
+      },
+      {
+        "weekStart": "2026-01-05",
+        "priceGHS": 16.79
+      },
+      {
+        "weekStart": "2026-01-12",
+        "priceGHS": 17.58
+      },
+      {
+        "weekStart": "2026-01-19",
+        "priceGHS": 18.14
+      },
+      {
+        "weekStart": "2026-01-26",
+        "priceGHS": 14.39
+      },
+      {
+        "weekStart": "2026-02-02",
+        "priceGHS": 17.16
+      },
+      {
+        "weekStart": "2026-02-09",
+        "priceGHS": 15.98
+      },
+      {
+        "weekStart": "2026-02-16",
+        "priceGHS": 14.25
+      },
+      {
+        "weekStart": "2026-02-23",
+        "priceGHS": 14.68
+      },
+      {
+        "weekStart": "2026-03-02",
+        "priceGHS": 14.58
+      },
+      {
+        "weekStart": "2026-03-09",
+        "priceGHS": 14.89
+      },
+      {
+        "weekStart": "2026-03-16",
+        "priceGHS": 15.58
+      },
+      {
+        "weekStart": "2026-03-23",
+        "priceGHS": 13.88
+      },
+      {
+        "weekStart": "2026-03-30",
+        "priceGHS": 13.56
+      },
+      {
+        "weekStart": "2026-04-06",
+        "priceGHS": 10.42
+      },
+      {
+        "weekStart": "2026-04-13",
+        "priceGHS": 9.69
+      },
+      {
+        "weekStart": "2026-04-20",
+        "priceGHS": 7.95
+      },
+      {
+        "weekStart": "2026-04-27",
+        "priceGHS": 9.85
+      },
+      {
+        "weekStart": "2026-05-04",
+        "priceGHS": 9.63
+      },
+      {
+        "weekStart": "2026-05-11",
+        "priceGHS": 11.03
+      },
+      {
+        "weekStart": "2026-05-18",
+        "priceGHS": 8.08
+      },
+      {
+        "weekStart": "2026-05-25",
+        "priceGHS": 9.53
+      },
+      {
+        "weekStart": "2026-06-01",
+        "priceGHS": 5.17
+      },
+      {
+        "weekStart": "2026-06-08",
+        "priceGHS": 5.16
+      },
+      {
+        "weekStart": "2026-06-15",
+        "priceGHS": 6.78
+      },
+      {
+        "weekStart": "2026-06-22",
+        "priceGHS": 8.5
+      },
+      {
+        "weekStart": "2026-06-29",
+        "priceGHS": 9.03
+      },
+      {
+        "weekStart": "2026-07-06",
+        "priceGHS": 3.46
+      },
+      {
+        "weekStart": "2026-07-13",
+        "priceGHS": 3.31
+      },
+      {
+        "weekStart": "2026-07-20",
+        "priceGHS": 5.7
+      },
+      {
+        "weekStart": "2026-07-27",
+        "priceGHS": 6.62
+      }
+    ],
+    "onions": [
+      {
+        "weekStart": "2024-08-05",
+        "priceGHS": 7.78
+      },
+      {
+        "weekStart": "2024-08-12",
+        "priceGHS": 8.31
+      },
+      {
+        "weekStart": "2024-08-19",
+        "priceGHS": 7.09
+      },
+      {
+        "weekStart": "2024-08-26",
+        "priceGHS": 8.37
+      },
+      {
+        "weekStart": "2024-09-02",
+        "priceGHS": 7.94
+      },
+      {
+        "weekStart": "2024-09-09",
+        "priceGHS": 7.73
+      },
+      {
+        "weekStart": "2024-09-16",
+        "priceGHS": 8.75
+      },
+      {
+        "weekStart": "2024-09-23",
+        "priceGHS": 6.56
+      },
+      {
+        "weekStart": "2024-09-30",
+        "priceGHS": 8.95
+      },
+      {
+        "weekStart": "2024-10-07",
+        "priceGHS": 6.84
+      },
+      {
+        "weekStart": "2024-10-14",
+        "priceGHS": 7.1
+      },
+      {
+        "weekStart": "2024-10-21",
+        "priceGHS": 8.23
+      },
+      {
+        "weekStart": "2024-10-28",
+        "priceGHS": 9.28
+      },
+      {
+        "weekStart": "2024-11-04",
+        "priceGHS": 9.89
+      },
+      {
+        "weekStart": "2024-11-11",
+        "priceGHS": 9.82
+      },
+      {
+        "weekStart": "2024-11-18",
+        "priceGHS": 8.2
+      },
+      {
+        "weekStart": "2024-11-25",
+        "priceGHS": 10.24
+      },
+      {
+        "weekStart": "2024-12-02",
+        "priceGHS": 10.32
+      },
+      {
+        "weekStart": "2024-12-09",
+        "priceGHS": 11.5
+      },
+      {
+        "weekStart": "2024-12-16",
+        "priceGHS": 9.51
+      },
+      {
+        "weekStart": "2024-12-23",
+        "priceGHS": 10.09
+      },
+      {
+        "weekStart": "2024-12-30",
+        "priceGHS": 10.16
+      },
+      {
+        "weekStart": "2025-01-06",
+        "priceGHS": 12.87
+      },
+      {
+        "weekStart": "2025-01-13",
+        "priceGHS": 9.91
+      },
+      {
+        "weekStart": "2025-01-20",
+        "priceGHS": 10.31
+      },
+      {
+        "weekStart": "2025-01-27",
+        "priceGHS": 11.18
+      },
+      {
+        "weekStart": "2025-02-03",
+        "priceGHS": 12.63
+      },
+      {
+        "weekStart": "2025-02-10",
+        "priceGHS": 13.39
+      },
+      {
+        "weekStart": "2025-02-17",
+        "priceGHS": 11.47
+      },
+      {
+        "weekStart": "2025-02-24",
+        "priceGHS": 13.22
+      },
+      {
+        "weekStart": "2025-03-03",
+        "priceGHS": 11.82
+      },
+      {
+        "weekStart": "2025-03-10",
+        "priceGHS": 11.88
+      },
+      {
+        "weekStart": "2025-03-17",
+        "priceGHS": 13.89
+      },
+      {
+        "weekStart": "2025-03-24",
+        "priceGHS": 13.53
+      },
+      {
+        "weekStart": "2025-03-31",
+        "priceGHS": 11.85
+      },
+      {
+        "weekStart": "2025-04-07",
+        "priceGHS": 9.33
+      },
+      {
+        "weekStart": "2025-04-14",
+        "priceGHS": 10.97
+      },
+      {
+        "weekStart": "2025-04-21",
+        "priceGHS": 9.43
+      },
+      {
+        "weekStart": "2025-04-28",
+        "priceGHS": 10.12
+      },
+      {
+        "weekStart": "2025-05-05",
+        "priceGHS": 10.73
+      },
+      {
+        "weekStart": "2025-05-12",
+        "priceGHS": 10.56
+      },
+      {
+        "weekStart": "2025-05-19",
+        "priceGHS": 9.95
+      },
+      {
+        "weekStart": "2025-05-26",
+        "priceGHS": 8.39
+      },
+      {
+        "weekStart": "2025-06-02",
+        "priceGHS": 8.88
+      },
+      {
+        "weekStart": "2025-06-09",
+        "priceGHS": 7.83
+      },
+      {
+        "weekStart": "2025-06-16",
+        "priceGHS": 6.73
+      },
+      {
+        "weekStart": "2025-06-23",
+        "priceGHS": 9.74
+      },
+      {
+        "weekStart": "2025-06-30",
+        "priceGHS": 6.92
+      },
+      {
+        "weekStart": "2025-07-07",
+        "priceGHS": 8.64
+      },
+      {
+        "weekStart": "2025-07-14",
+        "priceGHS": 6.8
+      },
+      {
+        "weekStart": "2025-07-21",
+        "priceGHS": 8.94
+      },
+      {
+        "weekStart": "2025-07-28",
+        "priceGHS": 6.08
+      },
+      {
+        "weekStart": "2025-08-04",
+        "priceGHS": 6.52
+      },
+      {
+        "weekStart": "2025-08-11",
+        "priceGHS": 6.54
+      },
+      {
+        "weekStart": "2025-08-18",
+        "priceGHS": 8.13
+      },
+      {
+        "weekStart": "2025-08-25",
+        "priceGHS": 7.03
+      },
+      {
+        "weekStart": "2025-09-01",
+        "priceGHS": 9.35
+      },
+      {
+        "weekStart": "2025-09-08",
+        "priceGHS": 7.26
+      },
+      {
+        "weekStart": "2025-09-15",
+        "priceGHS": 9.35
+      },
+      {
+        "weekStart": "2025-09-22",
+        "priceGHS": 9.4
+      },
+      {
+        "weekStart": "2025-09-29",
+        "priceGHS": 7.05
+      },
+      {
+        "weekStart": "2025-10-06",
+        "priceGHS": 7.12
+      },
+      {
+        "weekStart": "2025-10-13",
+        "priceGHS": 9.57
+      },
+      {
+        "weekStart": "2025-10-20",
+        "priceGHS": 9.68
+      },
+      {
+        "weekStart": "2025-10-27",
+        "priceGHS": 9.3
+      },
+      {
+        "weekStart": "2025-11-03",
+        "priceGHS": 9.97
+      },
+      {
+        "weekStart": "2025-11-10",
+        "priceGHS": 9.52
+      },
+      {
+        "weekStart": "2025-11-17",
+        "priceGHS": 10.13
+      },
+      {
+        "weekStart": "2025-11-24",
+        "priceGHS": 7.84
+      },
+      {
+        "weekStart": "2025-12-01",
+        "priceGHS": 11.87
+      },
+      {
+        "weekStart": "2025-12-08",
+        "priceGHS": 12.07
+      },
+      {
+        "weekStart": "2025-12-15",
+        "priceGHS": 9.16
+      },
+      {
+        "weekStart": "2025-12-22",
+        "priceGHS": 9.71
+      },
+      {
+        "weekStart": "2025-12-29",
+        "priceGHS": 8.59
+      },
+      {
+        "weekStart": "2026-01-05",
+        "priceGHS": 11.33
+      },
+      {
+        "weekStart": "2026-01-12",
+        "priceGHS": 9.71
+      },
+      {
+        "weekStart": "2026-01-19",
+        "priceGHS": 11.95
+      },
+      {
+        "weekStart": "2026-01-26",
+        "priceGHS": 11.21
+      },
+      {
+        "weekStart": "2026-02-02",
+        "priceGHS": 13.75
+      },
+      {
+        "weekStart": "2026-02-09",
+        "priceGHS": 11.37
+      },
+      {
+        "weekStart": "2026-02-16",
+        "priceGHS": 12.08
+      },
+      {
+        "weekStart": "2026-02-23",
+        "priceGHS": 10.04
+      },
+      {
+        "weekStart": "2026-03-02",
+        "priceGHS": 13.81
+      },
+      {
+        "weekStart": "2026-03-09",
+        "priceGHS": 11.18
+      },
+      {
+        "weekStart": "2026-03-16",
+        "priceGHS": 12.15
+      },
+      {
+        "weekStart": "2026-03-23",
+        "priceGHS": 11.81
+      },
+      {
+        "weekStart": "2026-03-30",
+        "priceGHS": 13.03
+      },
+      {
+        "weekStart": "2026-04-06",
+        "priceGHS": 9.23
+      },
+      {
+        "weekStart": "2026-04-13",
+        "priceGHS": 10.07
+      },
+      {
+        "weekStart": "2026-04-20",
+        "priceGHS": 9.75
+      },
+      {
+        "weekStart": "2026-04-27",
+        "priceGHS": 10.25
+      },
+      {
+        "weekStart": "2026-05-04",
+        "priceGHS": 10.59
+      },
+      {
+        "weekStart": "2026-05-11",
+        "priceGHS": 11.72
+      },
+      {
+        "weekStart": "2026-05-18",
+        "priceGHS": 9.73
+      },
+      {
+        "weekStart": "2026-05-25",
+        "priceGHS": 8.94
+      },
+      {
+        "weekStart": "2026-06-01",
+        "priceGHS": 7.93
+      },
+      {
+        "weekStart": "2026-06-08",
+        "priceGHS": 9.81
+      },
+      {
+        "weekStart": "2026-06-15",
+        "priceGHS": 8.49
+      },
+      {
+        "weekStart": "2026-06-22",
+        "priceGHS": 9.96
+      },
+      {
+        "weekStart": "2026-06-29",
+        "priceGHS": 7.49
+      },
+      {
+        "weekStart": "2026-07-06",
+        "priceGHS": 7.26
+      },
+      {
+        "weekStart": "2026-07-13",
+        "priceGHS": 8.41
+      },
+      {
+        "weekStart": "2026-07-20",
+        "priceGHS": 6.75
+      },
+      {
+        "weekStart": "2026-07-27",
+        "priceGHS": 7.69
+      }
+    ],
+    "pepper": [
+      {
+        "weekStart": "2024-08-05",
+        "priceGHS": 6.55
+      },
+      {
+        "weekStart": "2024-08-12",
+        "priceGHS": 8.34
+      },
+      {
+        "weekStart": "2024-08-19",
+        "priceGHS": 5.52
+      },
+      {
+        "weekStart": "2024-08-26",
+        "priceGHS": 5.5
+      },
+      {
+        "weekStart": "2024-09-02",
+        "priceGHS": 9.2
+      },
+      {
+        "weekStart": "2024-09-09",
+        "priceGHS": 10.33
+      },
+      {
+        "weekStart": "2024-09-16",
+        "priceGHS": 8.38
+      },
+      {
+        "weekStart": "2024-09-23",
+        "priceGHS": 9
+      },
+      {
+        "weekStart": "2024-09-30",
+        "priceGHS": 9.4
+      },
+      {
+        "weekStart": "2024-10-07",
+        "priceGHS": 8.2
+      },
+      {
+        "weekStart": "2024-10-14",
+        "priceGHS": 8.79
+      },
+      {
+        "weekStart": "2024-10-21",
+        "priceGHS": 11.85
+      },
+      {
+        "weekStart": "2024-10-28",
+        "priceGHS": 9.71
+      },
+      {
+        "weekStart": "2024-11-04",
+        "priceGHS": 11.16
+      },
+      {
+        "weekStart": "2024-11-11",
+        "priceGHS": 14.71
+      },
+      {
+        "weekStart": "2024-11-18",
+        "priceGHS": 12.69
+      },
+      {
+        "weekStart": "2024-11-25",
+        "priceGHS": 13.28
+      },
+      {
+        "weekStart": "2024-12-02",
+        "priceGHS": 12.83
+      },
+      {
+        "weekStart": "2024-12-09",
+        "priceGHS": 16.12
+      },
+      {
+        "weekStart": "2024-12-16",
+        "priceGHS": 16.42
+      },
+      {
+        "weekStart": "2024-12-23",
+        "priceGHS": 17.85
+      },
+      {
+        "weekStart": "2024-12-30",
+        "priceGHS": 14.91
+      },
+      {
+        "weekStart": "2025-01-06",
+        "priceGHS": 16.45
+      },
+      {
+        "weekStart": "2025-01-13",
+        "priceGHS": 19.89
+      },
+      {
+        "weekStart": "2025-01-20",
+        "priceGHS": 15.58
+      },
+      {
+        "weekStart": "2025-01-27",
+        "priceGHS": 18.7
+      },
+      {
+        "weekStart": "2025-02-03",
+        "priceGHS": 16.98
+      },
+      {
+        "weekStart": "2025-02-10",
+        "priceGHS": 15.51
+      },
+      {
+        "weekStart": "2025-02-17",
+        "priceGHS": 16.05
+      },
+      {
+        "weekStart": "2025-02-24",
+        "priceGHS": 18.02
+      },
+      {
+        "weekStart": "2025-03-03",
+        "priceGHS": 11.12
+      },
+      {
+        "weekStart": "2025-03-10",
+        "priceGHS": 11.53
+      },
+      {
+        "weekStart": "2025-03-17",
+        "priceGHS": 16.1
+      },
+      {
+        "weekStart": "2025-03-24",
+        "priceGHS": 16.73
+      },
+      {
+        "weekStart": "2025-03-31",
+        "priceGHS": 14.43
+      },
+      {
+        "weekStart": "2025-04-07",
+        "priceGHS": 13.48
+      },
+      {
+        "weekStart": "2025-04-14",
+        "priceGHS": 10.4
+      },
+      {
+        "weekStart": "2025-04-21",
+        "priceGHS": 13.75
+      },
+      {
+        "weekStart": "2025-04-28",
+        "priceGHS": 8.92
+      },
+      {
+        "weekStart": "2025-05-05",
+        "priceGHS": 8.23
+      },
+      {
+        "weekStart": "2025-05-12",
+        "priceGHS": 6.82
+      },
+      {
+        "weekStart": "2025-05-19",
+        "priceGHS": 9.07
+      },
+      {
+        "weekStart": "2025-05-26",
+        "priceGHS": 9.47
+      },
+      {
+        "weekStart": "2025-06-02",
+        "priceGHS": 7.04
+      },
+      {
+        "weekStart": "2025-06-09",
+        "priceGHS": 10.32
+      },
+      {
+        "weekStart": "2025-06-16",
+        "priceGHS": 6.97
+      },
+      {
+        "weekStart": "2025-06-23",
+        "priceGHS": 9.17
+      },
+      {
+        "weekStart": "2025-06-30",
+        "priceGHS": 8.69
+      },
+      {
+        "weekStart": "2025-07-07",
+        "priceGHS": 4.99
+      },
+      {
+        "weekStart": "2025-07-14",
+        "priceGHS": 5.49
+      },
+      {
+        "weekStart": "2025-07-21",
+        "priceGHS": 3.9
+      },
+      {
+        "weekStart": "2025-07-28",
+        "priceGHS": 3.99
+      },
+      {
+        "weekStart": "2025-08-04",
+        "priceGHS": 3.47
+      },
+      {
+        "weekStart": "2025-08-11",
+        "priceGHS": 6.68
+      },
+      {
+        "weekStart": "2025-08-18",
+        "priceGHS": 7
+      },
+      {
+        "weekStart": "2025-08-25",
+        "priceGHS": 5.91
+      },
+      {
+        "weekStart": "2025-09-01",
+        "priceGHS": 6.24
+      },
+      {
+        "weekStart": "2025-09-08",
+        "priceGHS": 6.17
+      },
+      {
+        "weekStart": "2025-09-15",
+        "priceGHS": 6.09
+      },
+      {
+        "weekStart": "2025-09-22",
+        "priceGHS": 8.2
+      },
+      {
+        "weekStart": "2025-09-29",
+        "priceGHS": 5.43
+      },
+      {
+        "weekStart": "2025-10-06",
+        "priceGHS": 11.66
+      },
+      {
+        "weekStart": "2025-10-13",
+        "priceGHS": 10.68
+      },
+      {
+        "weekStart": "2025-10-20",
+        "priceGHS": 9.8
+      },
+      {
+        "weekStart": "2025-10-27",
+        "priceGHS": 7.06
+      },
+      {
+        "weekStart": "2025-11-03",
+        "priceGHS": 11.72
+      },
+      {
+        "weekStart": "2025-11-10",
+        "priceGHS": 12.73
+      },
+      {
+        "weekStart": "2025-11-17",
+        "priceGHS": 14.44
+      },
+      {
+        "weekStart": "2025-11-24",
+        "priceGHS": 10.96
+      },
+      {
+        "weekStart": "2025-12-01",
+        "priceGHS": 18.48
+      },
+      {
+        "weekStart": "2025-12-08",
+        "priceGHS": 15.2
+      },
+      {
+        "weekStart": "2025-12-15",
+        "priceGHS": 15.42
+      },
+      {
+        "weekStart": "2025-12-22",
+        "priceGHS": 13.44
+      },
+      {
+        "weekStart": "2025-12-29",
+        "priceGHS": 15.54
+      },
+      {
+        "weekStart": "2026-01-05",
+        "priceGHS": 19.36
+      },
+      {
+        "weekStart": "2026-01-12",
+        "priceGHS": 16.96
+      },
+      {
+        "weekStart": "2026-01-19",
+        "priceGHS": 15.73
+      },
+      {
+        "weekStart": "2026-01-26",
+        "priceGHS": 17.79
+      },
+      {
+        "weekStart": "2026-02-02",
+        "priceGHS": 16.04
+      },
+      {
+        "weekStart": "2026-02-09",
+        "priceGHS": 18.05
+      },
+      {
+        "weekStart": "2026-02-16",
+        "priceGHS": 14.44
+      },
+      {
+        "weekStart": "2026-02-23",
+        "priceGHS": 16.8
+      },
+      {
+        "weekStart": "2026-03-02",
+        "priceGHS": 12.9
+      },
+      {
+        "weekStart": "2026-03-09",
+        "priceGHS": 11.76
+      },
+      {
+        "weekStart": "2026-03-16",
+        "priceGHS": 13.99
+      },
+      {
+        "weekStart": "2026-03-23",
+        "priceGHS": 15.61
+      },
+      {
+        "weekStart": "2026-03-30",
+        "priceGHS": 12.31
+      },
+      {
+        "weekStart": "2026-04-06",
+        "priceGHS": 13.9
+      },
+      {
+        "weekStart": "2026-04-13",
+        "priceGHS": 12.17
+      },
+      {
+        "weekStart": "2026-04-20",
+        "priceGHS": 8.69
+      },
+      {
+        "weekStart": "2026-04-27",
+        "priceGHS": 11.76
+      },
+      {
+        "weekStart": "2026-05-04",
+        "priceGHS": 10.9
+      },
+      {
+        "weekStart": "2026-05-11",
+        "priceGHS": 8.61
+      },
+      {
+        "weekStart": "2026-05-18",
+        "priceGHS": 7.05
+      },
+      {
+        "weekStart": "2026-05-25",
+        "priceGHS": 6.57
+      },
+      {
+        "weekStart": "2026-06-01",
+        "priceGHS": 7.31
+      },
+      {
+        "weekStart": "2026-06-08",
+        "priceGHS": 5.87
+      },
+      {
+        "weekStart": "2026-06-15",
+        "priceGHS": 9.27
+      },
+      {
+        "weekStart": "2026-06-22",
+        "priceGHS": 4.74
+      },
+      {
+        "weekStart": "2026-06-29",
+        "priceGHS": 7.09
+      },
+      {
+        "weekStart": "2026-07-06",
+        "priceGHS": 3.63
+      },
+      {
+        "weekStart": "2026-07-13",
+        "priceGHS": 5.97
+      },
+      {
+        "weekStart": "2026-07-20",
+        "priceGHS": 6.19
+      },
+      {
+        "weekStart": "2026-07-27",
+        "priceGHS": 5.47
+      }
+    ],
+    "plantain": [
+      {
+        "weekStart": "2024-08-05",
+        "priceGHS": 2.44
+      },
+      {
+        "weekStart": "2024-08-12",
+        "priceGHS": 2.51
+      },
+      {
+        "weekStart": "2024-08-19",
+        "priceGHS": 2.32
+      },
+      {
+        "weekStart": "2024-08-26",
+        "priceGHS": 2.47
+      },
+      {
+        "weekStart": "2024-09-02",
+        "priceGHS": 2.09
+      },
+      {
+        "weekStart": "2024-09-09",
+        "priceGHS": 1.92
+      },
+      {
+        "weekStart": "2024-09-16",
+        "priceGHS": 2.14
+      },
+      {
+        "weekStart": "2024-09-23",
+        "priceGHS": 1.67
+      },
+      {
+        "weekStart": "2024-09-30",
+        "priceGHS": 1.63
+      },
+      {
+        "weekStart": "2024-10-07",
+        "priceGHS": 3.17
+      },
+      {
+        "weekStart": "2024-10-14",
+        "priceGHS": 2.58
+      },
+      {
+        "weekStart": "2024-10-21",
+        "priceGHS": 2.57
+      },
+      {
+        "weekStart": "2024-10-28",
+        "priceGHS": 3.17
+      },
+      {
+        "weekStart": "2024-11-04",
+        "priceGHS": 2.87
+      },
+      {
+        "weekStart": "2024-11-11",
+        "priceGHS": 2.93
+      },
+      {
+        "weekStart": "2024-11-18",
+        "priceGHS": 2.47
+      },
+      {
+        "weekStart": "2024-11-25",
+        "priceGHS": 2.89
+      },
+      {
+        "weekStart": "2024-12-02",
+        "priceGHS": 3.08
+      },
+      {
+        "weekStart": "2024-12-09",
+        "priceGHS": 3.61
+      },
+      {
+        "weekStart": "2024-12-16",
+        "priceGHS": 4.43
+      },
+      {
+        "weekStart": "2024-12-23",
+        "priceGHS": 3.6
+      },
+      {
+        "weekStart": "2024-12-30",
+        "priceGHS": 3.23
+      },
+      {
+        "weekStart": "2025-01-06",
+        "priceGHS": 4.7
+      },
+      {
+        "weekStart": "2025-01-13",
+        "priceGHS": 4.36
+      },
+      {
+        "weekStart": "2025-01-20",
+        "priceGHS": 4.3
+      },
+      {
+        "weekStart": "2025-01-27",
+        "priceGHS": 3.93
+      },
+      {
+        "weekStart": "2025-02-03",
+        "priceGHS": 3.87
+      },
+      {
+        "weekStart": "2025-02-10",
+        "priceGHS": 4.81
+      },
+      {
+        "weekStart": "2025-02-17",
+        "priceGHS": 4.39
+      },
+      {
+        "weekStart": "2025-02-24",
+        "priceGHS": 3.58
+      },
+      {
+        "weekStart": "2025-03-03",
+        "priceGHS": 3.45
+      },
+      {
+        "weekStart": "2025-03-10",
+        "priceGHS": 3.28
+      },
+      {
+        "weekStart": "2025-03-17",
+        "priceGHS": 4.17
+      },
+      {
+        "weekStart": "2025-03-24",
+        "priceGHS": 4.32
+      },
+      {
+        "weekStart": "2025-03-31",
+        "priceGHS": 3.99
+      },
+      {
+        "weekStart": "2025-04-07",
+        "priceGHS": 2.93
+      },
+      {
+        "weekStart": "2025-04-14",
+        "priceGHS": 3.64
+      },
+      {
+        "weekStart": "2025-04-21",
+        "priceGHS": 3.27
+      },
+      {
+        "weekStart": "2025-04-28",
+        "priceGHS": 3.25
+      },
+      {
+        "weekStart": "2025-05-05",
+        "priceGHS": 2.83
+      },
+      {
+        "weekStart": "2025-05-12",
+        "priceGHS": 2.65
+      },
+      {
+        "weekStart": "2025-05-19",
+        "priceGHS": 2.39
+      },
+      {
+        "weekStart": "2025-05-26",
+        "priceGHS": 2.91
+      },
+      {
+        "weekStart": "2025-06-02",
+        "priceGHS": 2.9
+      },
+      {
+        "weekStart": "2025-06-09",
+        "priceGHS": 1.9
+      },
+      {
+        "weekStart": "2025-06-16",
+        "priceGHS": 2.19
+      },
+      {
+        "weekStart": "2025-06-23",
+        "priceGHS": 2.53
+      },
+      {
+        "weekStart": "2025-06-30",
+        "priceGHS": 1.74
+      },
+      {
+        "weekStart": "2025-07-07",
+        "priceGHS": 1.75
+      },
+      {
+        "weekStart": "2025-07-14",
+        "priceGHS": 1.34
+      },
+      {
+        "weekStart": "2025-07-21",
+        "priceGHS": 1.58
+      },
+      {
+        "weekStart": "2025-07-28",
+        "priceGHS": 2.57
+      },
+      {
+        "weekStart": "2025-08-04",
+        "priceGHS": 2.55
+      },
+      {
+        "weekStart": "2025-08-11",
+        "priceGHS": 1.69
+      },
+      {
+        "weekStart": "2025-08-18",
+        "priceGHS": 1.84
+      },
+      {
+        "weekStart": "2025-08-25",
+        "priceGHS": 1.9
+      },
+      {
+        "weekStart": "2025-09-01",
+        "priceGHS": 1.73
+      },
+      {
+        "weekStart": "2025-09-08",
+        "priceGHS": 1.66
+      },
+      {
+        "weekStart": "2025-09-15",
+        "priceGHS": 1.88
+      },
+      {
+        "weekStart": "2025-09-22",
+        "priceGHS": 1.84
+      },
+      {
+        "weekStart": "2025-09-29",
+        "priceGHS": 2.38
+      },
+      {
+        "weekStart": "2025-10-06",
+        "priceGHS": 2.34
+      },
+      {
+        "weekStart": "2025-10-13",
+        "priceGHS": 2.82
+      },
+      {
+        "weekStart": "2025-10-20",
+        "priceGHS": 2.48
+      },
+      {
+        "weekStart": "2025-10-27",
+        "priceGHS": 2.85
+      },
+      {
+        "weekStart": "2025-11-03",
+        "priceGHS": 3.07
+      },
+      {
+        "weekStart": "2025-11-10",
+        "priceGHS": 3.66
+      },
+      {
+        "weekStart": "2025-11-17",
+        "priceGHS": 2.46
+      },
+      {
+        "weekStart": "2025-11-24",
+        "priceGHS": 3.22
+      },
+      {
+        "weekStart": "2025-12-01",
+        "priceGHS": 3.98
+      },
+      {
+        "weekStart": "2025-12-08",
+        "priceGHS": 3.17
+      },
+      {
+        "weekStart": "2025-12-15",
+        "priceGHS": 4.32
+      },
+      {
+        "weekStart": "2025-12-22",
+        "priceGHS": 4.38
+      },
+      {
+        "weekStart": "2025-12-29",
+        "priceGHS": 3.56
+      },
+      {
+        "weekStart": "2026-01-05",
+        "priceGHS": 3.48
+      },
+      {
+        "weekStart": "2026-01-12",
+        "priceGHS": 4.14
+      },
+      {
+        "weekStart": "2026-01-19",
+        "priceGHS": 3.8
+      },
+      {
+        "weekStart": "2026-01-26",
+        "priceGHS": 4.22
+      },
+      {
+        "weekStart": "2026-02-02",
+        "priceGHS": 4.58
+      },
+      {
+        "weekStart": "2026-02-09",
+        "priceGHS": 4.41
+      },
+      {
+        "weekStart": "2026-02-16",
+        "priceGHS": 4.69
+      },
+      {
+        "weekStart": "2026-02-23",
+        "priceGHS": 3.97
+      },
+      {
+        "weekStart": "2026-03-02",
+        "priceGHS": 3.66
+      },
+      {
+        "weekStart": "2026-03-09",
+        "priceGHS": 3.81
+      },
+      {
+        "weekStart": "2026-03-16",
+        "priceGHS": 3.22
+      },
+      {
+        "weekStart": "2026-03-23",
+        "priceGHS": 4.18
+      },
+      {
+        "weekStart": "2026-03-30",
+        "priceGHS": 4.39
+      },
+      {
+        "weekStart": "2026-04-06",
+        "priceGHS": 3.78
+      },
+      {
+        "weekStart": "2026-04-13",
+        "priceGHS": 2.76
+      },
+      {
+        "weekStart": "2026-04-20",
+        "priceGHS": 3.51
+      },
+      {
+        "weekStart": "2026-04-27",
+        "priceGHS": 3.94
+      },
+      {
+        "weekStart": "2026-05-04",
+        "priceGHS": 2.26
+      },
+      {
+        "weekStart": "2026-05-11",
+        "priceGHS": 2.99
+      },
+      {
+        "weekStart": "2026-05-18",
+        "priceGHS": 2.69
+      },
+      {
+        "weekStart": "2026-05-25",
+        "priceGHS": 3.19
+      },
+      {
+        "weekStart": "2026-06-01",
+        "priceGHS": 2.82
+      },
+      {
+        "weekStart": "2026-06-08",
+        "priceGHS": 2.12
+      },
+      {
+        "weekStart": "2026-06-15",
+        "priceGHS": 2.08
+      },
+      {
+        "weekStart": "2026-06-22",
+        "priceGHS": 2.77
+      },
+      {
+        "weekStart": "2026-06-29",
+        "priceGHS": 2.8
+      },
+      {
+        "weekStart": "2026-07-06",
+        "priceGHS": 1.84
+      },
+      {
+        "weekStart": "2026-07-13",
+        "priceGHS": 2.59
+      },
+      {
+        "weekStart": "2026-07-20",
+        "priceGHS": 2.15
+      },
+      {
+        "weekStart": "2026-07-27",
+        "priceGHS": 2.56
+      }
+    ],
+    "yam": [
+      {
+        "weekStart": "2024-08-05",
+        "priceGHS": 6.24
+      },
+      {
+        "weekStart": "2024-08-12",
+        "priceGHS": 12.51
+      },
+      {
+        "weekStart": "2024-08-19",
+        "priceGHS": 9.9
+      },
+      {
+        "weekStart": "2024-08-26",
+        "priceGHS": 6.06
+      },
+      {
+        "weekStart": "2024-09-02",
+        "priceGHS": 9
+      },
+      {
+        "weekStart": "2024-09-09",
+        "priceGHS": 12.34
+      },
+      {
+        "weekStart": "2024-09-16",
+        "priceGHS": 11.73
+      },
+      {
+        "weekStart": "2024-09-23",
+        "priceGHS": 12.12
+      },
+      {
+        "weekStart": "2024-09-30",
+        "priceGHS": 11.49
+      },
+      {
+        "weekStart": "2024-10-07",
+        "priceGHS": 11.68
+      },
+      {
+        "weekStart": "2024-10-14",
+        "priceGHS": 7.61
+      },
+      {
+        "weekStart": "2024-10-21",
+        "priceGHS": 12.78
+      },
+      {
+        "weekStart": "2024-10-28",
+        "priceGHS": 11.12
+      },
+      {
+        "weekStart": "2024-11-04",
+        "priceGHS": 9.24
+      },
+      {
+        "weekStart": "2024-11-11",
+        "priceGHS": 9.65
+      },
+      {
+        "weekStart": "2024-11-18",
+        "priceGHS": 12.98
+      },
+      {
+        "weekStart": "2024-11-25",
+        "priceGHS": 8.45
+      },
+      {
+        "weekStart": "2024-12-02",
+        "priceGHS": 16.06
+      },
+      {
+        "weekStart": "2024-12-09",
+        "priceGHS": 14.78
+      },
+      {
+        "weekStart": "2024-12-16",
+        "priceGHS": 18.52
+      },
+      {
+        "weekStart": "2024-12-23",
+        "priceGHS": 17.1
+      },
+      {
+        "weekStart": "2024-12-30",
+        "priceGHS": 15.71
+      },
+      {
+        "weekStart": "2025-01-06",
+        "priceGHS": 23.96
+      },
+      {
+        "weekStart": "2025-01-13",
+        "priceGHS": 18.48
+      },
+      {
+        "weekStart": "2025-01-20",
+        "priceGHS": 20.13
+      },
+      {
+        "weekStart": "2025-01-27",
+        "priceGHS": 18.6
+      },
+      {
+        "weekStart": "2025-02-03",
+        "priceGHS": 24.45
+      },
+      {
+        "weekStart": "2025-02-10",
+        "priceGHS": 19.81
+      },
+      {
+        "weekStart": "2025-02-17",
+        "priceGHS": 22.94
+      },
+      {
+        "weekStart": "2025-02-24",
+        "priceGHS": 20.33
+      },
+      {
+        "weekStart": "2025-03-03",
+        "priceGHS": 19.02
+      },
+      {
+        "weekStart": "2025-03-10",
+        "priceGHS": 22.99
+      },
+      {
+        "weekStart": "2025-03-17",
+        "priceGHS": 21.7
+      },
+      {
+        "weekStart": "2025-03-24",
+        "priceGHS": 18.56
+      },
+      {
+        "weekStart": "2025-03-31",
+        "priceGHS": 23.19
+      },
+      {
+        "weekStart": "2025-04-07",
+        "priceGHS": 15.61
+      },
+      {
+        "weekStart": "2025-04-14",
+        "priceGHS": 19.72
+      },
+      {
+        "weekStart": "2025-04-21",
+        "priceGHS": 17.83
+      },
+      {
+        "weekStart": "2025-04-28",
+        "priceGHS": 17.93
+      },
+      {
+        "weekStart": "2025-05-05",
+        "priceGHS": 20.2
+      },
+      {
+        "weekStart": "2025-05-12",
+        "priceGHS": 19.87
+      },
+      {
+        "weekStart": "2025-05-19",
+        "priceGHS": 18.24
+      },
+      {
+        "weekStart": "2025-05-26",
+        "priceGHS": 15.9
+      },
+      {
+        "weekStart": "2025-06-02",
+        "priceGHS": 18.48
+      },
+      {
+        "weekStart": "2025-06-09",
+        "priceGHS": 18.26
+      },
+      {
+        "weekStart": "2025-06-16",
+        "priceGHS": 13.38
+      },
+      {
+        "weekStart": "2025-06-23",
+        "priceGHS": 16.21
+      },
+      {
+        "weekStart": "2025-06-30",
+        "priceGHS": 13.09
+      },
+      {
+        "weekStart": "2025-07-07",
+        "priceGHS": 15.53
+      },
+      {
+        "weekStart": "2025-07-14",
+        "priceGHS": 12.05
+      },
+      {
+        "weekStart": "2025-07-21",
+        "priceGHS": 12.22
+      },
+      {
+        "weekStart": "2025-07-28",
+        "priceGHS": 9.84
+      },
+      {
+        "weekStart": "2025-08-04",
+        "priceGHS": 10.6
+      },
+      {
+        "weekStart": "2025-08-11",
+        "priceGHS": 8.56
+      },
+      {
+        "weekStart": "2025-08-18",
+        "priceGHS": 6.21
+      },
+      {
+        "weekStart": "2025-08-25",
+        "priceGHS": 6.3
+      },
+      {
+        "weekStart": "2025-09-01",
+        "priceGHS": 9.71
+      },
+      {
+        "weekStart": "2025-09-08",
+        "priceGHS": 7.27
+      },
+      {
+        "weekStart": "2025-09-15",
+        "priceGHS": 12.14
+      },
+      {
+        "weekStart": "2025-09-22",
+        "priceGHS": 7.98
+      },
+      {
+        "weekStart": "2025-09-29",
+        "priceGHS": 8.13
+      },
+      {
+        "weekStart": "2025-10-06",
+        "priceGHS": 12.28
+      },
+      {
+        "weekStart": "2025-10-13",
+        "priceGHS": 11.8
+      },
+      {
+        "weekStart": "2025-10-20",
+        "priceGHS": 10.65
+      },
+      {
+        "weekStart": "2025-10-27",
+        "priceGHS": 13.4
+      },
+      {
+        "weekStart": "2025-11-03",
+        "priceGHS": 13.61
+      },
+      {
+        "weekStart": "2025-11-10",
+        "priceGHS": 11.7
+      },
+      {
+        "weekStart": "2025-11-17",
+        "priceGHS": 9.18
+      },
+      {
+        "weekStart": "2025-11-24",
+        "priceGHS": 14.1
+      },
+      {
+        "weekStart": "2025-12-01",
+        "priceGHS": 15.11
+      },
+      {
+        "weekStart": "2025-12-08",
+        "priceGHS": 15.17
+      },
+      {
+        "weekStart": "2025-12-15",
+        "priceGHS": 18.71
+      },
+      {
+        "weekStart": "2025-12-22",
+        "priceGHS": 16.21
+      },
+      {
+        "weekStart": "2025-12-29",
+        "priceGHS": 18.47
+      },
+      {
+        "weekStart": "2026-01-05",
+        "priceGHS": 20.13
+      },
+      {
+        "weekStart": "2026-01-12",
+        "priceGHS": 19.06
+      },
+      {
+        "weekStart": "2026-01-19",
+        "priceGHS": 22.95
+      },
+      {
+        "weekStart": "2026-01-26",
+        "priceGHS": 24.55
+      },
+      {
+        "weekStart": "2026-02-02",
+        "priceGHS": 19.74
+      },
+      {
+        "weekStart": "2026-02-09",
+        "priceGHS": 23.06
+      },
+      {
+        "weekStart": "2026-02-16",
+        "priceGHS": 23.67
+      },
+      {
+        "weekStart": "2026-02-23",
+        "priceGHS": 23.67
+      },
+      {
+        "weekStart": "2026-03-02",
+        "priceGHS": 18.24
+      },
+      {
+        "weekStart": "2026-03-09",
+        "priceGHS": 22
+      },
+      {
+        "weekStart": "2026-03-16",
+        "priceGHS": 19.91
+      },
+      {
+        "weekStart": "2026-03-23",
+        "priceGHS": 20.5
+      },
+      {
+        "weekStart": "2026-03-30",
+        "priceGHS": 22.31
+      },
+      {
+        "weekStart": "2026-04-06",
+        "priceGHS": 17.15
+      },
+      {
+        "weekStart": "2026-04-13",
+        "priceGHS": 16.28
+      },
+      {
+        "weekStart": "2026-04-20",
+        "priceGHS": 20.47
+      },
+      {
+        "weekStart": "2026-04-27",
+        "priceGHS": 21.06
+      },
+      {
+        "weekStart": "2026-05-04",
+        "priceGHS": 19.85
+      },
+      {
+        "weekStart": "2026-05-11",
+        "priceGHS": 18.39
+      },
+      {
+        "weekStart": "2026-05-18",
+        "priceGHS": 14.24
+      },
+      {
+        "weekStart": "2026-05-25",
+        "priceGHS": 14.74
+      },
+      {
+        "weekStart": "2026-06-01",
+        "priceGHS": 14.95
+      },
+      {
+        "weekStart": "2026-06-08",
+        "priceGHS": 15.33
+      },
+      {
+        "weekStart": "2026-06-15",
+        "priceGHS": 17.06
+      },
+      {
+        "weekStart": "2026-06-22",
+        "priceGHS": 14.54
+      },
+      {
+        "weekStart": "2026-06-29",
+        "priceGHS": 14.93
+      },
+      {
+        "weekStart": "2026-07-06",
+        "priceGHS": 11.88
+      },
+      {
+        "weekStart": "2026-07-13",
+        "priceGHS": 13.14
+      },
+      {
+        "weekStart": "2026-07-20",
+        "priceGHS": 11.73
+      },
+      {
+        "weekStart": "2026-07-27",
+        "priceGHS": 14.1
+      }
+    ],
+    "rice": [
+      {
+        "weekStart": "2024-08-05",
+        "priceGHS": 11.3
+      },
+      {
+        "weekStart": "2024-08-12",
+        "priceGHS": 9.52
+      },
+      {
+        "weekStart": "2024-08-19",
+        "priceGHS": 10.78
+      },
+      {
+        "weekStart": "2024-08-26",
+        "priceGHS": 10.07
+      },
+      {
+        "weekStart": "2024-09-02",
+        "priceGHS": 10.77
+      },
+      {
+        "weekStart": "2024-09-09",
+        "priceGHS": 10.93
+      },
+      {
+        "weekStart": "2024-09-16",
+        "priceGHS": 11.59
+      },
+      {
+        "weekStart": "2024-09-23",
+        "priceGHS": 11.36
+      },
+      {
+        "weekStart": "2024-09-30",
+        "priceGHS": 10.53
+      },
+      {
+        "weekStart": "2024-10-07",
+        "priceGHS": 10.93
+      },
+      {
+        "weekStart": "2024-10-14",
+        "priceGHS": 11.76
+      },
+      {
+        "weekStart": "2024-10-21",
+        "priceGHS": 10.27
+      },
+      {
+        "weekStart": "2024-10-28",
+        "priceGHS": 11.78
+      },
+      {
+        "weekStart": "2024-11-04",
+        "priceGHS": 10.64
+      },
+      {
+        "weekStart": "2024-11-11",
+        "priceGHS": 10.54
+      },
+      {
+        "weekStart": "2024-11-18",
+        "priceGHS": 11.21
+      },
+      {
+        "weekStart": "2024-11-25",
+        "priceGHS": 11.39
+      },
+      {
+        "weekStart": "2024-12-02",
+        "priceGHS": 11.2
+      },
+      {
+        "weekStart": "2024-12-09",
+        "priceGHS": 12.85
+      },
+      {
+        "weekStart": "2024-12-16",
+        "priceGHS": 11.84
+      },
+      {
+        "weekStart": "2024-12-23",
+        "priceGHS": 12.56
+      },
+      {
+        "weekStart": "2024-12-30",
+        "priceGHS": 11.03
+      },
+      {
+        "weekStart": "2025-01-06",
+        "priceGHS": 13
+      },
+      {
+        "weekStart": "2025-01-13",
+        "priceGHS": 11.22
+      },
+      {
+        "weekStart": "2025-01-20",
+        "priceGHS": 12.16
+      },
+      {
+        "weekStart": "2025-01-27",
+        "priceGHS": 12.16
+      },
+      {
+        "weekStart": "2025-02-03",
+        "priceGHS": 13.01
+      },
+      {
+        "weekStart": "2025-02-10",
+        "priceGHS": 12.8
+      },
+      {
+        "weekStart": "2025-02-17",
+        "priceGHS": 12.99
+      },
+      {
+        "weekStart": "2025-02-24",
+        "priceGHS": 11.63
+      },
+      {
+        "weekStart": "2025-03-03",
+        "priceGHS": 10.58
+      },
+      {
+        "weekStart": "2025-03-10",
+        "priceGHS": 12.26
+      },
+      {
+        "weekStart": "2025-03-17",
+        "priceGHS": 11.13
+      },
+      {
+        "weekStart": "2025-03-24",
+        "priceGHS": 12.15
+      },
+      {
+        "weekStart": "2025-03-31",
+        "priceGHS": 10.69
+      },
+      {
+        "weekStart": "2025-04-07",
+        "priceGHS": 11.99
+      },
+      {
+        "weekStart": "2025-04-14",
+        "priceGHS": 10.85
+      },
+      {
+        "weekStart": "2025-04-21",
+        "priceGHS": 11.75
+      },
+      {
+        "weekStart": "2025-04-28",
+        "priceGHS": 9.99
+      },
+      {
+        "weekStart": "2025-05-05",
+        "priceGHS": 11.84
+      },
+      {
+        "weekStart": "2025-05-12",
+        "priceGHS": 10.59
+      },
+      {
+        "weekStart": "2025-05-19",
+        "priceGHS": 10.43
+      },
+      {
+        "weekStart": "2025-05-26",
+        "priceGHS": 10.84
+      },
+      {
+        "weekStart": "2025-06-02",
+        "priceGHS": 11.57
+      },
+      {
+        "weekStart": "2025-06-09",
+        "priceGHS": 11.71
+      },
+      {
+        "weekStart": "2025-06-16",
+        "priceGHS": 10.11
+      },
+      {
+        "weekStart": "2025-06-23",
+        "priceGHS": 9.98
+      },
+      {
+        "weekStart": "2025-06-30",
+        "priceGHS": 10.67
+      },
+      {
+        "weekStart": "2025-07-07",
+        "priceGHS": 10.9
+      },
+      {
+        "weekStart": "2025-07-14",
+        "priceGHS": 9.85
+      },
+      {
+        "weekStart": "2025-07-21",
+        "priceGHS": 9.98
+      },
+      {
+        "weekStart": "2025-07-28",
+        "priceGHS": 9.95
+      },
+      {
+        "weekStart": "2025-08-04",
+        "priceGHS": 9.4
+      },
+      {
+        "weekStart": "2025-08-11",
+        "priceGHS": 10.8
+      },
+      {
+        "weekStart": "2025-08-18",
+        "priceGHS": 10.09
+      },
+      {
+        "weekStart": "2025-08-25",
+        "priceGHS": 9.41
+      },
+      {
+        "weekStart": "2025-09-01",
+        "priceGHS": 10.71
+      },
+      {
+        "weekStart": "2025-09-08",
+        "priceGHS": 9.92
+      },
+      {
+        "weekStart": "2025-09-15",
+        "priceGHS": 10.35
+      },
+      {
+        "weekStart": "2025-09-22",
+        "priceGHS": 10.53
+      },
+      {
+        "weekStart": "2025-09-29",
+        "priceGHS": 10.18
+      },
+      {
+        "weekStart": "2025-10-06",
+        "priceGHS": 11.77
+      },
+      {
+        "weekStart": "2025-10-13",
+        "priceGHS": 11.72
+      },
+      {
+        "weekStart": "2025-10-20",
+        "priceGHS": 10.39
+      },
+      {
+        "weekStart": "2025-10-27",
+        "priceGHS": 10.55
+      },
+      {
+        "weekStart": "2025-11-03",
+        "priceGHS": 10.31
+      },
+      {
+        "weekStart": "2025-11-10",
+        "priceGHS": 12.19
+      },
+      {
+        "weekStart": "2025-11-17",
+        "priceGHS": 11.22
+      },
+      {
+        "weekStart": "2025-11-24",
+        "priceGHS": 11.93
+      },
+      {
+        "weekStart": "2025-12-01",
+        "priceGHS": 11.45
+      },
+      {
+        "weekStart": "2025-12-08",
+        "priceGHS": 11.98
+      },
+      {
+        "weekStart": "2025-12-15",
+        "priceGHS": 11.74
+      },
+      {
+        "weekStart": "2025-12-22",
+        "priceGHS": 11.86
+      },
+      {
+        "weekStart": "2025-12-29",
+        "priceGHS": 12.22
+      },
+      {
+        "weekStart": "2026-01-05",
+        "priceGHS": 11.26
+      },
+      {
+        "weekStart": "2026-01-12",
+        "priceGHS": 12.97
+      },
+      {
+        "weekStart": "2026-01-19",
+        "priceGHS": 11.1
+      },
+      {
+        "weekStart": "2026-01-26",
+        "priceGHS": 11.66
+      },
+      {
+        "weekStart": "2026-02-02",
+        "priceGHS": 12.11
+      },
+      {
+        "weekStart": "2026-02-09",
+        "priceGHS": 12.78
+      },
+      {
+        "weekStart": "2026-02-16",
+        "priceGHS": 12.99
+      },
+      {
+        "weekStart": "2026-02-23",
+        "priceGHS": 13
+      },
+      {
+        "weekStart": "2026-03-02",
+        "priceGHS": 10.7
+      },
+      {
+        "weekStart": "2026-03-09",
+        "priceGHS": 11.56
+      },
+      {
+        "weekStart": "2026-03-16",
+        "priceGHS": 12.13
+      },
+      {
+        "weekStart": "2026-03-23",
+        "priceGHS": 10.67
+      },
+      {
+        "weekStart": "2026-03-30",
+        "priceGHS": 12.54
+      },
+      {
+        "weekStart": "2026-04-06",
+        "priceGHS": 10.19
+      },
+      {
+        "weekStart": "2026-04-13",
+        "priceGHS": 11.18
+      },
+      {
+        "weekStart": "2026-04-20",
+        "priceGHS": 11.1
+      },
+      {
+        "weekStart": "2026-04-27",
+        "priceGHS": 11.99
+      },
+      {
+        "weekStart": "2026-05-04",
+        "priceGHS": 11.96
+      },
+      {
+        "weekStart": "2026-05-11",
+        "priceGHS": 11.39
+      },
+      {
+        "weekStart": "2026-05-18",
+        "priceGHS": 10.3
+      },
+      {
+        "weekStart": "2026-05-25",
+        "priceGHS": 11.33
+      },
+      {
+        "weekStart": "2026-06-01",
+        "priceGHS": 9.79
+      },
+      {
+        "weekStart": "2026-06-08",
+        "priceGHS": 10.11
+      },
+      {
+        "weekStart": "2026-06-15",
+        "priceGHS": 9.89
+      },
+      {
+        "weekStart": "2026-06-22",
+        "priceGHS": 10.14
+      },
+      {
+        "weekStart": "2026-06-29",
+        "priceGHS": 10.4
+      },
+      {
+        "weekStart": "2026-07-06",
+        "priceGHS": 10.15
+      },
+      {
+        "weekStart": "2026-07-13",
+        "priceGHS": 10.43
+      },
+      {
+        "weekStart": "2026-07-20",
+        "priceGHS": 10.68
+      },
+      {
+        "weekStart": "2026-07-27",
+        "priceGHS": 9.81
+      }
+    ],
+    "palm_oil": [
+      {
+        "weekStart": "2024-08-05",
+        "priceGHS": 16.02
+      },
+      {
+        "weekStart": "2024-08-12",
+        "priceGHS": 13.91
+      },
+      {
+        "weekStart": "2024-08-19",
+        "priceGHS": 16.03
+      },
+      {
+        "weekStart": "2024-08-26",
+        "priceGHS": 15.15
+      },
+      {
+        "weekStart": "2024-09-02",
+        "priceGHS": 16.94
+      },
+      {
+        "weekStart": "2024-09-09",
+        "priceGHS": 14.3
+      },
+      {
+        "weekStart": "2024-09-16",
+        "priceGHS": 17.19
+      },
+      {
+        "weekStart": "2024-09-23",
+        "priceGHS": 14.35
+      },
+      {
+        "weekStart": "2024-09-30",
+        "priceGHS": 13.22
+      },
+      {
+        "weekStart": "2024-10-07",
+        "priceGHS": 15.53
+      },
+      {
+        "weekStart": "2024-10-14",
+        "priceGHS": 16.86
+      },
+      {
+        "weekStart": "2024-10-21",
+        "priceGHS": 18.86
+      },
+      {
+        "weekStart": "2024-10-28",
+        "priceGHS": 15.62
+      },
+      {
+        "weekStart": "2024-11-04",
+        "priceGHS": 17.34
+      },
+      {
+        "weekStart": "2024-11-11",
+        "priceGHS": 21.34
+      },
+      {
+        "weekStart": "2024-11-18",
+        "priceGHS": 21.88
+      },
+      {
+        "weekStart": "2024-11-25",
+        "priceGHS": 18.76
+      },
+      {
+        "weekStart": "2024-12-02",
+        "priceGHS": 23.61
+      },
+      {
+        "weekStart": "2024-12-09",
+        "priceGHS": 24.72
+      },
+      {
+        "weekStart": "2024-12-16",
+        "priceGHS": 23.19
+      },
+      {
+        "weekStart": "2024-12-23",
+        "priceGHS": 26.4
+      },
+      {
+        "weekStart": "2024-12-30",
+        "priceGHS": 21.88
+      },
+      {
+        "weekStart": "2025-01-06",
+        "priceGHS": 23.45
+      },
+      {
+        "weekStart": "2025-01-13",
+        "priceGHS": 26.82
+      },
+      {
+        "weekStart": "2025-01-20",
+        "priceGHS": 25.51
+      },
+      {
+        "weekStart": "2025-01-27",
+        "priceGHS": 27.4
+      },
+      {
+        "weekStart": "2025-02-03",
+        "priceGHS": 27.44
+      },
+      {
+        "weekStart": "2025-02-10",
+        "priceGHS": 24.35
+      },
+      {
+        "weekStart": "2025-02-17",
+        "priceGHS": 27.12
+      },
+      {
+        "weekStart": "2025-02-24",
+        "priceGHS": 25.58
+      },
+      {
+        "weekStart": "2025-03-03",
+        "priceGHS": 25.53
+      },
+      {
+        "weekStart": "2025-03-10",
+        "priceGHS": 25.32
+      },
+      {
+        "weekStart": "2025-03-17",
+        "priceGHS": 22.07
+      },
+      {
+        "weekStart": "2025-03-24",
+        "priceGHS": 25.66
+      },
+      {
+        "weekStart": "2025-03-31",
+        "priceGHS": 25.61
+      },
+      {
+        "weekStart": "2025-04-07",
+        "priceGHS": 25.06
+      },
+      {
+        "weekStart": "2025-04-14",
+        "priceGHS": 24.53
+      },
+      {
+        "weekStart": "2025-04-21",
+        "priceGHS": 22.14
+      },
+      {
+        "weekStart": "2025-04-28",
+        "priceGHS": 23.72
+      },
+      {
+        "weekStart": "2025-05-05",
+        "priceGHS": 22.24
+      },
+      {
+        "weekStart": "2025-05-12",
+        "priceGHS": 23.3
+      },
+      {
+        "weekStart": "2025-05-19",
+        "priceGHS": 22.99
+      },
+      {
+        "weekStart": "2025-05-26",
+        "priceGHS": 23.35
+      },
+      {
+        "weekStart": "2025-06-02",
+        "priceGHS": 16.93
+      },
+      {
+        "weekStart": "2025-06-09",
+        "priceGHS": 17.04
+      },
+      {
+        "weekStart": "2025-06-16",
+        "priceGHS": 18.16
+      },
+      {
+        "weekStart": "2025-06-23",
+        "priceGHS": 15.9
+      },
+      {
+        "weekStart": "2025-06-30",
+        "priceGHS": 19.06
+      },
+      {
+        "weekStart": "2025-07-07",
+        "priceGHS": 15.94
+      },
+      {
+        "weekStart": "2025-07-14",
+        "priceGHS": 13.46
+      },
+      {
+        "weekStart": "2025-07-21",
+        "priceGHS": 16.13
+      },
+      {
+        "weekStart": "2025-07-28",
+        "priceGHS": 17.48
+      },
+      {
+        "weekStart": "2025-08-04",
+        "priceGHS": 16.74
+      },
+      {
+        "weekStart": "2025-08-11",
+        "priceGHS": 14.05
+      },
+      {
+        "weekStart": "2025-08-18",
+        "priceGHS": 14.96
+      },
+      {
+        "weekStart": "2025-08-25",
+        "priceGHS": 15.2
+      },
+      {
+        "weekStart": "2025-09-01",
+        "priceGHS": 17.44
+      },
+      {
+        "weekStart": "2025-09-08",
+        "priceGHS": 15.85
+      },
+      {
+        "weekStart": "2025-09-15",
+        "priceGHS": 16.16
+      },
+      {
+        "weekStart": "2025-09-22",
+        "priceGHS": 17.97
+      },
+      {
+        "weekStart": "2025-09-29",
+        "priceGHS": 15.99
+      },
+      {
+        "weekStart": "2025-10-06",
+        "priceGHS": 19.07
+      },
+      {
+        "weekStart": "2025-10-13",
+        "priceGHS": 15.28
+      },
+      {
+        "weekStart": "2025-10-20",
+        "priceGHS": 16.42
+      },
+      {
+        "weekStart": "2025-10-27",
+        "priceGHS": 18.59
+      },
+      {
+        "weekStart": "2025-11-03",
+        "priceGHS": 18.1
+      },
+      {
+        "weekStart": "2025-11-10",
+        "priceGHS": 19.93
+      },
+      {
+        "weekStart": "2025-11-17",
+        "priceGHS": 17.31
+      },
+      {
+        "weekStart": "2025-11-24",
+        "priceGHS": 21.3
+      },
+      {
+        "weekStart": "2025-12-01",
+        "priceGHS": 25.55
+      },
+      {
+        "weekStart": "2025-12-08",
+        "priceGHS": 24.23
+      },
+      {
+        "weekStart": "2025-12-15",
+        "priceGHS": 25.48
+      },
+      {
+        "weekStart": "2025-12-22",
+        "priceGHS": 22.15
+      },
+      {
+        "weekStart": "2025-12-29",
+        "priceGHS": 22.78
+      },
+      {
+        "weekStart": "2026-01-05",
+        "priceGHS": 24.55
+      },
+      {
+        "weekStart": "2026-01-12",
+        "priceGHS": 24.36
+      },
+      {
+        "weekStart": "2026-01-19",
+        "priceGHS": 26.53
+      },
+      {
+        "weekStart": "2026-01-26",
+        "priceGHS": 23.43
+      },
+      {
+        "weekStart": "2026-02-02",
+        "priceGHS": 27.04
+      },
+      {
+        "weekStart": "2026-02-09",
+        "priceGHS": 24.6
+      },
+      {
+        "weekStart": "2026-02-16",
+        "priceGHS": 22.27
+      },
+      {
+        "weekStart": "2026-02-23",
+        "priceGHS": 24.25
+      },
+      {
+        "weekStart": "2026-03-02",
+        "priceGHS": 25.99
+      },
+      {
+        "weekStart": "2026-03-09",
+        "priceGHS": 21.45
+      },
+      {
+        "weekStart": "2026-03-16",
+        "priceGHS": 24.17
+      },
+      {
+        "weekStart": "2026-03-23",
+        "priceGHS": 24.5
+      },
+      {
+        "weekStart": "2026-03-30",
+        "priceGHS": 24.23
+      },
+      {
+        "weekStart": "2026-04-06",
+        "priceGHS": 21.22
+      },
+      {
+        "weekStart": "2026-04-13",
+        "priceGHS": 23.16
+      },
+      {
+        "weekStart": "2026-04-20",
+        "priceGHS": 25.52
+      },
+      {
+        "weekStart": "2026-04-27",
+        "priceGHS": 21.39
+      },
+      {
+        "weekStart": "2026-05-04",
+        "priceGHS": 21.5
+      },
+      {
+        "weekStart": "2026-05-11",
+        "priceGHS": 19.46
+      },
+      {
+        "weekStart": "2026-05-18",
+        "priceGHS": 18.91
+      },
+      {
+        "weekStart": "2026-05-25",
+        "priceGHS": 23.57
+      },
+      {
+        "weekStart": "2026-06-01",
+        "priceGHS": 16.93
+      },
+      {
+        "weekStart": "2026-06-08",
+        "priceGHS": 15.7
+      },
+      {
+        "weekStart": "2026-06-15",
+        "priceGHS": 18.62
+      },
+      {
+        "weekStart": "2026-06-22",
+        "priceGHS": 15.36
+      },
+      {
+        "weekStart": "2026-06-29",
+        "priceGHS": 18.47
+      },
+      {
+        "weekStart": "2026-07-06",
+        "priceGHS": 16.17
+      },
+      {
+        "weekStart": "2026-07-13",
+        "priceGHS": 14.82
+      },
+      {
+        "weekStart": "2026-07-20",
+        "priceGHS": 16.04
+      },
+      {
+        "weekStart": "2026-07-27",
+        "priceGHS": 15.62
+      }
+    ],
+    "smoked_fish": [
+      {
+        "weekStart": "2024-08-05",
+        "priceGHS": 12.3
+      },
+      {
+        "weekStart": "2024-08-12",
+        "priceGHS": 10.54
+      },
+      {
+        "weekStart": "2024-08-19",
+        "priceGHS": 13.21
+      },
+      {
+        "weekStart": "2024-08-26",
+        "priceGHS": 12.44
+      },
+      {
+        "weekStart": "2024-09-02",
+        "priceGHS": 10.07
+      },
+      {
+        "weekStart": "2024-09-09",
+        "priceGHS": 9.53
+      },
+      {
+        "weekStart": "2024-09-16",
+        "priceGHS": 11.21
+      },
+      {
+        "weekStart": "2024-09-23",
+        "priceGHS": 13.31
+      },
+      {
+        "weekStart": "2024-09-30",
+        "priceGHS": 12.96
+      },
+      {
+        "weekStart": "2024-10-07",
+        "priceGHS": 12.5
+      },
+      {
+        "weekStart": "2024-10-14",
+        "priceGHS": 12.12
+      },
+      {
+        "weekStart": "2024-10-21",
+        "priceGHS": 12.05
+      },
+      {
+        "weekStart": "2024-10-28",
+        "priceGHS": 14.04
+      },
+      {
+        "weekStart": "2024-11-04",
+        "priceGHS": 10.62
+      },
+      {
+        "weekStart": "2024-11-11",
+        "priceGHS": 14.44
+      },
+      {
+        "weekStart": "2024-11-18",
+        "priceGHS": 10.53
+      },
+      {
+        "weekStart": "2024-11-25",
+        "priceGHS": 14.95
+      },
+      {
+        "weekStart": "2024-12-02",
+        "priceGHS": 15.32
+      },
+      {
+        "weekStart": "2024-12-09",
+        "priceGHS": 16.21
+      },
+      {
+        "weekStart": "2024-12-16",
+        "priceGHS": 16.35
+      },
+      {
+        "weekStart": "2024-12-23",
+        "priceGHS": 15.69
+      },
+      {
+        "weekStart": "2024-12-30",
+        "priceGHS": 11.99
+      },
+      {
+        "weekStart": "2025-01-06",
+        "priceGHS": 13.85
+      },
+      {
+        "weekStart": "2025-01-13",
+        "priceGHS": 15.75
+      },
+      {
+        "weekStart": "2025-01-20",
+        "priceGHS": 13.28
+      },
+      {
+        "weekStart": "2025-01-27",
+        "priceGHS": 15.85
+      },
+      {
+        "weekStart": "2025-02-03",
+        "priceGHS": 14.03
+      },
+      {
+        "weekStart": "2025-02-10",
+        "priceGHS": 12.59
+      },
+      {
+        "weekStart": "2025-02-17",
+        "priceGHS": 12.92
+      },
+      {
+        "weekStart": "2025-02-24",
+        "priceGHS": 12.65
+      },
+      {
+        "weekStart": "2025-03-03",
+        "priceGHS": 15.16
+      },
+      {
+        "weekStart": "2025-03-10",
+        "priceGHS": 15.81
+      },
+      {
+        "weekStart": "2025-03-17",
+        "priceGHS": 16.73
+      },
+      {
+        "weekStart": "2025-03-24",
+        "priceGHS": 17.78
+      },
+      {
+        "weekStart": "2025-03-31",
+        "priceGHS": 16.24
+      },
+      {
+        "weekStart": "2025-04-07",
+        "priceGHS": 15.74
+      },
+      {
+        "weekStart": "2025-04-14",
+        "priceGHS": 14.45
+      },
+      {
+        "weekStart": "2025-04-21",
+        "priceGHS": 12.71
+      },
+      {
+        "weekStart": "2025-04-28",
+        "priceGHS": 12.5
+      },
+      {
+        "weekStart": "2025-05-05",
+        "priceGHS": 11.63
+      },
+      {
+        "weekStart": "2025-05-12",
+        "priceGHS": 12.21
+      },
+      {
+        "weekStart": "2025-05-19",
+        "priceGHS": 12.29
+      },
+      {
+        "weekStart": "2025-05-26",
+        "priceGHS": 11.42
+      },
+      {
+        "weekStart": "2025-06-02",
+        "priceGHS": 12.64
+      },
+      {
+        "weekStart": "2025-06-09",
+        "priceGHS": 9.03
+      },
+      {
+        "weekStart": "2025-06-16",
+        "priceGHS": 12.95
+      },
+      {
+        "weekStart": "2025-06-23",
+        "priceGHS": 9.07
+      },
+      {
+        "weekStart": "2025-06-30",
+        "priceGHS": 13.8
+      },
+      {
+        "weekStart": "2025-07-07",
+        "priceGHS": 8.31
+      },
+      {
+        "weekStart": "2025-07-14",
+        "priceGHS": 8.22
+      },
+      {
+        "weekStart": "2025-07-21",
+        "priceGHS": 10.9
+      },
+      {
+        "weekStart": "2025-07-28",
+        "priceGHS": 9.04
+      },
+      {
+        "weekStart": "2025-08-04",
+        "priceGHS": 8.86
+      },
+      {
+        "weekStart": "2025-08-11",
+        "priceGHS": 8.34
+      },
+      {
+        "weekStart": "2025-08-18",
+        "priceGHS": 9.24
+      },
+      {
+        "weekStart": "2025-08-25",
+        "priceGHS": 12.68
+      },
+      {
+        "weekStart": "2025-09-01",
+        "priceGHS": 13.65
+      },
+      {
+        "weekStart": "2025-09-08",
+        "priceGHS": 10.67
+      },
+      {
+        "weekStart": "2025-09-15",
+        "priceGHS": 9.55
+      },
+      {
+        "weekStart": "2025-09-22",
+        "priceGHS": 12.8
+      },
+      {
+        "weekStart": "2025-09-29",
+        "priceGHS": 9.57
+      },
+      {
+        "weekStart": "2025-10-06",
+        "priceGHS": 11.88
+      },
+      {
+        "weekStart": "2025-10-13",
+        "priceGHS": 9.61
+      },
+      {
+        "weekStart": "2025-10-20",
+        "priceGHS": 11.66
+      },
+      {
+        "weekStart": "2025-10-27",
+        "priceGHS": 11.91
+      },
+      {
+        "weekStart": "2025-11-03",
+        "priceGHS": 13.56
+      },
+      {
+        "weekStart": "2025-11-10",
+        "priceGHS": 10.09
+      },
+      {
+        "weekStart": "2025-11-17",
+        "priceGHS": 12.76
+      },
+      {
+        "weekStart": "2025-11-24",
+        "priceGHS": 13.14
+      },
+      {
+        "weekStart": "2025-12-01",
+        "priceGHS": 11.97
+      },
+      {
+        "weekStart": "2025-12-08",
+        "priceGHS": 15.97
+      },
+      {
+        "weekStart": "2025-12-15",
+        "priceGHS": 12.72
+      },
+      {
+        "weekStart": "2025-12-22",
+        "priceGHS": 15.96
+      },
+      {
+        "weekStart": "2025-12-29",
+        "priceGHS": 13.05
+      },
+      {
+        "weekStart": "2026-01-05",
+        "priceGHS": 13.98
+      },
+      {
+        "weekStart": "2026-01-12",
+        "priceGHS": 14.61
+      },
+      {
+        "weekStart": "2026-01-19",
+        "priceGHS": 14.45
+      },
+      {
+        "weekStart": "2026-01-26",
+        "priceGHS": 13.16
+      },
+      {
+        "weekStart": "2026-02-02",
+        "priceGHS": 13.51
+      },
+      {
+        "weekStart": "2026-02-09",
+        "priceGHS": 16.21
+      },
+      {
+        "weekStart": "2026-02-16",
+        "priceGHS": 14.67
+      },
+      {
+        "weekStart": "2026-02-23",
+        "priceGHS": 12.78
+      },
+      {
+        "weekStart": "2026-03-02",
+        "priceGHS": 14.58
+      },
+      {
+        "weekStart": "2026-03-09",
+        "priceGHS": 15.04
+      },
+      {
+        "weekStart": "2026-03-16",
+        "priceGHS": 14.64
+      },
+      {
+        "weekStart": "2026-03-23",
+        "priceGHS": 17.81
+      },
+      {
+        "weekStart": "2026-03-30",
+        "priceGHS": 16.09
+      },
+      {
+        "weekStart": "2026-04-06",
+        "priceGHS": 14.37
+      },
+      {
+        "weekStart": "2026-04-13",
+        "priceGHS": 12.85
+      },
+      {
+        "weekStart": "2026-04-20",
+        "priceGHS": 12.61
+      },
+      {
+        "weekStart": "2026-04-27",
+        "priceGHS": 14.8
+      },
+      {
+        "weekStart": "2026-05-04",
+        "priceGHS": 12.41
+      },
+      {
+        "weekStart": "2026-05-11",
+        "priceGHS": 14.85
+      },
+      {
+        "weekStart": "2026-05-18",
+        "priceGHS": 12.03
+      },
+      {
+        "weekStart": "2026-05-25",
+        "priceGHS": 14.42
+      },
+      {
+        "weekStart": "2026-06-01",
+        "priceGHS": 9.44
+      },
+      {
+        "weekStart": "2026-06-08",
+        "priceGHS": 13.6
+      },
+      {
+        "weekStart": "2026-06-15",
+        "priceGHS": 11.17
+      },
+      {
+        "weekStart": "2026-06-22",
+        "priceGHS": 9.45
+      },
+      {
+        "weekStart": "2026-06-29",
+        "priceGHS": 10.42
+      },
+      {
+        "weekStart": "2026-07-06",
+        "priceGHS": 11.92
+      },
+      {
+        "weekStart": "2026-07-13",
+        "priceGHS": 12.87
+      },
+      {
+        "weekStart": "2026-07-20",
+        "priceGHS": 9.89
+      },
+      {
+        "weekStart": "2026-07-27",
+        "priceGHS": 12.44
+      }
+    ]
+  }
+}

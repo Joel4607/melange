@@ -25,7 +25,7 @@ const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY as string;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 (async () => {
-  const { data, error } = await supabase.from("profiles").select("id").limit(1);
+  const { error } = await supabase.from("profiles").select("id").limit(1);
   if (error) {
     console.error(`❌ Supabase connection test failed: ${error.message}`);
     process.exit(1);

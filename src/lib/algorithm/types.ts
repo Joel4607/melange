@@ -91,12 +91,15 @@ export interface TrustBreakdown {
 
 export interface RunnerCandidate {
   runnerId: string;
-  location: GeoPoint;
+  location: GeoPoint | null;
   /** Trust score in [0, 1], typically produced by the trust module. */
   trust: number;
   /** Number of tasks the runner is currently committed to. */
   activeLoad: number;
   available: boolean;
+  active: boolean;
+  verified: boolean;
+  fraudAction: FraudAction;
   /** Task categories the runner can handle; omit/empty = any. */
   capabilities?: string[];
 }
@@ -110,7 +113,7 @@ export interface TaskRequest {
 export interface MatchWeights {
   proximity: number;
   trust: number;
-  availability: number;
+  capacity: number;
   urgency: number;
 }
 
@@ -119,14 +122,23 @@ export interface MatchConfig {
   weights: MatchWeights;
   /** Distance scale (km) for the proximity transform exp(-d / d0). */
   distanceScaleKm: number;
+  /** Assumed average travel speed used for explainable pickup-time estimates. */
+  assumedTravelSpeedKmh: number;
+  /** Additional pickup delay attributed to every active task. */
+  delayMinutesPerActiveTask: number;
+  /** Pickup-time target used to transform ETA into an urgency fit. */
+  urgencyTargetMinutes: Record<Urgency, number>;
+  algorithmVersion: string;
+  configVersion: string;
 }
 
 export interface MatchComponents {
   proximity: number;
   trust: number;
-  availability: number;
+  capacity: number;
   urgencyFit: number;
   distanceKm: number;
+  estimatedPickupMinutes: number;
 }
 
 export interface MatchResult {
@@ -135,6 +147,11 @@ export interface MatchResult {
   matchScore: number;
   components: MatchComponents;
 }
+
+export type MatchRunOutcome =
+  | { status: "matched"; runId: string; results: MatchResult[] }
+  | { status: "no_candidates"; runId: string; results: [] }
+  | { status: "not_posted"; runId: null; results: [] };
 
 // ---------------------------------------------------------------------------
 // Fraud detection

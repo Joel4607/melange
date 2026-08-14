@@ -13,8 +13,8 @@
  * reproducible by the examiner.
  */
 
-import { writeFileSync } from "fs";
-import { resolve } from "path";
+import { writeFileSync } from "node:fs";
+import { resolve } from "node:path";
 import {
   predictPrice,
   MARKET_CATALOGUE,
@@ -22,12 +22,14 @@ import {
   type PriceObservation,
 } from "../src/lib/algorithm/market-price";
 import {
+  formatWalkTime,
   routeThroughZones,
   type ZoneGraph,
 } from "../src/lib/algorithm/market-routing";
 import madinaRaw from "../src/lib/algorithm/data/madina-market-zones.json" assert { type: "json" };
 
 const MADINA = madinaRaw as ZoneGraph;
+const HISTORY_GENERATED_AT = "2026-07-27T00:00:00.000Z";
 
 // ---------------------------------------------------------------------------
 // Deterministic PRNG (mulberry32)
@@ -167,7 +169,6 @@ function computeRoutingTable(): {
   greedyFmt: string;
   randomFmt: string;
 }[] {
-  const { formatWalkTime } = require("../src/lib/algorithm/market-routing");
   return SHOPPING_SCENARIOS.map((s) => {
     const result = routeThroughZones(s.items, MADINA);
     return {
@@ -219,7 +220,7 @@ async function main() {
     "../src/lib/algorithm/data/market-price-history.json",
   );
   const payload = {
-    generated: new Date().toISOString(),
+    generated: HISTORY_GENERATED_AT,
     prngSeed: 1337,
     note: "Simulated 104-week price history for Madina Market, Accra. Calibrated against Ghana Statistical Service CPI food sub-indices and UG Legon student field observations.",
     items: MARKET_CATALOGUE.map((c) => ({

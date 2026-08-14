@@ -41,6 +41,7 @@ export interface TaskRow {
   fee: string;
   payment_reference: string | null;
   status: TaskStatus;
+  active_match_run_id: string | null;
   selected_runner_id: string | null;
   accepted_at: string | null;
   completed_at: string | null;

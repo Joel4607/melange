@@ -102,3 +102,28 @@ export async function refund(taskId: string): Promise<void> {
   const { error } = await db.rpc("refund_funds", { p_task_id: taskId });
   if (error) throw new Error(`escrow: ${error.message}`);
 }
+
+export interface CancelledTask {
+  selected_runner_id: string | null;
+  buyer_id: string;
+  task_title: string;
+}
+
+/** Lock, authorize, cancel, and refund a task in one database transaction. */
+export async function cancelTaskWithRefund(
+  taskId: string,
+  actorId: string,
+  actorKind: "buyer" | "runner",
+): Promise<CancelledTask | null> {
+  const db = getServiceClient();
+  const { data, error } = await db.rpc("cancel_task_with_refund", {
+    p_task_id: taskId,
+    p_actor_id: actorId,
+    p_actor_kind: actorKind,
+  });
+  if (error) throw new Error(`escrow: ${error.message}`);
+  const row = (Array.isArray(data) ? data[0] : data) as
+    | (CancelledTask & { status: "cancelled" | "not_cancellable" })
+    | null;
+  return row?.status === "cancelled" ? row : null;
+}
