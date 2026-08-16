@@ -2,6 +2,13 @@
 
 Walking skeleton for the Melange errand marketplace: a minimal **Next.js + Supabase** app, deployed to **Vercel** with CI/CD. The goal of this first slice is to prove the end-to-end pipeline (code → CI → deploy → live Supabase connection) before any features are built on top.
 
+## Native Android migration
+
+The repository-specific Kotlin/Jetpack Compose rebuilding specification starts at
+[`docs/android-migration/00_ANDROID_MIGRATION_GUIDE.md`](docs/android-migration/00_ANDROID_MIGRATION_GUIDE.md).
+It links one implementation document per major module and is based on the source
+state after the Errand-Share PR #86 merge.
+
 ## Stack
 
 - **Next.js 16** (App Router) + TypeScript + Tailwind
