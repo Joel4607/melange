@@ -21,11 +21,16 @@ import { Logo } from "@/components/brand";
 import { RealtimeStatus } from "../../realtime-status";
 import { MapView, MapMarker, type LiveRunner } from "../../map-view";
 import {
+  acceptSharedOffer,
   cancelErrand,
+  confirmSharedEscrow,
+  declineSharedOffer,
   payIntoEscrow,
   raiseDispute,
   rateRunner,
   rematch,
+  rematchSharedGroup,
+  startSharedTrip,
 } from "../../actions";
 import { TaskActions } from "../../dashboard-widgets";
 import { TaskChat } from "./task-chat";
@@ -49,6 +54,17 @@ type TaskStatus =
   | "cancelled";
 
 const STEPS = ["Posted", "Matched", "Paid", "Delivered"] as const;
+const SHARE_ROUTE_LABELS = ["Pickup 1", "Pickup 2", "Drop-off 1", "Drop-off 2"] as const;
+
+interface ShareGroupView {
+  id: string;
+  status: "posted" | "awaiting_funding" | "offered" | "accepted" | "in_progress" | "completed" | "dissolved";
+  predicted_shared_km: number;
+  predicted_saved_km: number;
+  stricter_deadline_at: string | null;
+  confirmation_deadline_at: string;
+  ordered_route?: { taskId: string; kind: "pickup" | "dropoff" }[];
+}
 
 function stepIndex(status: TaskStatus, selectedRunnerId: string | null): number {
   switch (status) {
@@ -86,7 +102,7 @@ export default async function ErrandPage({
   const { data: task } = await db
     .from("tasks")
     .select(
-      "id, buyer_id, title, description, category, urgency, price, fee, payment_reference, status, active_match_run_id, selected_runner_id, pickup_lat, pickup_lng, dropoff_lat, dropoff_lng, stops, recurrence, recurrence_end_date, parent_task_id, series_number, created_at, accepted_at, completed_at",
+      "id, buyer_id, title, description, category, urgency, price, fee, payment_reference, status, active_match_run_id, selected_runner_id, pickup_lat, pickup_lng, dropoff_lat, dropoff_lng, stops, recurrence, recurrence_end_date, parent_task_id, series_number, created_at, accepted_at, completed_at, share_state, share_window_ends_at, share_released_at, share_group_id, delivery_deadline_at",
     )
     .eq("id", id)
     .maybeSingle<{
@@ -114,6 +130,11 @@ export default async function ErrandPage({
       created_at: string;
       accepted_at: string | null;
       completed_at: string | null;
+      share_state: "ineligible" | "waiting" | "paired" | "released";
+      share_window_ends_at: string | null;
+      share_released_at: string | null;
+      share_group_id: string | null;
+      delivery_deadline_at: string | null;
     }>();
 
   if (!task) notFound();
@@ -129,6 +150,18 @@ export default async function ErrandPage({
   const isAdmin = profile?.is_admin ?? false;
 
   if (!isBuyer && !isRunner && !isAdmin) notFound();
+
+  let shareGroup: ShareGroupView | null = null;
+  if (task.share_group_id) {
+    const safeGroupFields =
+      "id, status, predicted_shared_km, predicted_saved_km, stricter_deadline_at, confirmation_deadline_at";
+    const { data } = await db
+      .from("errand_share_groups")
+      .select(isRunner ? `${safeGroupFields}, ordered_route` : safeGroupFields)
+      .eq("id", task.share_group_id)
+      .maybeSingle<ShareGroupView>();
+    shareGroup = data ?? null;
+  }
 
   let candidate: {
     runner_id: string;
@@ -292,6 +325,18 @@ export default async function ErrandPage({
   const showChat =
     (isBuyer || isRunner) && runnerId && chatAllowedStatuses.includes(task.status);
   const chatRecipientName = isBuyer ? runnerName : buyerName;
+  let pickupIndex = 0;
+  let dropoffIndex = 0;
+  const assignedRunnerRoute =
+    isRunner && shareGroup?.ordered_route
+      ? shareGroup.ordered_route.map((stop) => ({
+          ...stop,
+          label:
+            stop.kind === "pickup"
+              ? SHARE_ROUTE_LABELS[pickupIndex++]
+              : SHARE_ROUTE_LABELS[2 + dropoffIndex++],
+        }))
+      : [];
 
   return (
     <div className="flex min-h-dvh flex-col bg-cream">
@@ -327,6 +372,103 @@ export default async function ErrandPage({
         ) : null}
 
         <Stepper current={step} status={task.status} />
+
+        {isBuyer && task.share_state === "waiting" && task.share_window_ends_at ? (
+          <section className="mt-6 rounded-[1.5rem] border border-green/30 bg-green/5 p-6">
+            <p className="font-display text-lg font-semibold text-green-deep">
+              Looking for a shared trip
+            </p>
+            <p className="mt-1 text-sm text-muted">
+              We will automatically pair this errand when a safe shared route is available.
+              Sharing window ends{" "}
+              <time dateTime={task.share_window_ends_at}>
+                {new Date(task.share_window_ends_at).toLocaleString()}
+              </time>.
+            </p>
+          </section>
+        ) : null}
+
+        {isBuyer && task.share_state === "released" && task.status === "posted" ? (
+          <section className="mt-6 rounded-[1.5rem] border border-cream-deep bg-white p-6 shadow-sm">
+            <p className="font-display text-lg font-semibold text-green-deep">Continuing alone</p>
+            <p className="mt-1 text-sm text-muted">
+              This errand remains posted and available for immediate or manual rematching.
+            </p>
+          </section>
+        ) : null}
+
+        {isBuyer && shareGroup ? (
+          <section className="mt-6 rounded-[1.5rem] border border-green/30 bg-white p-6 shadow-sm">
+            <p className="font-display text-lg font-semibold text-green-deep">
+              {shareGroup.status === "awaiting_funding"
+                ? "Waiting for both payments"
+                : shareGroup.status === "accepted"
+                  ? "Shared trip accepted"
+                  : shareGroup.status === "in_progress"
+                    ? "Shared trip in progress"
+                    : shareGroup.status === "completed"
+                      ? "Shared trip completed"
+                      : "Paired"}
+            </p>
+            <p className="mt-1 text-sm text-muted">
+              Two errands share one route. Your task details remain private. Predicted route{" "}
+              {shareGroup.predicted_shared_km.toFixed(1)} km, saving{" "}
+              {shareGroup.predicted_saved_km.toFixed(1)} km.
+            </p>
+            {shareGroup.status === "awaiting_funding" && !held ? (
+              <form
+                action={confirmSharedEscrow.bind(null, shareGroup.id, task.id)}
+                className="mt-4"
+              >
+                <PrimaryButton>Confirm your unchanged budget</PrimaryButton>
+              </form>
+            ) : null}
+            {shareGroup.status === "posted" ? (
+              <form action={rematchSharedGroup.bind(null, shareGroup.id)} className="mt-4">
+                <SecondaryButton>Rematch shared trip</SecondaryButton>
+              </form>
+            ) : null}
+          </section>
+        ) : null}
+
+        {isRunner && shareGroup ? (
+          <section className="mt-6 rounded-[1.5rem] border border-green/30 bg-white p-6 shadow-sm">
+            <p className="font-display text-lg font-semibold text-green-deep">Shared runner opportunity</p>
+            <p className="mt-1 text-sm text-muted">2 errands · 4 ordered stops</p>
+            {shareGroup.status === "offered" ? (
+              <div className="mt-4 flex flex-wrap gap-3">
+                <form action={acceptSharedOffer.bind(null, shareGroup.id)}>
+                  <PrimaryButton>Accept shared trip</PrimaryButton>
+                </form>
+                <form action={declineSharedOffer.bind(null, shareGroup.id)}>
+                  <SecondaryButton>Decline</SecondaryButton>
+                </form>
+              </div>
+            ) : shareGroup.status === "accepted" ? (
+              <form action={startSharedTrip.bind(null, shareGroup.id)} className="mt-4">
+                <PrimaryButton>Start shared trip</PrimaryButton>
+              </form>
+            ) : null}
+          </section>
+        ) : null}
+
+        {isRunner && shareGroup?.ordered_route ? (
+          <section className="mt-5 rounded-[1.5rem] border border-cream-deep bg-white p-6 shadow-sm">
+            <p className="font-medium text-green-deep">Ordered shared route</p>
+            <ol className="mt-3 space-y-2 text-sm">
+              {assignedRunnerRoute.map((stop) => (
+                <li key={`${stop.taskId}-${stop.kind}`}>
+                  <Link
+                    href={`/app/errands/${stop.taskId}`}
+                    className="font-medium text-green-deep underline"
+                  >
+                    {stop.label}
+                  </Link>
+                </li>
+              ))}
+            </ol>
+          </section>
+        ) : null}
 
         {/* Matched runner */}
         {runnerId ? (
@@ -366,7 +508,7 @@ export default async function ErrandPage({
               </span>
             </div>
           </section>
-        ) : task.status === "posted" ? (
+        ) : task.status === "posted" && task.share_state !== "waiting" && !shareGroup ? (
           <section className="mt-6 rounded-[1.5rem] border border-cream-deep bg-white p-6 text-center shadow-sm">
             <Clock className="mx-auto h-6 w-6 text-orange-deep" aria-hidden />
             <p className="mt-2 font-medium text-green-deep">Finding a runner…</p>
@@ -710,7 +852,7 @@ export default async function ErrandPage({
               </div>
             ) : null}
           </div>
-        ) : isRunner ? (
+        ) : isRunner && (!shareGroup || shareGroup.status === "in_progress") ? (
           <section className="mt-6 rounded-[1.5rem] border border-cream-deep bg-white p-6 shadow-sm">
             <p className="text-xs font-medium uppercase tracking-wide text-muted">
               Runner actions

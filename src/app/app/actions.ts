@@ -13,6 +13,20 @@ import {
   refreshTrustScore,
 } from "@/lib/server/matching";
 import {
+  acceptShareOffer,
+  cancelShareGroupByRunner,
+  confirmShareFunding,
+  declineAndOfferNextShareCandidate,
+  dissolveShareGroupForCancellation,
+  enqueueOrPairErrand,
+  finalizeShareSelfClaim,
+  generateShareMatchRun,
+  offerShareToTopCandidate,
+  processDueShareWindows,
+  startShareGroup,
+  syncShareMemberCompletion,
+} from "@/lib/server/errand-share";
+import {
   cancelTaskWithRefund,
   hasLedgerEntry,
   holdFunds,
@@ -32,7 +46,12 @@ import {
   evaluateTaskFraud,
   persistFraudFlags,
 } from "@/lib/server/fraud";
-import type { TaskStop, Urgency } from "@/lib/algorithm";
+import {
+  shareWindowEndsAt,
+  todayDeadlineAt,
+  type TaskStop,
+  type Urgency,
+} from "@/lib/algorithm";
 import { isRunnerAvailable, type TimeRange } from "@/lib/availability";
 import { estimateErrandFee } from "@/lib/pricing";
 import type { ProofRow, TaskRow } from "@/lib/server/rows";
@@ -152,7 +171,7 @@ async function ownedTask(taskId: string, userId: string) {
   const db = getServiceClient();
   const { data: task } = await db
     .from("tasks")
-    .select("id, buyer_id, title, price, status, active_match_run_id, selected_runner_id")
+    .select("id, buyer_id, title, price, status, active_match_run_id, selected_runner_id, share_group_id, share_state")
     .eq("id", taskId)
     .maybeSingle<{
       id: string;
@@ -162,6 +181,8 @@ async function ownedTask(taskId: string, userId: string) {
       status: string;
       active_match_run_id: string | null;
       selected_runner_id: string | null;
+      share_group_id: string | null;
+      share_state: string;
     }>();
   if (!task || task.buyer_id !== userId) {
     throw new Error("Errand not found");
@@ -173,7 +194,7 @@ async function assignedTask(taskId: string, runnerId: string) {
   const db = getServiceClient();
   const { data: task } = await db
     .from("tasks")
-    .select("id, buyer_id, title, status, selected_runner_id, declined_runner_ids")
+    .select("id, buyer_id, title, status, selected_runner_id, declined_runner_ids, share_group_id")
     .eq("id", taskId)
     .maybeSingle<{
       id: string;
@@ -182,11 +203,48 @@ async function assignedTask(taskId: string, runnerId: string) {
       status: string;
       selected_runner_id: string | null;
       declined_runner_ids: string[];
+      share_group_id: string | null;
     }>();
   if (!task || task.selected_runner_id !== runnerId) {
     throw new Error("Errand not found");
   }
   return task;
+}
+
+async function ownedShareMember(groupId: string, userId: string) {
+  const db = getServiceClient();
+  const { data: task } = await db
+    .from("tasks")
+    .select("id, buyer_id, title, share_group_id")
+    .eq("share_group_id", groupId)
+    .eq("buyer_id", userId)
+    .maybeSingle<{ id: string; buyer_id: string; title: string; share_group_id: string }>();
+  if (!task) throw new Error("Shared errand not found");
+  return task;
+}
+
+async function shareMembers(groupId: string) {
+  const { data, error } = await getServiceClient()
+    .from("tasks")
+    .select("id, buyer_id, title")
+    .eq("share_group_id", groupId)
+    .returns<{ id: string; buyer_id: string; title: string }[]>();
+  if (error || !data || data.length !== 2) throw new Error("Shared errand is incomplete");
+  return data;
+}
+
+async function adjustRunnerLoad(runnerId: string, delta: number) {
+  const db = getServiceClient();
+  const { data: profile } = await db
+    .from("runner_profile")
+    .select("active_load")
+    .eq("user_id", runnerId)
+    .maybeSingle<{ active_load: number }>();
+  await db.from("runner_profile").upsert({
+    user_id: runnerId,
+    active_load: Math.max(0, (profile?.active_load ?? 0) + delta),
+    updated_at: new Date().toISOString(),
+  });
 }
 
 /**
@@ -321,7 +379,16 @@ export async function createErrand(formData: FormData) {
     redirect(`/app/errands/${task.id}`);
   }
 
-  // Auto-match: create a posted errand and run the matcher.
+  // Flexible, direct automatic errands enter the sharing window. Express,
+  // custom-stop, and pickup-only errands retain immediate ordinary matching.
+  const postedAt = new Date();
+  const shareEligible = urgency !== "express" && dropoff !== null && stops.length === 0;
+  const shareWindow = shareEligible
+    ? shareWindowEndsAt(postedAt.getTime(), urgency)
+    : null;
+  const deliveryDeadline = shareEligible && urgency === "normal"
+    ? todayDeadlineAt(postedAt.getTime())
+    : null;
   const { data: task, error } = await db
     .from("tasks")
     .insert({
@@ -341,6 +408,11 @@ export async function createErrand(formData: FormData) {
       recurrence,
       recurrence_end_date: recurrenceEndDate,
       series_number: 1,
+      share_state: shareEligible ? "waiting" : "ineligible",
+      share_window_ends_at: shareWindow ? new Date(shareWindow).toISOString() : null,
+      delivery_deadline_at: deliveryDeadline
+        ? new Date(deliveryDeadline).toISOString()
+        : null,
     })
     .select("id")
     .single<{ id: string }>();
@@ -348,11 +420,20 @@ export async function createErrand(formData: FormData) {
     throw new Error(error?.message ?? "Could not create errand");
   }
 
-  // Matching is best-effort: a transient failure shouldn't lose the errand.
+  // Pairing/matching is best-effort: a transient failure never loses the post.
   try {
-    await generateMatchRun(task.id);
+    if (shareEligible) {
+      await enqueueOrPairErrand(task.id);
+    } else {
+      await generateMatchRun(task.id);
+    }
   } catch {
     /* errand stays "posted"; buyer can re-run matching from the tracking page */
+  }
+  try {
+    await processDueShareWindows(5);
+  } catch {
+    /* request traffic is only a fallback for the protected scheduler */
   }
 
   revalidatePath("/app");
@@ -362,8 +443,12 @@ export async function createErrand(formData: FormData) {
 /** Re-run the matcher for an errand still waiting on a runner. */
 export async function rematch(taskId: string) {
   const userId = await requireUserId();
-  await ownedTask(taskId, userId);
-  await generateMatchRun(taskId, "manual");
+  const task = await ownedTask(taskId, userId);
+  if (task.share_group_id) {
+    await generateShareMatchRun(task.share_group_id, "manual");
+  } else {
+    await generateMatchRun(taskId, "manual");
+  }
   revalidatePath(`/app/errands/${taskId}`);
 }
 
@@ -381,11 +466,82 @@ export async function payIntoEscrow(taskId: string) {
   ) {
     return;
   }
+  if (task.share_group_id) {
+    const { ready } = await confirmShareFunding(task.share_group_id, taskId, userId);
+    if (ready) await offerShareToTopCandidate(task.share_group_id);
+    revalidatePath(`/app/errands/${taskId}`);
+    revalidatePath("/app");
+    return;
+  }
   if (!task.active_match_run_id) throw new Error("No active match is available");
 
   await offerToTopCandidate(taskId, true);
 
   revalidatePath(`/app/errands/${taskId}`);
+  revalidatePath("/app");
+}
+
+export async function confirmSharedEscrow(groupId: string, taskId: string) {
+  const userId = await requireUserId();
+  const task = await ownedTask(taskId, userId);
+  if (task.share_group_id !== groupId) throw new Error("Shared errand not found");
+  const { ready } = await confirmShareFunding(groupId, taskId, userId);
+  if (ready) await offerShareToTopCandidate(groupId);
+  revalidatePath(`/app/errands/${taskId}`);
+  revalidatePath("/app");
+}
+
+export async function rematchSharedGroup(groupId: string) {
+  const userId = await requireUserId();
+  const member = await ownedShareMember(groupId, userId);
+  const outcome = await generateShareMatchRun(groupId, "manual");
+  if (outcome.status === "matched") await offerShareToTopCandidate(groupId);
+  revalidatePath(`/app/errands/${member.id}`);
+  revalidatePath("/app");
+}
+
+export async function claimSharedGroup(groupId: string) {
+  const runnerId = await requireVerifiedRunner();
+  await requireActiveRunner(runnerId);
+  const outcome = await finalizeShareSelfClaim(groupId, runnerId);
+  if (outcome.status !== "matched") return;
+  await acceptSharedOffer(groupId);
+  revalidatePath("/app/feed");
+  revalidatePath("/app");
+}
+
+export async function acceptSharedOffer(groupId: string) {
+  const runnerId = await requireVerifiedRunner();
+  await requireActiveRunner(runnerId);
+  await acceptShareOffer(groupId, runnerId);
+  await adjustRunnerLoad(runnerId, 2);
+  await Promise.all((await shareMembers(groupId)).map((member) =>
+    createNotification(member.buyer_id, "share_accepted", {
+      task_id: member.id,
+      task_title: member.title,
+      share_group_id: groupId,
+    }),
+  ));
+  revalidatePath("/app");
+}
+
+export async function declineSharedOffer(groupId: string) {
+  const runnerId = await requireRunnerId();
+  const outcome = await declineAndOfferNextShareCandidate(groupId, runnerId);
+  if (outcome.status === "not_matchable") return;
+  const db = getServiceClient();
+  await db.from("trust_events").insert({
+    runner_id: runnerId,
+    type: "responsiveness",
+    value: 0,
+  });
+  await refreshTrustScore(runnerId);
+  revalidatePath("/app");
+}
+
+export async function startSharedTrip(groupId: string) {
+  const runnerId = await requireRunnerId();
+  await startShareGroup(groupId, runnerId);
   revalidatePath("/app");
 }
 
@@ -497,6 +653,10 @@ export async function acceptOffer(taskId: string) {
   const db = getServiceClient();
   const task = await assignedTask(taskId, runnerId);
   if (task.status !== "matched") return;
+  if (task.share_group_id) {
+    await acceptSharedOffer(task.share_group_id);
+    return;
+  }
   const acceptedAt = new Date();
 
   const { data: updated } = await db
@@ -601,6 +761,10 @@ export async function declineOffer(taskId: string) {
   const db = getServiceClient();
   const task = await assignedTask(taskId, runnerId);
   if (task.status !== "matched") return;
+  if (task.share_group_id) {
+    await declineSharedOffer(task.share_group_id);
+    return;
+  }
 
   const decline = await declineAndOfferNextCandidate(taskId, runnerId);
   if (decline.status === "not_matchable") return;
@@ -621,6 +785,10 @@ export async function markPickedUp(taskId: string) {
   const db = getServiceClient();
   const task = await assignedTask(taskId, runnerId);
   if (task.status !== "accepted") return;
+  if (task.share_group_id) {
+    await startSharedTrip(task.share_group_id);
+    return;
+  }
   const pickedUpAt = new Date();
 
   const { data: updated } = await db
@@ -702,6 +870,7 @@ export async function markDelivered(taskId: string, formData: FormData) {
   await recordMatchOutcomeEvent(taskId, runnerId, "completed", {
     occurredAt: completedAt,
   });
+  await syncShareMemberCompletion(taskId, completedAt);
 
   // Run fraud detection on the delivery proof before the completed event is
   // folded into the runner's trust score.
@@ -785,6 +954,19 @@ async function spawnNextRecurrence(
     return null;
   }
 
+  const shareEligible =
+    task.urgency !== "express" &&
+    task.dropoff_lat != null &&
+    task.dropoff_lng != null &&
+    (task.stops?.length ?? 0) === 0;
+  const createdAt = new Date();
+  const shareWindow = shareEligible
+    ? shareWindowEndsAt(createdAt.getTime(), task.urgency)
+    : null;
+  const deliveryDeadline = shareEligible && task.urgency === "normal"
+    ? todayDeadlineAt(createdAt.getTime())
+    : null;
+
   const { data: nextTask, error } = await db
     .from("tasks")
     .insert({
@@ -806,6 +988,11 @@ async function spawnNextRecurrence(
       series_number: (task.series_number ?? 1) + 1,
       payment_reference: task.payment_reference,
       status: "posted",
+      share_state: shareEligible ? "waiting" : "ineligible",
+      share_window_ends_at: shareWindow ? new Date(shareWindow).toISOString() : null,
+      delivery_deadline_at: deliveryDeadline
+        ? new Date(deliveryDeadline).toISOString()
+        : null,
     })
     .select("id")
     .single<{ id: string }>();
@@ -815,7 +1002,11 @@ async function spawnNextRecurrence(
   }
 
   try {
-    await generateMatchRun(nextTask.id);
+    if (shareEligible) {
+      await enqueueOrPairErrand(nextTask.id);
+    } else {
+      await generateMatchRun(nextTask.id);
+    }
   } catch {
     /* match is best-effort; task stays posted */
   }
@@ -1013,6 +1204,24 @@ export async function cancelErrand(taskId: string) {
   const task = await ownedTask(taskId, userId);
   if (task.status !== "posted" && task.status !== "matched") return;
 
+  if (task.share_group_id) {
+    const dissolved = await dissolveShareGroupForCancellation(task.share_group_id, taskId);
+    if (dissolved.survivingTaskId) {
+      try {
+        if (dissolved.survivingShareState === "waiting") {
+          await enqueueOrPairErrand(dissolved.survivingTaskId);
+        } else {
+          await generateMatchRun(dissolved.survivingTaskId, "automatic");
+        }
+      } catch {
+        /* survivor remains posted and can be manually rematched */
+      }
+    }
+    revalidatePath(`/app/errands/${taskId}`);
+    revalidatePath("/app");
+    return;
+  }
+
   const cancelled = await cancelTaskWithRefund(taskId, userId, "buyer");
   if (!cancelled) return;
   if (cancelled.selected_runner_id) {
@@ -1033,6 +1242,33 @@ export async function cancelRunnerErrand(taskId: string) {
   const db = getServiceClient();
   const task = await assignedTask(taskId, runnerId);
   if (task.status !== "accepted" && task.status !== "in_progress") return;
+
+  if (task.share_group_id) {
+    const cancelledGroup = await cancelShareGroupByRunner(task.share_group_id, runnerId);
+    await db.from("trust_events").insert({
+      runner_id: runnerId,
+      type: "cancelled",
+      value: 1,
+    });
+    if (cancelledGroup.buyerIds[0]) {
+      const cancelFraud = await evaluateCancellationFraud(
+        db,
+        runnerId,
+        cancelledGroup.buyerIds[0],
+        Date.now(),
+      );
+      await persistFraudFlags(db, runnerId, taskId, cancelFraud);
+    }
+    await refreshTrustScore(runnerId);
+    await Promise.all(cancelledGroup.buyerIds.map((buyerId) =>
+      createNotification(buyerId, "runner_cancelled", {
+        share_group_id: task.share_group_id,
+      }),
+    ));
+    await adjustRunnerLoad(runnerId, -2);
+    revalidatePath("/app");
+    return;
+  }
 
   const cancelled = await cancelTaskWithRefund(taskId, runnerId, "runner");
   if (!cancelled) return;

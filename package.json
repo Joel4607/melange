@@ -11,6 +11,7 @@
     "test:watch": "vitest",
     "seed": "node --env-file=.env.local --import tsx scripts/seed.ts",
     "seed:admin": "node --env-file=.env.local --import tsx scripts/seed-admin.ts",
+    "evaluate:errand-share": "node --import tsx scripts/evaluate-errand-share.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

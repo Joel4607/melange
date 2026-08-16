@@ -75,6 +75,6 @@ describe("matching action contracts", () => {
     expect(errandPage).toContain("active_match_run_id");
     expect(errandPage).not.toContain('.from("match_runs")');
     expect(feedPage).toContain('.eq("status", "posted")');
-    expect(errandPage).toContain(') : task.status === "posted" ? (');
+    expect(errandPage).toContain('task.status === "posted" &&');
   });
 });

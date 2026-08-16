@@ -22,7 +22,15 @@ export type NotificationType =
   | "dispute_raised"
   | "dispute_resolved"
   | "new_message"
-  | "recurring_scheduled";
+  | "recurring_scheduled"
+  | "share_paired"
+  | "share_dissolved"
+  | "share_continuing_alone"
+  | "share_funding_ready"
+  | "share_offer"
+  | "share_accepted"
+  | "share_member_delivered"
+  | "share_completed";
 
 function getTitle(type: NotificationType): string {
   switch (type) {
@@ -49,6 +57,22 @@ function getTitle(type: NotificationType): string {
       return "New message";
     case "recurring_scheduled":
       return "Next errand scheduled";
+    case "share_paired":
+      return "Shared trip found";
+    case "share_dissolved":
+      return "Shared trip changed";
+    case "share_continuing_alone":
+      return "Errand continuing alone";
+    case "share_funding_ready":
+      return "Shared trip ready";
+    case "share_offer":
+      return "New shared errand offer";
+    case "share_accepted":
+      return "Shared trip accepted";
+    case "share_member_delivered":
+      return "Shared trip delivery update";
+    case "share_completed":
+      return "Shared trip completed";
   }
 }
 
@@ -79,6 +103,22 @@ function getBody(type: NotificationType, payload: NotificationPayload): string {
       return `You have a new message about ${title}.`;
     case "recurring_scheduled":
       return `Your recurring errand ${title} has been scheduled.`;
+    case "share_paired":
+      return `Your errand ${title} was paired into a shared trip. Your private details remain private.`;
+    case "share_dissolved":
+      return `The shared trip for ${title} changed. Your errand remains available.`;
+    case "share_continuing_alone":
+      return `Your errand ${title} is continuing as an individual errand.`;
+    case "share_funding_ready":
+      return `Both errands in the shared trip are funded and ready for a runner.`;
+    case "share_offer":
+      return `You have an offer for a two-errand shared trip.`;
+    case "share_accepted":
+      return `A runner accepted the shared trip containing ${title}.`;
+    case "share_member_delivered":
+      return `One stop in the shared trip containing ${title} was delivered.`;
+    case "share_completed":
+      return `The shared trip containing ${title} is complete.`;
   }
 }
 

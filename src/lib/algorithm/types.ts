@@ -107,6 +107,10 @@ export interface RunnerCandidate {
 export interface TaskRequest {
   pickup: GeoPoint;
   category?: string;
+  /** Capabilities required by a combined opportunity; every value is required. */
+  requiredCapabilities?: string[];
+  /** Number of active-load units this opportunity consumes. */
+  loadUnits?: number;
   urgency: Urgency;
 }
 
