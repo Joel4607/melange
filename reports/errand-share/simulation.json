@@ -1,0 +1,51 @@
+{
+  "algorithmVersion": "errand-share-v1",
+  "configVersion": "accra-v1",
+  "evaluationVersion": "errand-share-evaluation-v1",
+  "evidence": "simulated",
+  "generatorVersion": "errand-share-generator-v1",
+  "limitation": "Deterministic simulation supports repeatable engineering validation only; production outcomes are required for real-world claims.",
+  "metrics": {
+    "deadlineViolations": 0,
+    "detourViolations": 0,
+    "distanceSavedKm": 1474.837569,
+    "distanceSavingRate": 0.34161,
+    "eligibleErrands": 809,
+    "hardConstraintViolations": 0,
+    "maximumDetourKm": 0.945628,
+    "meanDetourKm": 0.170845,
+    "noSharingBaselineKm": 4317.307758,
+    "pairCount": 400,
+    "pairedErrands": 800,
+    "pairingRate": 0.988875,
+    "rejectionReasons": {
+      "detour_ratio_exceeded": 7,
+      "pickup_too_far": 1208
+    },
+    "sharedRouteKm": 2842.470189,
+    "simulatedCancellationRate": 0.085,
+    "simulatedCompletionRate": 0.83125,
+    "urgencySlices": {
+      "express": {
+        "eligible": 0,
+        "paired": 0,
+        "pairingRate": 0,
+        "scenarios": 191
+      },
+      "low": {
+        "eligible": 406,
+        "paired": 404,
+        "pairingRate": 0.995074,
+        "scenarios": 406
+      },
+      "normal": {
+        "eligible": 403,
+        "paired": 396,
+        "pairingRate": 0.98263,
+        "scenarios": 403
+      }
+    }
+  },
+  "scenarioCount": 1000,
+  "seed": 4607
+}

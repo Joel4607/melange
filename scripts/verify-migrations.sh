@@ -208,4 +208,203 @@ begin
 end $$;
 SQL
 
+echo ">>> smoke test: atomic errand sharing lifecycle"
+"${PSQL[@]}" <<'SQL'
+insert into auth.users (email, raw_user_meta_data)
+values
+  ('share-buyer-a@example.com', '{"name":"Share Buyer A"}'::jsonb),
+  ('share-buyer-b@example.com', '{"name":"Share Buyer B"}'::jsonb),
+  ('share-runner-a@example.com', '{"name":"Share Runner A"}'::jsonb),
+  ('share-runner-b@example.com', '{"name":"Share Runner B"}'::jsonb);
+
+do $$
+declare
+  v_buyer_a uuid;
+  v_buyer_b uuid;
+  v_runner_a uuid;
+  v_runner_b uuid;
+  v_task_a uuid;
+  v_task_b uuid;
+  v_due_task uuid;
+  v_claimed_task uuid;
+  v_group_id uuid;
+  v_run_id uuid;
+  v_status text;
+  v_offered_runner_id uuid;
+  v_ready boolean;
+  v_group_completed boolean;
+  v_decision jsonb;
+  v_candidates jsonb;
+begin
+  select id into v_buyer_a from public.profiles where name = 'Share Buyer A';
+  select id into v_buyer_b from public.profiles where name = 'Share Buyer B';
+  select id into v_runner_a from public.profiles where name = 'Share Runner A';
+  select id into v_runner_b from public.profiles where name = 'Share Runner B';
+
+  if has_function_privilege(
+       'authenticated', 'public.create_errand_share_group(uuid,uuid,jsonb)', 'EXECUTE'
+     ) or not has_function_privilege(
+       'service_role', 'public.create_errand_share_group(uuid,uuid,jsonb)', 'EXECUTE'
+     ) then
+    raise exception 'create_errand_share_group grants are incorrect';
+  end if;
+  if has_column_privilege(
+       'authenticated', 'public.errand_share_groups', 'ordered_route', 'SELECT'
+     ) or not has_column_privilege(
+       'authenticated', 'public.errand_share_groups', 'predicted_shared_km', 'SELECT'
+     ) then
+    raise exception 'errand-share route column privacy grants are incorrect';
+  end if;
+
+  insert into public.tasks (
+    buyer_id, title, category, pickup_lat, pickup_lng, dropoff_lat, dropoff_lng,
+    urgency, price, share_state, share_window_ends_at, delivery_deadline_at
+  ) values (
+    v_buyer_a, 'Shared A', 'pharmacy', 5.56, -0.20, 5.56, -0.18,
+    'normal', 25, 'waiting', now() + interval '10 minutes', now() + interval '8 hours'
+  ) returning id into v_task_a;
+  insert into public.tasks (
+    buyer_id, title, category, pickup_lat, pickup_lng, dropoff_lat, dropoff_lng,
+    urgency, price, share_state, share_window_ends_at
+  ) values (
+    v_buyer_b, 'Shared B', 'groceries', 5.561, -0.20, 5.561, -0.18,
+    'low', 25, 'waiting', now() + interval '30 minutes'
+  ) returning id into v_task_b;
+
+  v_decision := jsonb_build_object(
+    'accepted', true,
+    'algorithmVersion', 'errand-share-v1',
+    'configVersion', 'verify-v1',
+    'config', '{}'::jsonb,
+    'stricterDeadlineAt', extract(epoch from now() + interval '8 hours') * 1000,
+    'route', jsonb_build_array(
+      jsonb_build_object('taskId', v_task_a, 'kind', 'pickup'),
+      jsonb_build_object('taskId', v_task_b, 'kind', 'pickup'),
+      jsonb_build_object('taskId', v_task_a, 'kind', 'dropoff'),
+      jsonb_build_object('taskId', v_task_b, 'kind', 'dropoff')
+    ),
+    'metrics', jsonb_build_object(
+      'soloDistanceKm', 4,
+      'sharedDistanceKm', 2.1,
+      'savedDistanceKm', 1.9,
+      'taskMetrics', jsonb_build_object(
+        v_task_a::text, jsonb_build_object(
+          'directDistanceKm', 2, 'carriedDistanceKm', 2.05,
+          'detourKm', 0.05, 'detourRatio', 0.025,
+          'predictedCompletionAt', extract(epoch from now() + interval '50 minutes') * 1000
+        ),
+        v_task_b::text, jsonb_build_object(
+          'directDistanceKm', 2, 'carriedDistanceKm', 2.1,
+          'detourKm', 0.1, 'detourRatio', 0.05,
+          'predictedCompletionAt', extract(epoch from now() + interval '55 minutes') * 1000
+        )
+      )
+    )
+  );
+
+  select status, group_id into v_status, v_group_id
+  from public.create_errand_share_group(v_task_a, v_task_b, v_decision);
+  if v_status <> 'created'
+     or (select count(*) from public.errand_share_members where group_id = v_group_id) <> 2
+     or exists (
+       select 1 from public.tasks
+       where id = any(array[v_task_a, v_task_b])
+         and (share_state <> 'paired' or share_group_id <> v_group_id)
+     ) then
+    raise exception 'pair creation did not atomically create two members';
+  end if;
+
+  v_candidates := jsonb_build_array(
+    jsonb_build_object(
+      'runnerId', v_runner_a, 'rank', 1, 'matchScore', 0.9,
+      'components', jsonb_build_object(
+        'proximity', 0.9, 'trust', 0.8, 'capacity', 0.5,
+        'urgencyFit', 0.9, 'distanceKm', 0.5
+      )
+    ),
+    jsonb_build_object(
+      'runnerId', v_runner_b, 'rank', 2, 'matchScore', 0.8,
+      'components', jsonb_build_object(
+        'proximity', 0.8, 'trust', 0.8, 'capacity', 0.5,
+        'urgencyFit', 0.8, 'distanceKm', 0.8
+      )
+    )
+  );
+
+  select status, run_id into v_status, v_run_id
+  from public.finalize_share_match_run(
+    v_group_id, 'automatic', 'matching-v2', 'verify-v1', '{}'::jsonb, v_candidates
+  );
+  if v_status <> 'matched'
+     or (select status from public.errand_share_groups where id = v_group_id) <> 'awaiting_funding'
+     or exists (
+       select 1 from public.tasks
+       where id = any(array[v_task_a, v_task_b]) and status <> 'matched'
+     ) then
+    raise exception 'group match finalization was not atomic';
+  end if;
+
+  select status, ready into v_status, v_ready
+  from public.confirm_share_funding(v_group_id, v_task_a, v_buyer_a);
+  if v_status <> 'funded' or v_ready then
+    raise exception 'first member funding readiness is incorrect';
+  end if;
+  select status, ready into v_status, v_ready
+  from public.confirm_share_funding(v_group_id, v_task_b, v_buyer_b);
+  if v_status <> 'funded' or not v_ready then
+    raise exception 'second member funding readiness is incorrect';
+  end if;
+
+  select status, offered_runner_id into v_status, v_offered_runner_id
+  from public.offer_next_share_candidate(v_group_id, false);
+  if v_status <> 'offered' or v_offered_runner_id <> v_runner_a then
+    raise exception 'first shared candidate was not offered';
+  end if;
+  select status, offered_runner_id into v_status, v_offered_runner_id
+  from public.decline_and_offer_next_share_candidate(v_group_id, v_runner_a);
+  if v_status <> 'offered' or v_offered_runner_id <> v_runner_b then
+    raise exception 'shared decline did not rotate atomically';
+  end if;
+
+  select status into v_status from public.accept_share_offer(v_group_id, v_runner_b);
+  if v_status <> 'accepted' or exists (
+    select 1 from public.tasks
+    where id = any(array[v_task_a, v_task_b])
+      and (status <> 'accepted' or selected_runner_id <> v_runner_b)
+  ) then
+    raise exception 'shared acceptance did not update both tasks';
+  end if;
+  select status into v_status from public.start_share_group(v_group_id, v_runner_b);
+  if v_status <> 'started' then
+    raise exception 'shared group did not start';
+  end if;
+
+  update public.tasks set status = 'completed', completed_at = now() where id = v_task_a;
+  select status, group_completed into v_status, v_group_completed
+  from public.complete_share_member(v_group_id, v_task_a, now());
+  if v_status <> 'member_completed' or v_group_completed then
+    raise exception 'first member completion closed the group early';
+  end if;
+  update public.tasks set status = 'completed', completed_at = now() where id = v_task_b;
+  select status, group_completed into v_status, v_group_completed
+  from public.complete_share_member(v_group_id, v_task_b, now());
+  if v_status <> 'completed' or not v_group_completed
+     or (select status from public.errand_share_groups where id = v_group_id) <> 'completed' then
+    raise exception 'second member completion did not close the group';
+  end if;
+
+  insert into public.tasks (
+    buyer_id, title, pickup_lat, pickup_lng, share_state, share_window_ends_at
+  ) values (
+    v_buyer_a, 'Due share window', 5.56, -0.20, 'waiting', now() - interval '1 minute'
+  ) returning id into v_due_task;
+  select due.task_id into v_claimed_task
+  from public.claim_due_errand_share_tasks(1) due;
+  if v_claimed_task is distinct from v_due_task
+     or (select share_state from public.tasks where id = v_due_task) <> 'released' then
+    raise exception 'due waiting task was not atomically released';
+  end if;
+end $$;
+SQL
+
 echo ">>> migrations OK"

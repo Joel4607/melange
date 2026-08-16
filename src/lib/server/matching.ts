@@ -7,11 +7,13 @@ import {
   type FraudContext,
   type FraudAction,
   type FraudResult,
+  type GeoPoint,
+  type MatchResult,
   type MatchRunOutcome,
   type RunnerCandidate,
-  type TaskRequest,
   type TrustEvent,
   type TrustEventType,
+  type Urgency,
 } from "@/lib/algorithm";
 import { isRunnerAvailable } from "@/lib/availability";
 import {
@@ -78,6 +80,113 @@ export function toRunnerCandidate(
   };
 }
 
+export interface RunnerSnapshotRequest {
+  buyerIds: string[];
+  pickup: GeoPoint;
+  urgency: Urgency;
+  category?: string;
+  requiredCapabilities?: string[];
+  loadUnits?: number;
+  runnerIds?: string[];
+  now?: Date;
+}
+
+/** Resolve presence, availability, trust and fraud once, then run the pure matcher. */
+export async function rankAvailableRunners(
+  request: RunnerSnapshotRequest,
+): Promise<MatchResult[]> {
+  const db = getServiceClient();
+  const nowDate = request.now ?? new Date();
+  const now = nowDate.getTime();
+  let runnerQuery = db
+    .from("runner_profile")
+    .select(
+      "user_id, current_lat, current_lng, is_available, active_load, trust_score, verified, status, capabilities, available_manual, scheduled_hours",
+    );
+  if (request.runnerIds) {
+    runnerQuery = runnerQuery.in("user_id", request.runnerIds);
+  }
+  const { data: runners, error: runnersError } =
+    await runnerQuery.returns<RunnerProfileRow[]>();
+  if (runnersError) {
+    throw new Error(`rankAvailableRunners: ${runnersError.message}`);
+  }
+
+  const liveById = await liveRunnerLocations((runners ?? []).map((runner) => runner.user_id));
+  const resolvedRunners = (runners ?? []).map((runner) => {
+    const live = liveById.get(runner.user_id);
+    return live ? { ...runner, current_lat: live.lat, current_lng: live.lng } : runner;
+  });
+  const runnerIds = resolvedRunners.map((runner) => runner.user_id);
+  const uniqueBuyerIds = [...new Set(request.buyerIds)];
+  const [eventsByRunner, verifiedById, cancellationCounts, pairDisputeMaps, activeFlags] =
+    await Promise.all([
+      loadTrustEvents(db, runnerIds),
+      loadVerified(db, runnerIds),
+      loadCancellationCounts(db, runnerIds, now),
+      Promise.all(
+        uniqueBuyerIds.map((buyerId) => loadPairDisputeCounts(db, runnerIds, buyerId)),
+      ),
+      loadActiveFraudFlags(db, runnerIds),
+    ]);
+
+  const pairDisputeCounts = new Map<string, number>();
+  for (const counts of pairDisputeMaps) {
+    for (const [runnerId, count] of counts) {
+      pairDisputeCounts.set(runnerId, Math.max(pairDisputeCounts.get(runnerId) ?? 0, count));
+    }
+  }
+
+  const candidates: RunnerCandidate[] = [];
+  const trustScores: { user_id: string; trust_score: number; updated_at: string }[] = [];
+  for (const runner of resolvedRunners) {
+    const verified = verifiedById.get(runner.user_id) ?? false;
+    const { trust, action } = runnerTrustSnapshot(
+      eventsByRunner.get(runner.user_id) ?? [],
+      verified,
+      now,
+      {
+        recentCancellations: cancellationCounts.get(runner.user_id) ?? 0,
+        disputesWithSameCounterparty: pairDisputeCounts.get(runner.user_id) ?? 0,
+      },
+      activeFlags.has(runner.user_id),
+    );
+    trustScores.push({
+      user_id: runner.user_id,
+      trust_score: trust,
+      updated_at: nowDate.toISOString(),
+    });
+    candidates.push(
+      toRunnerCandidate(
+        runner,
+        trust,
+        verified,
+        action,
+        isRunnerAvailable(runner.available_manual, runner.scheduled_hours, nowDate),
+      ),
+    );
+  }
+
+  if (trustScores.length > 0) {
+    const { error } = await db
+      .from("runner_profile")
+      .upsert(trustScores, { onConflict: "user_id" });
+    if (error) throw new Error(`rankAvailableRunners: ${error.message}`);
+  }
+
+  return rankRunners(
+    {
+      pickup: request.pickup,
+      urgency: request.urgency,
+      category: request.category,
+      requiredCapabilities: request.requiredCapabilities,
+      loadUnits: request.loadUnits,
+    },
+    candidates,
+    CALIBRATED_MATCH_CONFIG,
+  );
+}
+
 /**
  * Run the matcher for a task and persist the ranking snapshot.
  *
@@ -108,88 +217,13 @@ export async function generateMatchRun(
     return { status: "not_posted", runId: null, results: [] };
   }
 
-  const { data: runners, error: runnersError } = await db
-    .from("runner_profile")
-    .select(
-      "user_id, current_lat, current_lng, is_available, active_load, trust_score, verified, status, capabilities, available_manual, scheduled_hours",
-    )
-    .returns<RunnerProfileRow[]>();
-  if (runnersError) {
-    throw new Error(`generateMatchRun: ${runnersError.message}`);
-  }
-
-  // Prefer fresh Redis presence positions over the (periodically synced)
-  // Postgres coords; runners with neither are unmatchable. Availability is
-  // computed from the manual toggle or the scheduled hours for the current time.
-  const liveById = await liveRunnerLocations(
-    (runners ?? []).map((r) => r.user_id),
-  );
-  const nowDate = new Date(now);
-  const resolvedRunners = (runners ?? [])
-    .map((r) => {
-      const live = liveById.get(r.user_id);
-      return live ? { ...r, current_lat: live.lat, current_lng: live.lng } : r;
-    });
-
-  const runnerIds = resolvedRunners.map((r) => r.user_id);
-  const [eventsByRunner, verifiedById, cancellationCounts, pairDisputeCounts, activeFraudFlags] =
-    await Promise.all([
-      loadTrustEvents(db, runnerIds),
-      loadVerified(db, runnerIds),
-      loadCancellationCounts(db, runnerIds, now),
-      loadPairDisputeCounts(db, runnerIds, task.buyer_id),
-      loadActiveFraudFlags(db, runnerIds),
-    ]);
-
-  const candidates: RunnerCandidate[] = [];
-  const trustScores: { user_id: string; trust_score: number; updated_at: string }[] = [];
-  for (const r of resolvedRunners) {
-    const verified = verifiedById.get(r.user_id) ?? false;
-    const events = eventsByRunner.get(r.user_id) ?? [];
-    const fraudContext: FraudContext = {
-      recentCancellations: cancellationCounts.get(r.user_id) ?? 0,
-      disputesWithSameCounterparty: pairDisputeCounts.get(r.user_id) ?? 0,
-    };
-    const { trust, action } = runnerTrustSnapshot(
-      events,
-      verified,
-      now,
-      fraudContext,
-      activeFraudFlags.has(r.user_id),
-    );
-
-    trustScores.push({
-      user_id: r.user_id,
-      trust_score: trust,
-      updated_at: new Date(now).toISOString(),
-    });
-
-    candidates.push(
-      toRunnerCandidate(
-        r,
-        trust,
-        verified,
-        action,
-        isRunnerAvailable(r.available_manual, r.scheduled_hours, nowDate),
-      ),
-    );
-  }
-
-  if (trustScores.length > 0) {
-    const { error: trustError } = await db
-      .from("runner_profile")
-      .upsert(trustScores, { onConflict: "user_id" });
-    if (trustError) {
-      throw new Error(`generateMatchRun: ${trustError.message}`);
-    }
-  }
-
-  const request: TaskRequest = {
+  const results = await rankAvailableRunners({
+    buyerIds: [task.buyer_id],
     pickup: { lat: task.pickup_lat, lng: task.pickup_lng },
     category: task.category ?? undefined,
     urgency: task.urgency,
-  };
-  const results = rankRunners(request, candidates, CALIBRATED_MATCH_CONFIG);
+    now: new Date(now),
+  });
   const { data, error } = await db.rpc("finalize_match_run", {
     p_task_id: task.id,
     p_source: source,
@@ -245,56 +279,16 @@ export async function finalizeSelfClaim(
   if (task.status !== "posted" || task.selected_runner_id) {
     return { status: "not_posted", runId: null, results: [] };
   }
+  if (task.buyer_id === runnerId) throw new Error("You cannot claim your own errand");
 
-  const { data: runnerRows, error: runnerError } = await db
-    .from("runner_profile")
-    .select(
-      "user_id, current_lat, current_lng, is_available, active_load, trust_score, verified, status, capabilities, available_manual, scheduled_hours",
-    )
-    .eq("user_id", runnerId)
-    .returns<RunnerProfileRow[]>();
-  if (runnerError) throw new Error(`finalizeSelfClaim: ${runnerError.message}`);
-  let runner = runnerRows?.[0];
-  if (!runner) throw new Error("Runner profile is missing");
-
-  const live = (await liveRunnerLocations([runnerId])).get(runnerId);
-  if (live) runner = { ...runner, current_lat: live.lat, current_lng: live.lng };
-
-  const [eventsByRunner, verifiedById, cancellationCounts, pairDisputeCounts, activeFlags] =
-    await Promise.all([
-      loadTrustEvents(db, [runnerId]),
-      loadVerified(db, [runnerId]),
-      loadCancellationCounts(db, [runnerId], now),
-      loadPairDisputeCounts(db, [runnerId], task.buyer_id),
-      loadActiveFraudFlags(db, [runnerId]),
-    ]);
-  const verified = verifiedById.get(runnerId) ?? false;
-  const { trust, action } = runnerTrustSnapshot(
-    eventsByRunner.get(runnerId) ?? [],
-    verified,
-    now,
-    {
-      recentCancellations: cancellationCounts.get(runnerId) ?? 0,
-      disputesWithSameCounterparty: pairDisputeCounts.get(runnerId) ?? 0,
-    },
-    activeFlags.has(runnerId),
-  );
-  const candidate = toRunnerCandidate(
-    runner,
-    trust,
-    verified,
-    action,
-    isRunnerAvailable(runner.available_manual, runner.scheduled_hours, new Date(now)),
-  );
-  const results = rankRunners(
-    {
-      pickup: { lat: task.pickup_lat, lng: task.pickup_lng },
-      category: task.category ?? undefined,
-      urgency: task.urgency,
-    },
-    [candidate],
-    CALIBRATED_MATCH_CONFIG,
-  );
+  const results = await rankAvailableRunners({
+    buyerIds: [task.buyer_id],
+    pickup: { lat: task.pickup_lat, lng: task.pickup_lng },
+    category: task.category ?? undefined,
+    urgency: task.urgency,
+    runnerIds: [runnerId],
+    now: new Date(now),
+  });
   if (results.length !== 1) {
     throw new Error("You are not currently eligible to claim this errand");
   }

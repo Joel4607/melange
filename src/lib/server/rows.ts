@@ -20,6 +20,15 @@ export type TaskStatus =
 export type DisputeStatus = "open" | "auto_resolved" | "escalated" | "resolved";
 export type DisputeResolutionDb = "refund" | "release" | "partial";
 export type VerificationStatus = "pending" | "approved" | "rejected";
+export type ShareState = "ineligible" | "waiting" | "paired" | "released";
+export type ShareGroupStatus =
+  | "posted"
+  | "awaiting_funding"
+  | "offered"
+  | "accepted"
+  | "in_progress"
+  | "completed"
+  | "dissolved";
 
 export interface TaskRow {
   id: string;
@@ -45,6 +54,103 @@ export interface TaskRow {
   selected_runner_id: string | null;
   accepted_at: string | null;
   completed_at: string | null;
+  share_state: ShareState;
+  share_window_ends_at: string | null;
+  share_released_at: string | null;
+  share_group_id: string | null;
+  delivery_deadline_at: string | null;
+}
+
+export interface ErrandShareGroupRow {
+  id: string;
+  status: ShareGroupStatus;
+  ordered_route: unknown;
+  algorithm_version: string;
+  config_version: string;
+  config: unknown;
+  predicted_solo_km: number;
+  predicted_shared_km: number;
+  predicted_saved_km: number;
+  stricter_deadline_at: string | null;
+  confirmation_deadline_at: string;
+  selected_runner_id: string | null;
+  active_match_run_id: string | null;
+  offered_at: string | null;
+  accepted_at: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  dissolved_at: string | null;
+  dissolution_reason: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ErrandShareMemberRow {
+  group_id: string;
+  task_id: string;
+  pickup_position: number;
+  dropoff_position: number;
+  direct_distance_km: number;
+  carried_distance_km: number;
+  detour_km: number;
+  detour_ratio: number | null;
+  predicted_completion_at: string;
+  escrow_confirmed_at: string | null;
+  completed_at: string | null;
+}
+
+export interface ErrandShareDecisionRow {
+  id: string;
+  task_a_id: string;
+  task_b_id: string;
+  accepted: boolean;
+  reason: string | null;
+  algorithm_version: string;
+  config_version: string;
+  config: unknown;
+  metrics: unknown;
+  deadline_met: boolean | null;
+  evaluated_at: string;
+}
+
+export interface ErrandShareMatchRunRow {
+  id: string;
+  group_id: string;
+  outcome: "matched" | "no_candidates";
+  source: "automatic" | "manual" | "self_claim";
+  algorithm_version: string;
+  config_version: string;
+  config: unknown;
+  candidate_count: number;
+  generated_at: string;
+}
+
+export interface ErrandShareMatchCandidateRow {
+  match_run_id: string;
+  runner_id: string;
+  rank: number;
+  match_score: number;
+  proximity: number;
+  trust: number;
+  capacity: number;
+  urgency_fit: number;
+  distance_km: number;
+}
+
+export interface ErrandShareMatchOutcomeRow {
+  id: string;
+  match_run_id: string;
+  group_id: string;
+  runner_id: string;
+  offered_at: string;
+  responded_at: string | null;
+  accepted: boolean;
+  declined: boolean;
+  started_at: string | null;
+  completed_at: string | null;
+  cancelled_at: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface RunnerProfileRow {

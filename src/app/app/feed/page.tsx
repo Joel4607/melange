@@ -7,7 +7,7 @@ import { getServiceClient } from "@/lib/supabase/service";
 import { Logo } from "@/components/brand";
 import { haversineKm } from "@/lib/algorithm";
 import { isRunnerAvailable } from "@/lib/availability";
-import { claimTask } from "../actions";
+import { claimSharedGroup, claimTask } from "../actions";
 import { RealtimeStatus } from "../realtime-status";
 import { MapView, MapMarker } from "../map-view";
 
@@ -28,6 +28,21 @@ interface OpenTask {
   dropoff_lat: number | null;
   dropoff_lng: number | null;
   created_at: string;
+}
+
+interface OpenShareGroup {
+  id: string;
+  predicted_shared_km: number;
+  stricter_deadline_at: string | null;
+  created_at: string;
+}
+
+interface ShareMemberSummary {
+  id: string;
+  buyer_id: string;
+  category: string | null;
+  price: string;
+  fee: string;
 }
 
 export default async function FeedPage() {
@@ -71,9 +86,34 @@ export default async function FeedPage() {
     )
     .eq("status", "posted")
     .is("selected_runner_id", null)
+    .is("share_group_id", null)
     .neq("buyer_id", user.id)
     .order("created_at", { ascending: false })
     .returns<OpenTask[]>();
+
+  const { data: shareGroups } = await db
+    .from("errand_share_groups")
+    .select("id, predicted_shared_km, stricter_deadline_at, created_at")
+    .eq("status", "posted")
+    .is("selected_runner_id", null)
+    .order("created_at", { ascending: false })
+    .returns<OpenShareGroup[]>();
+  const groupIds = (shareGroups ?? []).map((group) => group.id);
+  const { data: shareMembers } = groupIds.length > 0
+    ? await db
+        .from("errand_share_members")
+        .select("group_id, task_id")
+        .in("group_id", groupIds)
+        .returns<{ group_id: string; task_id: string }[]>()
+    : { data: [] as { group_id: string; task_id: string }[] };
+  const shareTaskIds = (shareMembers ?? []).map((member) => member.task_id);
+  const { data: shareTasks } = shareTaskIds.length > 0
+    ? await db
+        .from("tasks")
+        .select("id, buyer_id, category, price, fee")
+        .in("id", shareTaskIds)
+        .returns<ShareMemberSummary[]>()
+    : { data: [] as ShareMemberSummary[] };
 
   const runnerLocation =
     profile?.current_lat != null && profile?.current_lng != null
@@ -88,6 +128,51 @@ export default async function FeedPage() {
         ? haversineKm(runnerLocation, { lat: task.pickup_lat, lng: task.pickup_lng })
         : null;
     return { ...task, distance };
+  });
+
+  const shareTaskById = new Map((shareTasks ?? []).map((task) => [task.id, task]));
+  const membersByGroup = new Map<string, ShareMemberSummary[]>();
+  for (const member of shareMembers ?? []) {
+    const summary = shareTaskById.get(member.task_id);
+    if (!summary) continue;
+    membersByGroup.set(member.group_id, [...(membersByGroup.get(member.group_id) ?? []), summary]);
+  }
+  const sharedOpportunities = (shareGroups ?? []).flatMap((group) => {
+    const members = membersByGroup.get(group.id) ?? [];
+    if (members.length !== 2 || members.some((member) => member.buyer_id === user.id)) return [];
+    const requiredCapabilities = [...new Set(
+      members.map((member) => member.category).filter((value): value is string => Boolean(value)),
+    )];
+    return [{
+      kind: "share" as const,
+      id: group.id,
+      createdAt: group.created_at,
+      deadlineAt: group.stricter_deadline_at,
+      distanceKm: group.predicted_shared_km,
+      payout: members.reduce(
+        (sum, member) => sum + Number(member.price) - Number(member.fee),
+        0,
+      ),
+      capable:
+        capabilities.size === 0 ||
+        requiredCapabilities.every((category) => capabilities.has(category)),
+      categories: requiredCapabilities,
+    }];
+  });
+
+  const opportunities = [
+    ...tasksWithDistance.map((task) => ({
+      kind: "task" as const,
+      id: task.id,
+      createdAt: task.created_at,
+      deadlineAt: null,
+      task,
+    })),
+    ...sharedOpportunities,
+  ].sort((a, b) => {
+    const aTime = new Date(a.deadlineAt ?? a.createdAt).getTime();
+    const bTime = new Date(b.deadlineAt ?? b.createdAt).getTime();
+    return aTime - bTime || a.id.localeCompare(b.id);
   });
 
   tasksWithDistance.sort((a, b) => {
@@ -159,7 +244,7 @@ export default async function FeedPage() {
           </div>
         )}
 
-        {tasksWithDistance.length === 0 ? (
+        {opportunities.length === 0 ? (
           <div className="mt-8 rounded-[1.5rem] border border-cream-deep bg-white p-6 text-center shadow-sm">
             <PackageCheck className="mx-auto h-8 w-8 text-orange-deep" aria-hidden />
             <p className="mt-3 font-medium text-green-deep">No open errands right now</p>
@@ -167,7 +252,53 @@ export default async function FeedPage() {
           </div>
         ) : (
           <ul className="mt-8 space-y-4">
-            {tasksWithDistance.map((task) => {
+            {opportunities.map((opportunity) => {
+              if (opportunity.kind === "share") {
+                return (
+                  <li
+                    key={opportunity.id}
+                    className="rounded-[1.5rem] border border-green/30 bg-white p-6 shadow-sm"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="font-display text-lg font-semibold text-green-deep">
+                          Shared route · 2 errands
+                        </p>
+                        <p className="text-sm text-muted">
+                          {opportunity.categories.join(" + ") || "Flexible errands"} · 4 ordered stops
+                        </p>
+                        <p className="mt-1 text-sm text-muted">
+                          Combined payout GHS {opportunity.payout.toFixed(2)} · {opportunity.distanceKm.toFixed(1)} km route
+                        </p>
+                        <p className="mt-1 text-sm text-muted">
+                          Stricter deadline: {opportunity.deadlineAt
+                            ? new Date(opportunity.deadlineAt).toLocaleString()
+                            : "Whenever"}
+                        </p>
+                      </div>
+                      {opportunity.capable && available && verified ? (
+                        <form action={claimSharedGroup.bind(null, opportunity.id)}>
+                          <button
+                            type="submit"
+                            className="rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-cream transition hover:bg-green-deep"
+                          >
+                            Claim shared trip
+                          </button>
+                        </form>
+                      ) : (
+                        <span className="rounded-full border border-cream-deep bg-cream/40 px-4 py-2 text-sm text-muted">
+                          {!verified
+                            ? "Verification required"
+                            : !available
+                              ? "Unavailable"
+                              : "Not in your capabilities"}
+                        </span>
+                      )}
+                    </div>
+                  </li>
+                );
+              }
+              const task = opportunity.task;
               const capable =
                 !task.category ||
                 capabilities.size === 0 ||

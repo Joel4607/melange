@@ -4,3 +4,4 @@ export * from "./trust";
 export * from "./matching";
 export * from "./fraud";
 export * from "./arbitration";
+export * from "./errand-share";

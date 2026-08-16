@@ -97,11 +97,12 @@ function isEligible(task: TaskRequest, candidate: RunnerCandidate): boolean {
   if (!isValidPoint(candidate.location)) return false;
   if (!Number.isFinite(candidate.trust)) return false;
   if (!Number.isFinite(candidate.activeLoad) || candidate.activeLoad < 0) return false;
+  const requiredCapabilities =
+    task.requiredCapabilities ?? (task.category ? [task.category] : []);
   if (
-    task.category &&
     candidate.capabilities &&
     candidate.capabilities.length > 0 &&
-    !candidate.capabilities.includes(task.category)
+    !requiredCapabilities.every((capability) => candidate.capabilities?.includes(capability))
   ) {
     return false;
   }
@@ -123,13 +124,17 @@ export function rankRunners(
   if (!isValidPoint(task.pickup)) {
     throw new Error("Task pickup must be a valid geographic point");
   }
+  const loadUnits = task.loadUnits ?? 1;
+  if (!Number.isInteger(loadUnits) || loadUnits <= 0) {
+    throw new Error("Task loadUnits must be a positive integer");
+  }
 
   const { weights } = config;
   const scored = candidates.filter((candidate) => isEligible(task, candidate)).map((candidate) => {
     const location = candidate.location as GeoPoint;
     const distanceKm = haversineKm(task.pickup, location);
     const proximity = Math.exp(-distanceKm / config.distanceScaleKm);
-    const capacity = 1 / (1 + candidate.activeLoad);
+    const capacity = 1 / (loadUnits + candidate.activeLoad);
     const trust = clamp01(candidate.trust);
     const straightLineTravelMinutes =
       (distanceKm / config.assumedTravelSpeedKmh) * 60;

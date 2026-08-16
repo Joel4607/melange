@@ -67,6 +67,47 @@ describe("rankRunners", () => {
     expect(ids).not.toContain("cannot");
   });
 
+  it("requires every capability for a shared opportunity", () => {
+    const task: TaskRequest = {
+      ...baseTask,
+      requiredCapabilities: ["pharmacy", "groceries"],
+    };
+    const ranked = rankRunners(task, [
+      runner("both", { capabilities: ["groceries", "pharmacy", "fragile"] }),
+      runner("partial", { capabilities: ["pharmacy"] }),
+      runner("any", { capabilities: [] }),
+    ]);
+
+    expect(ranked.map((result) => result.runnerId)).toEqual(["any", "both"]);
+  });
+
+  it("charges shared opportunities for both load units", () => {
+    const candidate = runner("runner", { activeLoad: 1 });
+    const single = rankRunners({ ...baseTask, loadUnits: 1 }, [candidate])[0];
+    const shared = rankRunners({ ...baseTask, loadUnits: 2 }, [candidate])[0];
+
+    expect(single.components.capacity).toBeCloseTo(1 / 2);
+    expect(shared.components.capacity).toBeCloseTo(1 / 3);
+    expect(shared.components.capacity).toBeLessThan(single.components.capacity);
+  });
+
+  it("preserves the legacy single-task ordering", () => {
+    const ranked = rankRunners(baseTask, [
+      runner("far-trusted", {
+        location: { lat: 5.69, lng: -0.187 },
+        trust: 0.95,
+      }),
+      runner("near-busy", { activeLoad: 2, trust: 0.8 }),
+      runner("near-free", { trust: 0.5 }),
+    ]);
+
+    expect(ranked.map((result) => result.runnerId)).toEqual([
+      "near-free",
+      "near-busy",
+      "far-trusted",
+    ]);
+  });
+
   it("all component scores are within [0, 1]", () => {
     const ranked = rankRunners(baseTask, [
       runner("a", { location: { lat: 5.9, lng: -0.4 }, activeLoad: 3 }),
