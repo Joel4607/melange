@@ -143,10 +143,16 @@ export default function Home() {
               Log in
             </Link>
             <Link
-              href="/app/runners"
-              className="rounded-full bg-orange px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-deep"
+              href="/app/runners?from=landing"
+              className="hidden rounded-full border border-cream-deep px-4 py-2.5 text-sm font-semibold text-green-deep transition hover:bg-white sm:inline-flex"
             >
               Find a runner
+            </Link>
+            <Link
+              href="/get-started"
+              className="rounded-full bg-orange px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-deep"
+            >
+              Get started
             </Link>
           </div>
         </nav>
@@ -178,7 +184,7 @@ export default function Home() {
 
             <div className="flex max-w-md flex-col gap-3 sm:flex-row">
               <Link
-                href="/app/runners"
+                href="/app/runners?from=landing"
                 className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-green px-6 py-3.5 font-semibold text-cream transition hover:bg-green-deep"
               >
                 Browse runners

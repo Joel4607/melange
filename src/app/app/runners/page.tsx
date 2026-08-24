@@ -32,6 +32,7 @@ export default async function RunnersPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const params = await searchParams;
+  const backHref = params.from === "landing" ? "/" : "/app";
   const supabase = await createClient();
   const {
     data: { user },
@@ -126,7 +127,7 @@ export default async function RunnersPage({
         <div className="mx-auto flex max-w-4xl items-center justify-between px-5 py-4">
           <Logo />
           <Link
-            href="/app"
+            href={backHref}
             className="inline-flex items-center gap-1.5 rounded-full border border-cream-deep px-4 py-2 text-sm font-medium text-green-deep transition hover:bg-white"
           >
             <ArrowLeft className="h-4 w-4" aria-hidden /> Back
