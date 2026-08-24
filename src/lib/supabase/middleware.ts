@@ -40,7 +40,7 @@ export async function updateSession(request: NextRequest) {
   if (!user && path.startsWith("/app")) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
-    url.searchParams.set("next", path);
+    url.searchParams.set("next", path + request.nextUrl.search);
     return NextResponse.redirect(url);
   }
 
