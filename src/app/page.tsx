@@ -191,7 +191,7 @@ export default function Home() {
                 <ArrowRight className="h-4 w-4" aria-hidden />
               </Link>
               <Link
-                href="/app/post"
+                href="/app/post?from=landing"
                 className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-cream-deep bg-white px-6 py-3.5 font-semibold text-green-deep transition hover:bg-cream/60"
               >
                 Quick match

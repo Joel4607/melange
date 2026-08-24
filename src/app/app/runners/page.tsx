@@ -32,7 +32,8 @@ export default async function RunnersPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const params = await searchParams;
-  const backHref = params.from === "landing" ? "/" : "/app";
+  const fromLanding = params.from === "landing";
+  const backHref = fromLanding ? "/" : "/app";
   const supabase = await createClient();
   const {
     data: { user },
@@ -156,7 +157,11 @@ export default async function RunnersPage({
         ) : (
           <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {runners.map((runner) => (
-              <RunnerCard key={runner.user_id} runner={runner} />
+              <RunnerCard
+                key={runner.user_id}
+                runner={runner}
+                fromLanding={fromLanding}
+              />
             ))}
           </div>
         )}
