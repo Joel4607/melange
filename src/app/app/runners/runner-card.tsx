@@ -2,6 +2,7 @@ import Link from "next/link";
 import { MapPin, Star, User, ShieldCheck, Bike } from "lucide-react";
 
 interface RunnerCardProps {
+  fromLanding?: boolean;
   runner: {
     user_id: string;
     profiles: { name: string | null; verified: boolean } | null;
@@ -12,7 +13,10 @@ interface RunnerCardProps {
   };
 }
 
-export function RunnerCard({ runner }: RunnerCardProps) {
+export function RunnerCard({
+  runner,
+  fromLanding = false,
+}: RunnerCardProps) {
   const name = runner.profiles?.name ?? "A trusted runner";
   const trustStars = (runner.trust_score * 5).toFixed(1);
   const category = runner.capabilities?.[0] ?? "Any Other Errand";
@@ -63,7 +67,7 @@ export function RunnerCard({ runner }: RunnerCardProps) {
       ) : null}
 
       <Link
-        href={`/app/post?runner=${runner.user_id}&category=${encodeURIComponent(category)}`}
+        href={`/app/post?runner=${runner.user_id}&category=${encodeURIComponent(category)}${fromLanding ? "&from=landing" : ""}`}
         className="mt-auto flex w-full items-center justify-center rounded-full bg-orange py-2.5 text-sm font-semibold text-white transition hover:bg-orange-deep"
       >
         Request {name.split(" ")[0]}

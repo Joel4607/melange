@@ -44,13 +44,5 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // New users have no reason to see the pre-auth role selector once authenticated.
-  if (user && path === "/get-started") {
-    const url = request.nextUrl.clone();
-    url.pathname = "/app";
-    url.search = "";
-    return NextResponse.redirect(url);
-  }
-
   return response;
 }
