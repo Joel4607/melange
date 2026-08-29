@@ -1,5 +1,5 @@
 import { getServiceClient } from "@/lib/supabase/service";
-import { getTelegramBotToken, getSiteUrl } from "./env";
+import { getTelegramBotToken, resolveTelegramWebhookUrl } from "./env";
 import { getBotUsernameFromToken } from "./init-data";
 
 export interface TelegramBotStatus {
@@ -35,7 +35,7 @@ export async function getTelegramBotStatus(adminId: string): Promise<TelegramBot
     }
   }
 
-  const expectedUrl = `${getSiteUrl()}/api/telegram/webhook`;
+  const expectedUrl = resolveTelegramWebhookUrl();
   const webhookActive = webhookUrl === expectedUrl;
 
   return {

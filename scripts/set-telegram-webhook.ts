@@ -1,4 +1,8 @@
-import { getTelegramBotToken, getWebhookSecret } from "@/lib/telegram/env";
+import {
+  getTelegramBotToken,
+  getWebhookSecret,
+  resolveTelegramWebhookUrl,
+} from "@/lib/telegram/env";
 
 async function main() {
   const token = getTelegramBotToken();
@@ -13,11 +17,7 @@ async function main() {
     process.exit(1);
   }
 
-  const url =
-    process.argv[2] ||
-    (process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}/api/telegram/webhook`
-      : "https://melange-liard.vercel.app/api/telegram/webhook");
+  const url = resolveTelegramWebhookUrl(process.argv[2]);
 
   const res = await fetch(`https://api.telegram.org/bot${token}/setWebhook`, {
     method: "POST",
