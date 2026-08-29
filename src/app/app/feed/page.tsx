@@ -59,7 +59,7 @@ export default async function FeedPage() {
   const [{ data: profile }, { data: userProfile }] = await Promise.all([
     db
       .from("runner_profile")
-      .select("current_lat, current_lng, capabilities, available_manual, scheduled_hours, verified")
+      .select("current_lat, current_lng, capabilities, available_manual, scheduled_hours")
       .eq("user_id", user.id)
       .maybeSingle<{
         current_lat: number | null;
@@ -67,7 +67,6 @@ export default async function FeedPage() {
         capabilities: string[] | null;
         available_manual: boolean | null;
         scheduled_hours: { day: number; start: string; end: string }[] | null;
-        verified: boolean;
       }>(),
     db
       .from("profiles")
@@ -76,7 +75,9 @@ export default async function FeedPage() {
       .maybeSingle<{ verified: boolean }>(),
   ]);
 
-  const verified = profile?.verified || userProfile?.verified || false;
+  const verified = userProfile?.verified ?? false;
+  if (!verified) redirect("/app/verify");
+
   const available = profile ? isRunnerAvailable(profile.available_manual, profile.scheduled_hours) : false;
 
   const { data: tasks } = await db
@@ -335,7 +336,7 @@ export default async function FeedPage() {
                       </form>
                     ) : (
                       <span className="rounded-full border border-cream-deep bg-cream/40 px-4 py-2 text-sm text-muted">
-                        {!profile?.verified
+                        {!verified
                           ? "Verification required"
                           : !available
                             ? "Unavailable"
