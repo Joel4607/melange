@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { pushSubscriptionDatabaseFailure } from "@/lib/server/push-subscription-errors";
 import { createClient } from "@/lib/supabase/server";
 import { getServiceClient } from "@/lib/supabase/service";
 
@@ -31,7 +32,7 @@ export async function POST(request: NextRequest) {
     .eq("endpoint", endpoint);
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return pushSubscriptionDatabaseFailure("delete", error);
   }
 
   return NextResponse.json({ ok: true });

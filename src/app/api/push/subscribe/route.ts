@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { pushSubscriptionDatabaseFailure } from "@/lib/server/push-subscription-errors";
 import { createClient } from "@/lib/supabase/server";
 import { getServiceClient } from "@/lib/supabase/service";
 
@@ -33,12 +34,16 @@ export async function POST(request: NextRequest) {
   }
 
   const db = getServiceClient();
-  const { data: existing } = await db
+  const { data: existing, error: lookupError } = await db
     .from("push_subscriptions")
     .select("id")
     .eq("user_id", user.id)
     .eq("endpoint", endpoint)
     .maybeSingle<{ id: string }>();
+
+  if (lookupError) {
+    return pushSubscriptionDatabaseFailure("lookup", lookupError);
+  }
 
   if (existing) {
     const { error } = await db
@@ -46,7 +51,7 @@ export async function POST(request: NextRequest) {
       .update({ p256dh, auth })
       .eq("id", existing.id);
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return pushSubscriptionDatabaseFailure("update", error);
     }
   } else {
     const { error } = await db.from("push_subscriptions").insert({
@@ -59,7 +64,7 @@ export async function POST(request: NextRequest) {
       if (error.code === "23505") {
         return NextResponse.json({ ok: true });
       }
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return pushSubscriptionDatabaseFailure("insert", error);
     }
   }
 
