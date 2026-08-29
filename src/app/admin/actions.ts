@@ -97,42 +97,24 @@ export async function updateFraudFlag(
   revalidatePath("/admin");
 }
 
-export async function approveVerificationAsAdmin(
-  requestId: string,
-  adminId: string,
-  skipRevalidate = false,
-) {
-  const ok = await approveVerificationCore(requestId, adminId);
-  if (ok && !skipRevalidate) {
-    revalidatePath("/admin");
-    revalidatePath("/app");
-    revalidatePath("/app/verify");
-  }
-  return ok;
-}
-
 export async function approveVerification(requestId: string) {
   const adminId = await requireAdmin();
-  await approveVerificationAsAdmin(requestId, adminId);
-}
-
-export async function rejectVerificationAsAdmin(
-  requestId: string,
-  adminId: string,
-  skipRevalidate = false,
-) {
-  const ok = await rejectVerificationCore(requestId, adminId);
-  if (ok && !skipRevalidate) {
+  const ok = await approveVerificationCore(requestId, adminId);
+  if (ok) {
     revalidatePath("/admin");
     revalidatePath("/app");
     revalidatePath("/app/verify");
   }
-  return ok;
 }
 
 export async function rejectVerification(requestId: string) {
   const adminId = await requireAdmin();
-  await rejectVerificationAsAdmin(requestId, adminId);
+  const ok = await rejectVerificationCore(requestId, adminId);
+  if (ok) {
+    revalidatePath("/admin");
+    revalidatePath("/app");
+    revalidatePath("/app/verify");
+  }
 }
 
 export async function generateTelegramLink(): Promise<{ ok: boolean; link?: string; error?: string }> {
