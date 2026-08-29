@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { escapeHtmlText } from "@/lib/security/html";
 
 export interface MapMarker {
   lat: number;
@@ -88,11 +89,11 @@ export function MapView({
       const existing = markerRefs.current.get(key);
       if (existing) {
         existing.setLatLng([m.lat, m.lng]);
-        existing.setPopupContent?.(m.label);
+        existing.setPopupContent?.(escapeHtmlText(m.label));
       } else {
         const marker = L.marker([m.lat, m.lng], { icon: markerIcon(m.kind) })
           .addTo(group as unknown as L.LayerGroup)
-          .bindPopup(m.label);
+          .bindPopup(escapeHtmlText(m.label));
         markerRefs.current.set(key, marker);
       }
     }
@@ -128,10 +129,11 @@ export function MapView({
     function setRunnerMarker(lat: number, lng: number) {
       if (runnerMarkerRef.current) {
         runnerMarkerRef.current.setLatLng([lat, lng]);
+        runnerMarkerRef.current.setPopupContent(escapeHtmlText(runnerLabel));
       } else {
         runnerMarkerRef.current = L.marker([lat, lng], { icon: markerIcon("runner") })
           .addTo(group as unknown as L.LayerGroup)
-          .bindPopup(runnerLabel);
+          .bindPopup(escapeHtmlText(runnerLabel));
       }
       fitBounds();
     }
