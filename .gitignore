@@ -24,6 +24,12 @@
 .DS_Store
 *.pem
 
+# private keys and signing credentials
+*.key
+*.p12
+*.pfx
+signing_keys.json
+
 # debug
 npm-debug.log*
 yarn-debug.log*

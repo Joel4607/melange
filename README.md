@@ -172,6 +172,20 @@ npm run seed      # needs SUPABASE_SERVICE_ROLE_KEY in .env.local
 
 Set the same variables in the Vercel project (Settings → Environment Variables).
 
+### Secret handling
+
+Keep application secrets in `.env.local` during development and in the hosting
+provider's secret store for deployments. Never commit private keys, signing
+bundles, service-role credentials, or generated signing-key JSON. This
+repository ignores `.pem`, `.key`, `.p12`, `.pfx`, and `signing_keys.json`
+artifacts; public certificates such as `.crt` and `.cer` remain committable when
+the application intentionally needs them.
+
+Before committing, inspect `git status` and use `git check-ignore -v <path>` to
+confirm sensitive artifacts are protected. If a secret is ever committed,
+revoke or rotate it immediately; deleting it in a later commit does not remove
+it from Git history.
+
 ## Scripts
 
 | Command             | Purpose                  |
