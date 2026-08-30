@@ -14,21 +14,33 @@ export async function createTelegramLinkToken(profileId: string): Promise<string
   return token;
 }
 
-export async function verifyTelegramLinkToken(
+export async function consumeTelegramLinkToken(
   token: string,
-): Promise<{ profileId: string } | null> {
+  telegramUserId: string,
+): Promise<{
+  profileId: string;
+  name: string | null;
+  alreadyLinked: boolean;
+} | null> {
   const db = getServiceClient();
   const { data, error } = await db
-    .from("telegram_link_tokens")
-    .select("profile_id, expires_at, used_at")
-    .eq("token", token)
-    .maybeSingle<{ profile_id: string; expires_at: string; used_at: string | null }>();
-  if (error || !data) return null;
-  if (data.used_at) return null;
-  if (new Date() > new Date(data.expires_at)) return null;
+    .rpc("link_telegram_from_token", {
+      p_token: token,
+      p_telegram_user_id: telegramUserId,
+    })
+    .maybeSingle<{
+      linked_profile_id: string;
+      linked_profile_name: string | null;
+      was_already_linked: boolean;
+    }>();
 
-  await db.from("telegram_link_tokens").update({ used_at: new Date().toISOString() }).eq("token", token);
-  return { profileId: data.profile_id };
+  if (error || !data) return null;
+
+  return {
+    profileId: data.linked_profile_id,
+    name: data.linked_profile_name,
+    alreadyLinked: data.was_already_linked,
+  };
 }
 
 export function getBotUsernameFromToken(botToken: string): Promise<string | null> {

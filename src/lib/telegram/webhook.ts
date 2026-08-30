@@ -3,7 +3,7 @@ import { approveVerificationCore, rejectVerificationCore } from "@/lib/server/ad
 import { logAdminAction } from "@/lib/server/admin-audit";
 import { resolveDisputeAdmin } from "@/lib/server/disputes";
 import { sendTelegramMessage, answerCallbackQuery, editTelegramMessage } from "./messaging";
-import { verifyTelegramLinkToken } from "./init-data";
+import { consumeTelegramLinkToken } from "./init-data";
 
 interface TelegramUser {
   id: number;
@@ -66,26 +66,16 @@ async function linkTelegramFromToken(
   token: string,
   telegramUserId: string,
 ): Promise<{ ok: boolean; name?: string | null; alreadyLinked?: boolean }> {
-  const db = getServiceClient();
-  const tokenData = await verifyTelegramLinkToken(token);
-  if (!tokenData) return { ok: false };
+  const link = await consumeTelegramLinkToken(token, telegramUserId);
+  if (!link) return { ok: false };
 
-  const { data: profile } = await db
-    .from("profiles")
-    .select("id, name, is_admin, telegram_user_id")
-    .eq("id", tokenData.profileId)
-    .maybeSingle<{ id: string; name: string | null; is_admin: boolean; telegram_user_id: string | null }>();
-
-  if (!profile || !profile.is_admin) return { ok: false };
-
-  const alreadyLinked = profile.telegram_user_id === telegramUserId;
-
-  if (!alreadyLinked) {
-    await db.from("profiles").update({ telegram_user_id: telegramUserId }).eq("id", profile.id);
-    await logAdminAction(profile.id, "telegram_link", profile.id, { telegram_user_id: telegramUserId });
+  if (!link.alreadyLinked) {
+    await logAdminAction(link.profileId, "telegram_link", link.profileId, {
+      telegram_user_id: telegramUserId,
+    });
   }
 
-  return { ok: true, name: profile.name, alreadyLinked };
+  return { ok: true, name: link.name, alreadyLinked: link.alreadyLinked };
 }
 
 async function handleStart(message: TelegramMessage): Promise<void> {

@@ -407,4 +407,172 @@ begin
 end $$;
 SQL
 
+echo ">>> smoke test: atomic Telegram link-token consumption"
+"${PSQL[@]}" <<'SQL'
+insert into auth.users (email, raw_user_meta_data)
+values
+  ('telegram-admin-verify@example.com', '{"name":"Telegram Admin Verify"}'::jsonb),
+  ('telegram-user-verify@example.com', '{"name":"Telegram User Verify"}'::jsonb);
+
+do $$
+declare
+  v_admin_id uuid;
+  v_user_id uuid;
+  v_linked_profile_id uuid;
+  v_linked_profile_name text;
+  v_was_already_linked boolean;
+  v_result_count integer;
+begin
+  select id into v_admin_id
+  from public.profiles
+  where name = 'Telegram Admin Verify';
+
+  select id into v_user_id
+  from public.profiles
+  where name = 'Telegram User Verify';
+
+  update public.profiles set is_admin = true where id = v_admin_id;
+
+  if not (select relrowsecurity from pg_class where oid = 'public.telegram_link_tokens'::regclass) then
+    raise exception 'telegram_link_tokens RLS is disabled';
+  end if;
+
+  if has_table_privilege('anon', 'public.telegram_link_tokens', 'SELECT')
+     or has_table_privilege('anon', 'public.telegram_link_tokens', 'INSERT')
+     or has_table_privilege('anon', 'public.telegram_link_tokens', 'UPDATE')
+     or has_table_privilege('anon', 'public.telegram_link_tokens', 'DELETE')
+     or has_table_privilege('authenticated', 'public.telegram_link_tokens', 'SELECT')
+     or has_table_privilege('authenticated', 'public.telegram_link_tokens', 'INSERT')
+     or has_table_privilege('authenticated', 'public.telegram_link_tokens', 'UPDATE')
+     or has_table_privilege('authenticated', 'public.telegram_link_tokens', 'DELETE')
+     or not has_table_privilege('service_role', 'public.telegram_link_tokens', 'SELECT')
+     or not has_table_privilege('service_role', 'public.telegram_link_tokens', 'INSERT')
+     or not has_table_privilege('service_role', 'public.telegram_link_tokens', 'UPDATE')
+     or not has_table_privilege('service_role', 'public.telegram_link_tokens', 'DELETE') then
+    raise exception 'telegram_link_tokens grants are incorrect';
+  end if;
+
+  if has_function_privilege(
+       'anon', 'public.link_telegram_from_token(text,text)', 'EXECUTE'
+     ) or has_function_privilege(
+       'authenticated', 'public.link_telegram_from_token(text,text)', 'EXECUTE'
+     ) or not has_function_privilege(
+       'service_role', 'public.link_telegram_from_token(text,text)', 'EXECUTE'
+     ) then
+    raise exception 'link_telegram_from_token grants are incorrect';
+  end if;
+
+  insert into public.telegram_link_tokens (token, profile_id, expires_at)
+  values ('verify-valid-token', v_admin_id, now() + interval '10 minutes');
+
+  select linked_profile_id, linked_profile_name, was_already_linked
+    into v_linked_profile_id, v_linked_profile_name, v_was_already_linked
+  from public.link_telegram_from_token('verify-valid-token', 'telegram-verify-42');
+
+  if v_linked_profile_id is distinct from v_admin_id
+     or v_linked_profile_name is distinct from 'Telegram Admin Verify'
+     or v_was_already_linked
+     or (select telegram_user_id from public.profiles where id = v_admin_id)
+        is distinct from 'telegram-verify-42'
+     or (select used_at from public.telegram_link_tokens where token = 'verify-valid-token') is null then
+    raise exception 'valid Telegram token was not linked and consumed atomically';
+  end if;
+
+  select count(*) into v_result_count
+  from public.link_telegram_from_token('verify-valid-token', 'telegram-verify-42');
+  if v_result_count <> 0 then
+    raise exception 'used Telegram token was accepted twice';
+  end if;
+
+  insert into public.telegram_link_tokens (token, profile_id, expires_at)
+  values ('verify-already-linked-token', v_admin_id, now() + interval '10 minutes');
+
+  select linked_profile_id, linked_profile_name, was_already_linked
+    into v_linked_profile_id, v_linked_profile_name, v_was_already_linked
+  from public.link_telegram_from_token('verify-already-linked-token', 'telegram-verify-42');
+
+  if v_linked_profile_id is distinct from v_admin_id
+     or not v_was_already_linked
+     or (select used_at from public.telegram_link_tokens where token = 'verify-already-linked-token') is null then
+    raise exception 'already-linked Telegram token behavior is incorrect';
+  end if;
+
+  insert into public.telegram_link_tokens (token, profile_id, expires_at)
+  values
+    ('verify-expired-token', v_admin_id, now() - interval '1 minute'),
+    ('verify-used-token', v_admin_id, now() + interval '10 minutes'),
+    ('verify-non-admin-token', v_user_id, now() + interval '10 minutes');
+  update public.telegram_link_tokens set used_at = now() where token = 'verify-used-token';
+
+  select count(*) into v_result_count
+  from (
+    select * from public.link_telegram_from_token('verify-expired-token', 'telegram-other')
+    union all
+    select * from public.link_telegram_from_token('verify-used-token', 'telegram-other')
+    union all
+    select * from public.link_telegram_from_token('verify-non-admin-token', 'telegram-other')
+  ) rejected;
+
+  if v_result_count <> 0
+     or (select used_at from public.telegram_link_tokens where token = 'verify-expired-token') is not null
+     or (select used_at from public.telegram_link_tokens where token = 'verify-non-admin-token') is not null
+     or (select telegram_user_id from public.profiles where id = v_user_id) is not null then
+    raise exception 'invalid Telegram token was accepted or mutated';
+  end if;
+
+  update public.profiles
+  set telegram_user_id = 'telegram-conflict'
+  where id = v_user_id;
+  insert into public.telegram_link_tokens (token, profile_id, expires_at)
+  values ('verify-conflict-token', v_admin_id, now() + interval '10 minutes');
+
+  begin
+    perform *
+    from public.link_telegram_from_token('verify-conflict-token', 'telegram-conflict');
+    raise exception 'duplicate Telegram ID did not reject the link';
+  exception
+    when unique_violation then null;
+  end;
+
+  if (select used_at from public.telegram_link_tokens where token = 'verify-conflict-token') is not null
+     or (select telegram_user_id from public.profiles where id = v_admin_id)
+        is distinct from 'telegram-verify-42' then
+    raise exception 'failed Telegram link did not roll back token and profile changes';
+  end if;
+
+  insert into public.telegram_link_tokens (token, profile_id, expires_at)
+  values ('verify-race-token', v_admin_id, now() + interval '10 minutes');
+
+  create table public.telegram_link_race_results (
+    slot integer primary key,
+    result_count integer not null
+  );
+end $$;
+SQL
+
+"${PSQL[@]}" -c "begin; insert into public.telegram_link_race_results select 1, count(*) from public.link_telegram_from_token('verify-race-token', 'telegram-race'); select pg_sleep(1); commit;" &
+race_pid_one=$!
+sleep 0.2
+"${PSQL[@]}" -c "insert into public.telegram_link_race_results select 2, count(*) from public.link_telegram_from_token('verify-race-token', 'telegram-race');" &
+race_pid_two=$!
+wait "$race_pid_one"
+wait "$race_pid_two"
+
+"${PSQL[@]}" <<'SQL'
+do $$
+begin
+  if (select count(*) from public.telegram_link_race_results) <> 2
+     or (select sum(result_count) from public.telegram_link_race_results) <> 1
+     or (select used_at from public.telegram_link_tokens where token = 'verify-race-token') is null
+     or not exists (
+       select 1 from public.profiles
+       where name = 'Telegram Admin Verify' and telegram_user_id = 'telegram-race'
+     ) then
+    raise exception 'concurrent Telegram token consumption did not produce exactly one winner';
+  end if;
+end $$;
+
+drop table public.telegram_link_race_results;
+SQL
+
 echo ">>> migrations OK"
