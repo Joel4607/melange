@@ -14,7 +14,7 @@ import {
   liveRunnerLocations,
   publishRunnerLocation,
 } from "../presence";
-import { enforceRateLimit, withinRateLimit } from "../rate-limit";
+import { enforceRateLimit, RateLimitError, withinRateLimit } from "../rate-limit";
 
 describe("without Redis configured", () => {
   it("reports unconfigured", () => {
@@ -37,9 +37,10 @@ describe("without Redis configured", () => {
     await expect(clearRunnerPresence("r1")).resolves.toBeUndefined();
   });
 
-  it("rate limits fail open", async () => {
-    await expect(withinRateLimit("post-errand", "u1", 1, 60)).resolves.toBe(true);
-    await expect(withinRateLimit("post-errand", "u1", 1, 60)).resolves.toBe(true);
-    await expect(enforceRateLimit("post-errand", "u1", 1, 60)).resolves.toBeUndefined();
+  it("rate limits fail closed when neither backend is configured", async () => {
+    await expect(withinRateLimit("post-errand", "u1", 1, 60)).resolves.toBe(false);
+    await expect(enforceRateLimit("post-errand", "u1", 1, 60)).rejects.toBeInstanceOf(
+      RateLimitError,
+    );
   });
 });

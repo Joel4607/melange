@@ -575,4 +575,148 @@ end $$;
 drop table public.telegram_link_race_results;
 SQL
 
+echo ">>> smoke test: durable rate-limit fallback"
+"${PSQL[@]}" <<'SQL'
+do $$
+declare
+  v_allowed boolean;
+begin
+  if not (select relrowsecurity from pg_class where oid = 'public.rate_limit_counters'::regclass) then
+    raise exception 'rate_limit_counters RLS is disabled';
+  end if;
+
+  if has_table_privilege('anon', 'public.rate_limit_counters', 'SELECT')
+     or has_table_privilege('anon', 'public.rate_limit_counters', 'INSERT')
+     or has_table_privilege('anon', 'public.rate_limit_counters', 'UPDATE')
+     or has_table_privilege('anon', 'public.rate_limit_counters', 'DELETE')
+     or has_table_privilege('authenticated', 'public.rate_limit_counters', 'SELECT')
+     or has_table_privilege('authenticated', 'public.rate_limit_counters', 'INSERT')
+     or has_table_privilege('authenticated', 'public.rate_limit_counters', 'UPDATE')
+     or has_table_privilege('authenticated', 'public.rate_limit_counters', 'DELETE')
+     or not has_table_privilege('service_role', 'public.rate_limit_counters', 'SELECT')
+     or not has_table_privilege('service_role', 'public.rate_limit_counters', 'INSERT')
+     or not has_table_privilege('service_role', 'public.rate_limit_counters', 'UPDATE')
+     or not has_table_privilege('service_role', 'public.rate_limit_counters', 'DELETE') then
+    raise exception 'rate_limit_counters grants are incorrect';
+  end if;
+
+  if has_function_privilege(
+       'anon', 'public.consume_rate_limit(text,integer,integer)', 'EXECUTE'
+     ) or has_function_privilege(
+       'authenticated', 'public.consume_rate_limit(text,integer,integer)', 'EXECUTE'
+     ) or not has_function_privilege(
+       'service_role', 'public.consume_rate_limit(text,integer,integer)', 'EXECUTE'
+     ) then
+    raise exception 'consume_rate_limit grants are incorrect';
+  end if;
+
+  select public.consume_rate_limit('verify-sequential-limit', 2, 60) into v_allowed;
+  if v_allowed is distinct from true then
+    raise exception 'first durable rate-limit hit was rejected';
+  end if;
+  if exists (
+    select 1
+    from public.rate_limit_counters
+    where counter_key = 'verify-sequential-limit'
+      and mod(extract(epoch from expires_at), 60) <> 0
+  ) then
+    raise exception 'durable and Redis rate-limit windows are not aligned';
+  end if;
+  select public.consume_rate_limit('verify-sequential-limit', 2, 60) into v_allowed;
+  if v_allowed is distinct from true then
+    raise exception 'second durable rate-limit hit was rejected';
+  end if;
+  select public.consume_rate_limit('verify-sequential-limit', 2, 60) into v_allowed;
+  if v_allowed is distinct from false
+     or (select hit_count from public.rate_limit_counters where counter_key = 'verify-sequential-limit') <> 3 then
+    raise exception 'durable rate limit did not reject and cap the over-limit hit';
+  end if;
+
+  update public.rate_limit_counters
+  set expires_at = clock_timestamp() - interval '1 second'
+  where counter_key = 'verify-sequential-limit';
+  select public.consume_rate_limit('verify-sequential-limit', 2, 60) into v_allowed;
+  if v_allowed is distinct from true
+     or (select hit_count from public.rate_limit_counters where counter_key = 'verify-sequential-limit') <> 1 then
+    raise exception 'expired durable rate limit did not reset';
+  end if;
+
+  insert into public.rate_limit_counters (counter_key, hit_count, expires_at)
+  select 'verify-stale-cleanup-' || series_number, 1,
+         clock_timestamp() - interval '2 hours'
+  from generate_series(1, 101) series_number;
+  perform public.consume_rate_limit('verify-cleanup-trigger', 2, 60);
+  if (select count(*) from public.rate_limit_counters
+      where counter_key like 'verify-stale-cleanup-%') <> 1 then
+    raise exception 'stale durable rate-limit cleanup was not bounded to 100 rows';
+  end if;
+  perform public.consume_rate_limit('verify-cleanup-trigger', 2, 60);
+  if exists (select 1 from public.rate_limit_counters
+             where counter_key like 'verify-stale-cleanup-%') then
+    raise exception 'remaining stale durable rate-limit counter was not pruned';
+  end if;
+
+  insert into public.rate_limit_counters (counter_key, hit_count, expires_at)
+  values
+    ('verify-locked-cleanup', 1, clock_timestamp() - interval '2 hours'),
+    ('verify-unlocked-cleanup', 1, clock_timestamp() - interval '2 hours');
+
+  if public.consume_rate_limit('', 2, 60)
+     or public.consume_rate_limit('   ', 2, 60)
+     or public.consume_rate_limit(null, 2, 60)
+     or public.consume_rate_limit(repeat('x', 513), 2, 60)
+     or public.consume_rate_limit('verify-invalid-limit', 0, 60)
+     or public.consume_rate_limit('verify-invalid-limit-upper', 1000001, 60)
+     or public.consume_rate_limit('verify-invalid-window', 2, 0)
+     or public.consume_rate_limit('verify-invalid-window-upper', 2, 86401) then
+    raise exception 'invalid durable rate-limit inputs were accepted';
+  end if;
+
+  create table public.rate_limit_race_results (
+    slot integer primary key,
+    allowed boolean not null
+  );
+end $$;
+SQL
+
+"${PSQL[@]}" -c "begin; select counter_key from public.rate_limit_counters where counter_key = 'verify-locked-cleanup' for update; select pg_sleep(1); commit;" &
+cleanup_lock_pid=$!
+sleep 0.2
+"${PSQL[@]}" -c "select public.consume_rate_limit('verify-lock-cleanup-trigger', 2, 60);"
+wait "$cleanup_lock_pid"
+
+"${PSQL[@]}" <<'SQL'
+do $$
+begin
+  if not exists (
+       select 1 from public.rate_limit_counters where counter_key = 'verify-locked-cleanup'
+     ) or exists (
+       select 1 from public.rate_limit_counters where counter_key = 'verify-unlocked-cleanup'
+     ) then
+    raise exception 'durable rate-limit cleanup did not skip a contended row';
+  end if;
+end $$;
+SQL
+
+"${PSQL[@]}" -c "begin; insert into public.rate_limit_race_results select 1, public.consume_rate_limit('verify-race-limit', 1, 60); select pg_sleep(1); commit;" &
+limit_race_pid_one=$!
+sleep 0.2
+"${PSQL[@]}" -c "insert into public.rate_limit_race_results select 2, public.consume_rate_limit('verify-race-limit', 1, 60);" &
+limit_race_pid_two=$!
+wait "$limit_race_pid_one"
+wait "$limit_race_pid_two"
+
+"${PSQL[@]}" <<'SQL'
+do $$
+begin
+  if (select count(*) from public.rate_limit_race_results) <> 2
+     or (select count(*) from public.rate_limit_race_results where allowed) <> 1
+     or (select hit_count from public.rate_limit_counters where counter_key = 'verify-race-limit') <> 2 then
+    raise exception 'concurrent durable rate limiting did not produce exactly one allowed hit';
+  end if;
+end $$;
+
+drop table public.rate_limit_race_results;
+SQL
+
 echo ">>> migrations OK"
