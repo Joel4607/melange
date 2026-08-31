@@ -25,6 +25,15 @@ export interface DashboardErrand {
   created_at: string;
 }
 
+export interface DashboardFocus {
+  eyebrow: string;
+  title: string;
+  description: string;
+  primary: { href: string; label: string };
+  secondary?: { href: string; label: string };
+  tone?: "green" | "orange";
+}
+
 export const STATUS_LABELS: Record<string, { label: string; tone: string }> = {
   posted:      { label: "Finding runner",  tone: "bg-orange/10 text-orange-deep" },
   matched:     { label: "Runner matched",  tone: "bg-orange/10 text-orange-deep" },
@@ -55,56 +64,82 @@ export function StatCard({
 }) {
   const iconBg   = tone === "orange" ? "bg-orange/10 text-orange-deep" : "bg-green/10 text-green-deep";
   return (
-    <div className="rounded-[2rem] border border-cream-deep bg-white p-6 shadow-sm">
-      <span className={`grid h-10 w-10 place-items-center rounded-2xl ${iconBg}`}>
-        <Icon className="h-5 w-5" aria-hidden />
+    <div className="min-w-0 rounded-2xl border border-cream-deep bg-white p-3 shadow-sm sm:rounded-3xl sm:p-5">
+      <span className={`hidden h-9 w-9 place-items-center rounded-xl sm:grid ${iconBg}`}>
+        <Icon className="h-4 w-4" aria-hidden />
       </span>
-      <p className="mt-4 font-display text-3xl font-semibold text-ink">{value}</p>
-      <p className="mt-1 text-sm font-medium text-ink">{title}</p>
-      {subtitle ? <p className="mt-0.5 text-xs text-muted">{subtitle}</p> : null}
+      <p className="font-display text-[clamp(0.95rem,4.3vw,1.875rem)] font-semibold leading-tight tracking-tight text-ink sm:mt-3">
+        {value}
+      </p>
+      <p className="mt-1 text-[11px] font-medium leading-tight text-ink sm:text-sm">{title}</p>
+      {subtitle ? <p className="mt-1 hidden text-xs text-muted sm:block">{subtitle}</p> : null}
     </div>
   );
 }
 
 /* ------------------------------------------------------------------ */
-/* Quick action pair                                                    */
+/* State-aware next action                                              */
 /* ------------------------------------------------------------------ */
 
-export function QuickActions({ role }: { role: "buyer" | "runner" }) {
-  const primary =
-    role === "runner"
-      ? { href: "/app/feed",    label: "Browse open errands", sub: "See jobs near you" }
-      : { href: "/app/runners", label: "Browse runners",      sub: "Pick a trusted runner first" };
-
-  const secondary =
-    role === "runner"
-      ? { href: "/app/settings", label: "Set availability",  sub: "Update hours & capabilities" }
-      : { href: "/app/post",     label: "Post an errand",    sub: "Auto-match to a runner" };
+export function NextActionCard({
+  eyebrow,
+  title,
+  description,
+  primary,
+  secondary,
+  icon: Icon,
+  tone = "green",
+}: DashboardFocus & { icon: LucideIcon }) {
+  const background =
+    tone === "orange"
+      ? "from-orange to-orange-deep"
+      : "from-green to-green-deep";
+  const primaryText = tone === "orange" ? "text-orange-deep" : "text-green-deep";
 
   return (
-    <div className="grid gap-3 sm:grid-cols-2">
-      <Link
-        href={primary.href}
-        className="flex items-center justify-between rounded-2xl bg-green p-5 text-cream shadow-sm transition hover:bg-green-deep"
-      >
-        <span>
-          <span className="block font-display text-base font-semibold">{primary.label}</span>
-          <span className="mt-0.5 block text-sm text-cream/75">{primary.sub}</span>
+    <section
+      aria-label={`${eyebrow}: ${title}`}
+      className={`relative isolate overflow-hidden rounded-[1.75rem] bg-linear-to-br ${background} p-5 text-cream shadow-lg sm:p-7`}
+    >
+      <span
+        className="absolute -right-10 -top-12 -z-10 h-40 w-40 rounded-full border-[28px] border-white/10"
+        aria-hidden
+      />
+      <div className="flex items-start gap-4">
+        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-white/12 ring-1 ring-white/20">
+          <Icon className="h-5 w-5" aria-hidden />
         </span>
-        <ArrowRight className="h-5 w-5 shrink-0" aria-hidden />
-      </Link>
+        <div className="min-w-0">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-cream/70">
+            {eyebrow}
+          </p>
+          <h2 className="mt-2 max-w-2xl font-display text-2xl font-semibold leading-tight sm:text-3xl">
+            {title}
+          </h2>
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-cream/75 sm:text-base">
+            {description}
+          </p>
+        </div>
+      </div>
 
-      <Link
-        href={secondary.href}
-        className="flex items-center justify-between rounded-2xl border border-cream-deep bg-white p-5 text-green-deep shadow-sm transition hover:bg-cream/60"
-      >
-        <span>
-          <span className="block font-display text-base font-semibold">{secondary.label}</span>
-          <span className="mt-0.5 block text-sm text-muted">{secondary.sub}</span>
-        </span>
-        <ArrowRight className="h-5 w-5 shrink-0" aria-hidden />
-      </Link>
-    </div>
+      <div className="mt-5 flex flex-col gap-2 sm:flex-row">
+        <Link
+          href={primary.href}
+          className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-cream px-5 py-2.5 text-sm font-semibold shadow-sm transition hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ${primaryText}`}
+        >
+          {primary.label}
+          <ArrowRight className="h-4 w-4" aria-hidden />
+        </Link>
+        {secondary ? (
+          <Link
+            href={secondary.href}
+            className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/25 bg-white/5 px-5 py-2.5 text-sm font-semibold text-cream transition hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+          >
+            {secondary.label}
+          </Link>
+        ) : null}
+      </div>
+    </section>
   );
 }
 
@@ -125,12 +160,15 @@ export function Section({
 }) {
   return (
     <div>
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex items-center justify-between gap-4">
         <h2 className="flex items-center gap-2 font-display text-lg font-semibold text-ink">
           <Icon className="h-5 w-5 text-green-soft" aria-hidden /> {title}
         </h2>
         {action ? (
-          <Link href={action.href} className="text-sm font-medium text-green-deep hover:underline">
+          <Link
+            href={action.href}
+            className="inline-flex min-h-11 shrink-0 items-center rounded-full px-3 text-sm font-semibold text-green-deep transition hover:bg-cream focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green"
+          >
             {action.label}
           </Link>
         ) : null}
@@ -154,13 +192,13 @@ export function Empty({
   action?: { href: string; label: string };
 }) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-cream-deep py-10 text-center">
+    <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-cream-deep bg-cream/25 px-5 py-10 text-center">
       {Icon ? <Icon className="h-8 w-8 text-cream-deep" aria-hidden /> : null}
-      <p className={`text-sm text-muted ${Icon ? "mt-3" : ""}`}>{children}</p>
+      <p className={`max-w-md text-sm leading-relaxed text-muted ${Icon ? "mt-3" : ""}`}>{children}</p>
       {action ? (
         <Link
           href={action.href}
-          className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-green px-5 py-2 text-sm font-semibold text-cream transition hover:bg-green-deep"
+          className="mt-4 inline-flex min-h-11 items-center gap-1.5 rounded-xl bg-green px-5 py-2.5 text-sm font-semibold text-cream transition hover:bg-green-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green"
         >
           {action.label}
         </Link>
@@ -195,12 +233,12 @@ export function BuyerErrandList({ errands }: { errands: DashboardErrand[] }) {
     );
   }
   return (
-    <ul className="divide-y divide-cream-deep">
+    <ul className="space-y-2">
       {errands.map((e) => (
         <li key={e.id}>
           <Link
             href={`/app/errands/${e.id}`}
-            className="group flex items-center justify-between gap-4 py-3.5 transition-opacity hover:opacity-70"
+            className="group flex min-h-16 items-center justify-between gap-3 rounded-2xl border border-cream-deep/80 bg-cream/20 p-3.5 transition hover:border-green/20 hover:bg-cream/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green"
           >
             <span className="min-w-0">
               <span className="block truncate font-medium text-ink group-hover:underline">
@@ -210,7 +248,10 @@ export function BuyerErrandList({ errands }: { errands: DashboardErrand[] }) {
                 {e.category ?? "Errand"} · GHS {Number(e.price).toFixed(2)}
               </span>
             </span>
-            <StatusPill status={e.status} />
+            <span className="flex shrink-0 items-center gap-2">
+              <StatusPill status={e.status} />
+              <ArrowRight className="hidden h-4 w-4 text-muted sm:block" aria-hidden />
+            </span>
           </Link>
         </li>
       ))}
@@ -235,7 +276,7 @@ export function TaskCard({
       : Number(task.price).toFixed(2);
 
   return (
-    <div className="rounded-2xl border border-cream-deep bg-white p-4 shadow-sm">
+    <div className="rounded-2xl border border-cream-deep bg-white p-4 shadow-sm transition hover:border-green/20">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="truncate font-medium text-ink">{task.title}</p>
@@ -255,7 +296,7 @@ export function TaskActions({ taskId, status }: { taskId: string; status: string
         <form action={acceptOffer.bind(null, taskId)}>
           <button
             type="submit"
-            className="rounded-full bg-green px-4 py-1.5 text-sm font-semibold text-cream transition hover:bg-green-deep"
+            className="min-h-11 rounded-xl bg-green px-4 py-2.5 text-sm font-semibold text-cream transition hover:bg-green-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green"
           >
             Accept
           </button>
@@ -263,7 +304,7 @@ export function TaskActions({ taskId, status }: { taskId: string; status: string
         <form action={declineOffer.bind(null, taskId)}>
           <button
             type="submit"
-            className="rounded-full border border-cream-deep px-4 py-1.5 text-sm font-semibold text-ink transition hover:bg-cream/40"
+            className="min-h-11 rounded-xl border border-cream-deep px-4 py-2.5 text-sm font-semibold text-ink transition hover:bg-cream/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green"
           >
             Decline
           </button>
@@ -280,7 +321,7 @@ export function TaskActions({ taskId, status }: { taskId: string; status: string
             <form action={markPickedUp.bind(null, taskId)}>
               <button
                 type="submit"
-                className="rounded-full bg-green px-4 py-1.5 text-sm font-semibold text-cream transition hover:bg-green-deep"
+                className="min-h-11 rounded-xl bg-green px-4 py-2.5 text-sm font-semibold text-cream transition hover:bg-green-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green"
               >
                 Mark picked up
               </button>
@@ -289,7 +330,7 @@ export function TaskActions({ taskId, status }: { taskId: string; status: string
           <form action={cancelRunnerErrand.bind(null, taskId)}>
             <button
               type="submit"
-              className="rounded-full border border-orange/20 px-4 py-1.5 text-sm font-semibold text-orange-deep transition hover:bg-orange/10"
+              className="min-h-11 rounded-xl border border-orange/20 px-4 py-2.5 text-sm font-semibold text-orange-deep transition hover:bg-orange/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange"
             >
               Cancel
             </button>
@@ -301,27 +342,4 @@ export function TaskActions({ taskId, status }: { taskId: string; status: string
   }
 
   return null;
-}
-
-
-
-/* ------------------------------------------------------------------ */
-/* Kept for backward-compat (errands/[id]/page.tsx imports this)        */
-/* ------------------------------------------------------------------ */
-
-/** @deprecated Use StatCard instead */
-export function KpiCard({
-  title,
-  value,
-  subtitle,
-  icon: Icon,
-  tone = "green",
-}: {
-  title: string;
-  value: string | number;
-  subtitle?: string;
-  icon: LucideIcon;
-  tone?: "green" | "orange";
-}) {
-  return <StatCard title={title} value={value} subtitle={subtitle} icon={Icon} tone={tone} />;
 }

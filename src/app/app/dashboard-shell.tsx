@@ -3,7 +3,19 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, LayoutDashboard, Users, PlusCircle, Wallet, Settings, LogOut, Bike, PackageCheck } from "lucide-react";
+import {
+  Bike,
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  PackageCheck,
+  PlusCircle,
+  Settings,
+  Users,
+  Wallet,
+  X,
+  type LucideIcon,
+} from "lucide-react";
 import { Logo } from "@/components/brand";
 import { NotificationsPopover } from "./notifications-popover";
 import { RealtimeStatus } from "./realtime-status";
@@ -14,24 +26,25 @@ type Role = "buyer" | "runner";
 interface NavItem {
   href: string;
   label: string;
-  icon: React.ReactNode;
+  shortLabel?: string;
+  icon: LucideIcon;
 }
 
 function navItems(role: Role): NavItem[] {
   if (role === "runner") {
     return [
-      { href: "/app", label: "Dashboard", icon: <LayoutDashboard className="h-5 w-5" /> },
-      { href: "/app/feed", label: "Open errands", icon: <PackageCheck className="h-5 w-5" /> },
-      { href: "/app/earnings", label: "Earnings", icon: <Wallet className="h-5 w-5" /> },
-      { href: "/app/settings", label: "Settings", icon: <Settings className="h-5 w-5" /> },
+      { href: "/app", label: "Dashboard", shortLabel: "Home", icon: LayoutDashboard },
+      { href: "/app/feed", label: "Find work", icon: PackageCheck },
+      { href: "/app/earnings", label: "Earnings", icon: Wallet },
+      { href: "/app/settings", label: "Settings", icon: Settings },
     ];
   }
   return [
-    { href: "/app", label: "Dashboard", icon: <LayoutDashboard className="h-5 w-5" /> },
-    { href: "/app/runners", label: "Browse runners", icon: <Users className="h-5 w-5" /> },
-    { href: "/app/post", label: "Post errand", icon: <PlusCircle className="h-5 w-5" /> },
-    { href: "/app/wallet", label: "Wallet", icon: <Wallet className="h-5 w-5" /> },
-    { href: "/app/settings", label: "Settings", icon: <Settings className="h-5 w-5" /> },
+    { href: "/app", label: "Dashboard", shortLabel: "Home", icon: LayoutDashboard },
+    { href: "/app/post", label: "Post errand", shortLabel: "Post", icon: PlusCircle },
+    { href: "/app/runners", label: "Runners", icon: Users },
+    { href: "/app/wallet", label: "Wallet", icon: Wallet },
+    { href: "/app/settings", label: "Settings", icon: Settings },
   ];
 }
 
@@ -46,7 +59,7 @@ export function DashboardShell({
   role: Role;
   firstName: string;
   notifications: NotificationSummary[];
-  children: React.ReactNode;
+  children?: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   const items = navItems(role);
@@ -80,9 +93,9 @@ export function DashboardShell({
           </button>
         </div>
 
-        <nav className="mt-8 space-y-1">
+        <nav aria-label="Main navigation" className="mt-8 space-y-1">
           {items.map((item) => (
-            <NavLink key={item.href} item={item} />
+            <NavLink key={item.href} item={item} onNavigate={() => setOpen(false)} />
           ))}
         </nav>
 
@@ -113,7 +126,7 @@ export function DashboardShell({
 
       {/* Main area — scrolls independently of the sidebar */}
       <div className="flex flex-1 flex-col overflow-y-auto">
-        <header className="sticky top-0 z-30 border-b border-cream-deep/70 bg-cream/90 px-5 py-4 backdrop-blur">
+        <header className="sticky top-0 z-30 border-b border-cream-deep/70 bg-cream/90 px-4 py-3 backdrop-blur sm:px-6 sm:py-4">
           <div className="mx-auto flex max-w-7xl items-center justify-between">
             <div className="flex items-center gap-3">
               <button
@@ -125,10 +138,10 @@ export function DashboardShell({
                 <Menu className="h-5 w-5" aria-hidden />
               </button>
               <div>
-                <h1 className="font-display text-xl font-semibold text-green-deep">
-                  Welcome, {firstName}
+                <h1 className="font-display text-lg font-semibold text-green-deep sm:text-xl">
+                  Hi, {firstName}
                 </h1>
-                <p className="text-xs capitalize text-muted">{role}</p>
+                <p className="text-xs capitalize text-muted">{role} dashboard</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -144,29 +157,71 @@ export function DashboardShell({
           </div>
         </header>
 
-        <main className="mx-auto w-full max-w-7xl flex-1 px-5 py-6">
+        <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-5 pb-28 sm:px-6 sm:py-7 lg:pb-8">
           {children}
           <RealtimeStatus userId={user.id} />
         </main>
       </div>
+
+      <nav
+        aria-label="Mobile navigation"
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-cream-deep bg-white/95 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1.5 shadow-[0_-8px_30px_rgba(28,26,23,0.08)] backdrop-blur lg:hidden"
+      >
+        <div className="mx-auto grid max-w-lg grid-cols-4">
+          {items.slice(0, 4).map((item) => (
+            <MobileNavLink key={item.href} item={item} />
+          ))}
+        </div>
+      </nav>
     </div>
   );
 }
 
-function NavLink({ item }: { item: NavItem }) {
+function NavLink({ item, onNavigate }: { item: NavItem; onNavigate: () => void }) {
   const pathname = usePathname();
-  const active = pathname === item.href;
+  const active = isActivePath(pathname, item.href);
+  const Icon = item.icon;
+
   return (
     <Link
       href={item.href}
+      onClick={onNavigate}
       className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
         active
           ? "bg-green text-cream"
           : "text-muted hover:bg-cream/40 hover:text-green-deep"
       }`}
+      aria-current={active ? "page" : undefined}
     >
-      {item.icon}
+      <Icon className="h-5 w-5" aria-hidden />
       {item.label}
     </Link>
   );
+}
+
+function MobileNavLink({ item }: { item: NavItem }) {
+  const pathname = usePathname();
+  const active = isActivePath(pathname, item.href);
+  const Icon = item.icon;
+
+  return (
+    <Link
+      href={item.href}
+      className={`flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[11px] font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-green ${
+        active ? "text-green-deep" : "text-muted hover:bg-cream/50 hover:text-green-deep"
+      }`}
+      aria-current={active ? "page" : undefined}
+    >
+      <span
+        className={`grid h-7 w-9 place-items-center rounded-xl transition ${active ? "bg-green/10" : ""}`}
+      >
+        <Icon className="h-[18px] w-[18px]" aria-hidden />
+      </span>
+      <span>{item.shortLabel ?? item.label}</span>
+    </Link>
+  );
+}
+
+function isActivePath(pathname: string, href: string) {
+  return pathname === href || (href !== "/app" && pathname.startsWith(`${href}/`));
 }
