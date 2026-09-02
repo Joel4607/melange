@@ -25,7 +25,6 @@ describe("dashboard experience", () => {
           },
         ],
         wallet: { balance: "86", held: "72" },
-        name: "Ama Kusi",
       }),
     );
 
@@ -34,6 +33,23 @@ describe("dashboard experience", () => {
     expect(html.indexOf("Your errand is on the move")).toBeLessThan(
       html.indexOf("Active errands"),
     );
+  });
+
+  it("keeps the buyer's wallet actions inside the balance card", () => {
+    const html = renderToStaticMarkup(
+      createElement(BuyerDashboard, {
+        errands: [],
+        wallet: { balance: "86", held: "12" },
+      }),
+    );
+
+    const balanceCard = labelledSection(html, "Wallet balance");
+    expect(balanceCard).toContain("GHS 86.00");
+    expect(balanceCard).toContain("GHS 12.00 in escrow");
+    expect(balanceCard).toContain("Top up");
+    expect(balanceCard).toContain(">Wallet<");
+    expect(balanceCard.match(/href="\/app\/wallet"/g)).toHaveLength(2);
+    expect(html).not.toContain("**** **** **** 4242");
   });
 
   it("prioritizes a new runner offer over an existing active job", () => {
@@ -61,8 +77,6 @@ describe("dashboard experience", () => {
         avgRating: 4.8,
         totalEarned: 284,
         completedCount: 6,
-        name: "Kwame Mensah",
-        wallet: { balance: "284", held: "0" },
       }),
     );
 
@@ -70,6 +84,7 @@ describe("dashboard experience", () => {
     expect(html).toContain("Groceries from Osu Market");
     expect(html).toContain('href="/app/errands/offer-1"');
     expect(html.indexOf("New offer")).toBeLessThan(html.indexOf("Total earned"));
+    expect(html).not.toContain("**** **** **** 4242");
   });
 
   it("gives each role a persistent mobile navigation", () => {
@@ -113,4 +128,10 @@ function mobileNav(html: string) {
   const start = html.indexOf('<nav aria-label="Mobile navigation"');
   expect(start).toBeGreaterThanOrEqual(0);
   return html.slice(start, html.indexOf("</nav>", start));
+}
+
+function labelledSection(html: string, label: string) {
+  const start = html.indexOf(`<section aria-label="${label}"`);
+  expect(start).toBeGreaterThanOrEqual(0);
+  return html.slice(start, html.indexOf("</section>", start) + "</section>".length);
 }

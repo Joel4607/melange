@@ -6,7 +6,6 @@ import {
   Star,
   Wallet as WalletIcon,
 } from "lucide-react";
-import { WalletCreditCard } from "./wallet-credit-card";
 import { LiveLocationUpdater } from "./live-location-updater";
 import {
   Empty,
@@ -29,8 +28,6 @@ interface RunnerDashboardProps {
   avgRating: number;
   totalEarned: number;
   completedCount: number;
-  name: string | null;
-  wallet: { balance: string; held: string } | null;
 }
 
 export function RunnerDashboard({
@@ -39,8 +36,6 @@ export function RunnerDashboard({
   avgRating,
   totalEarned,
   completedCount,
-  name,
-  wallet,
 }: RunnerDashboardProps) {
   const available = profile?.is_available ?? false;
   const offers    = tasks.filter((t) => t.status === "matched");
@@ -174,9 +169,6 @@ export function RunnerDashboard({
 
           {/* Live location tracking */}
           <LiveLocationUpdater enabled={available || active.length > 0} />
-
-          {/* Wallet */}
-          <WalletCreditCard wallet={wallet} name={name} />
 
           {/* Capabilities */}
           {profile?.capabilities && profile.capabilities.length > 0 ? (

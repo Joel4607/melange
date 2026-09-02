@@ -143,7 +143,6 @@ export default async function AppHome() {
         <BuyerDashboard
           errands={errands ?? []}
           wallet={wallet ?? null}
-          name={profile?.name ?? null}
         />
       ) : (
         <RunnerDashboard
@@ -152,8 +151,6 @@ export default async function AppHome() {
           avgRating={avgRating}
           totalEarned={totalEarned}
           completedCount={completedTasks.length}
-          name={profile?.name ?? null}
-          wallet={wallet ?? null}
         />
       )}
     </DashboardShell>

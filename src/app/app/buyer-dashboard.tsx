@@ -1,13 +1,15 @@
+import Link from "next/link";
 import {
   AlertTriangle,
+  ArrowUpRight,
   CheckCircle,
   Clock,
   Navigation,
+  Plus,
   PlusCircle,
   Wallet as WalletIcon,
   type LucideIcon,
 } from "lucide-react";
-import { WalletCreditCard } from "./wallet-credit-card";
 import {
   BuyerErrandList,
   NextActionCard,
@@ -20,11 +22,9 @@ import {
 export function BuyerDashboard({
   errands,
   wallet,
-  name,
 }: {
   errands: DashboardErrand[];
   wallet: { balance: string; held: string } | null;
-  name: string | null;
 }) {
   const activeErrands = errands.filter((e) =>
     ["posted", "matched", "accepted", "in_progress", "disputed"].includes(e.status),
@@ -47,7 +47,7 @@ export function BuyerDashboard({
     <div className="space-y-5 sm:space-y-8">
       <NextActionCard {...focus} icon={FocusIcon} />
 
-      <div className="grid grid-cols-3 gap-2 sm:gap-4">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-4">
         <StatCard
           title="Active errands"
           value={active}
@@ -62,36 +62,63 @@ export function BuyerDashboard({
           icon={CheckCircle}
           tone="green"
         />
-        <StatCard
-          title="Wallet balance"
-          value={wallet ? `GHS ${Number(wallet.balance).toFixed(2)}` : "GHS 0.00"}
-          subtitle={wallet ? `GHS ${Number(wallet.held).toFixed(2)} in escrow` : "No funds yet"}
-          icon={WalletIcon}
-          tone="green"
-        />
+        <WalletBalanceCard wallet={wallet} />
       </div>
 
-      {/* Main content + sidebar */}
-      <div className="grid gap-6 lg:grid-cols-3 lg:gap-8">
-        {/* Errand list — takes up 2/3 */}
-        <div className="space-y-8 lg:col-span-2">
-          <div className="rounded-3xl border border-cream-deep bg-white p-4 shadow-sm sm:p-6">
-            <Section
-              title="Your errands"
-              icon={Clock}
-              action={{ href: "/app/post", label: "Post new" }}
-            >
-              <BuyerErrandList errands={errands} />
-            </Section>
-          </div>
-        </div>
-
-        {/* Sidebar — wallet only */}
-        <div className="hidden space-y-6 lg:col-span-1 lg:block">
-          <WalletCreditCard wallet={wallet} name={name} />
-        </div>
+      <div className="rounded-3xl border border-cream-deep bg-white p-4 shadow-sm sm:p-6">
+        <Section
+          title="Your errands"
+          icon={Clock}
+          action={{ href: "/app/post", label: "Post new" }}
+        >
+          <BuyerErrandList errands={errands} />
+        </Section>
       </div>
     </div>
+  );
+}
+
+function WalletBalanceCard({
+  wallet,
+}: {
+  wallet: { balance: string; held: string } | null;
+}) {
+  const balance = Number(wallet?.balance ?? 0).toFixed(2);
+  const held = Number(wallet?.held ?? 0).toFixed(2);
+
+  return (
+    <section
+      aria-label="Wallet balance"
+      className="col-span-2 min-w-0 rounded-2xl border border-cream-deep bg-white p-4 shadow-sm sm:col-span-1 sm:rounded-3xl sm:p-5"
+    >
+      <div className="flex items-center gap-2">
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-green/10 text-green-deep">
+          <WalletIcon className="h-4 w-4" aria-hidden />
+        </span>
+        <p className="text-sm font-medium text-ink">Wallet balance</p>
+      </div>
+      <p className="mt-3 font-display text-2xl font-semibold leading-tight tracking-tight text-ink sm:text-3xl">
+        GHS {balance}
+      </p>
+      <p className="mt-1 text-xs text-muted">GHS {held} in escrow</p>
+
+      <div className="mt-4 grid grid-cols-2 gap-2">
+        <Link
+          href="/app/wallet"
+          className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-green px-3 py-2.5 text-sm font-semibold text-cream transition hover:bg-green-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green"
+        >
+          <Plus className="h-4 w-4" aria-hidden />
+          Top up
+        </Link>
+        <Link
+          href="/app/wallet"
+          className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-cream-deep bg-cream/30 px-3 py-2.5 text-sm font-semibold text-green-deep transition hover:bg-cream focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green"
+        >
+          Wallet
+          <ArrowUpRight className="h-4 w-4" aria-hidden />
+        </Link>
+      </div>
+    </section>
   );
 }
 
