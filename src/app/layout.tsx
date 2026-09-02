@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Fraunces } from "next/font/google";
+import { connection } from "next/server";
 import "./globals.css";
 import { ServiceWorkerRegister } from "./service-worker-register";
 import { InstallPrompt } from "./install-prompt";
@@ -50,11 +51,15 @@ export const viewport: Viewport = {
   themeColor: "#1e5631",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // A request must exist so Next.js can apply the proxy-generated CSP nonce to
+  // its framework scripts and generated styles.
+  await connection();
+
   return (
     <html
       lang="en"

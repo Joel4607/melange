@@ -1,6 +1,6 @@
 # Security Remediation Tracker
 
-Updated: 2026-08-31
+Updated: 2026-09-02
 
 This document is the canonical tracker for the security audit. SEC-001 and
 SEC-002 retain their original identifiers. The remaining findings received
@@ -20,16 +20,16 @@ effort.
 | SEC-007 | Telegram account-link tokens had a time-of-check/time-of-use race | A service-role-only database function now locks, validates, links, and consumes each token in one transaction; the token table is protected by RLS and explicit grants. |
 | SEC-008 | CI workflows used mutable third-party references and implicit token permissions | External actions and the PostgreSQL service image are pinned to immutable digests, while the workflow token is limited to read-only repository contents. |
 | SEC-009 | The application rate limiter failed open when Redis was absent or unavailable | PostgreSQL now provides the authoritative atomic counter for every potentially allowed request; Redis remains an aligned early-rejection layer, and failures deny access instead of bypassing protection. |
+| SEC-010 | Production CSP permitted executable inline scripts, evaluation, and broad outbound connections | Every HTML request now receives a unique nonce-based script policy, a pinned hash covers Next.js's built-in error style, and browser connections/images are restricted to the configured Supabase and map origins. |
 
 ## Open SEC items
 
 | Order | ID | Finding | Risk / required outcome |
 | ---: | --- | --- | --- |
-| 1 | SEC-010 | Production CSP permits `unsafe-inline`, `unsafe-eval`, and overly broad outbound connections | Move to nonce/hash-based script policy and enumerate required connection origins without breaking Next.js or integrations. |
-| 2 | SEC-011 | Wallet and escrow balances are simulated and can be auto-credited | Before balances become redeemable or represent real money, replace the trust model with an authoritative payment ledger and verified provider events. |
-| 3 | SEC-012 | Local Supabase defaults are unsafe if reused in a shared or exposed environment | Harden configuration before any non-local deployment of the bundled development stack. |
-| 4 | SEC-013 | Authenticated chat typing presence is broadcast broadly | Scope ephemeral presence events to the intended conversation participants. |
-| 5 | SEC-014 | Runner-filter URLs contain precise GPS coordinates | Reduce precision or move location criteria out of URLs where logs/history exposure is unacceptable. |
+| 1 | SEC-011 | Wallet and escrow balances are simulated and can be auto-credited | Before balances become redeemable or represent real money, replace the trust model with an authoritative payment ledger and verified provider events. |
+| 2 | SEC-012 | Local Supabase defaults are unsafe if reused in a shared or exposed environment | Harden configuration before any non-local deployment of the bundled development stack. |
+| 3 | SEC-013 | Authenticated chat typing presence is broadcast broadly | Scope ephemeral presence events to the intended conversation participants. |
+| 4 | SEC-014 | Runner-filter URLs contain precise GPS coordinates | Reduce precision or move location criteria out of URLs where logs/history exposure is unacceptable. |
 
 ## Completed related audit remediations
 
