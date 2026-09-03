@@ -29,9 +29,12 @@ import {
 import {
   cancelTaskWithRefund,
   hasLedgerEntry,
-  holdFunds,
   releaseFunds,
 } from "@/lib/server/escrow";
+import {
+  demoMoneyError,
+  type DemoActionState,
+} from "@/lib/demo-money";
 import { resolveDispute } from "@/lib/server/disputes";
 import {
   clearRunnerPresence,
@@ -250,7 +253,10 @@ async function adjustRunnerLoad(runnerId: string, delta: number) {
  * Create an errand for the signed-in buyer (inserted by validated service code), then
  * run the matcher so a ranked runner is ready when they open the tracking page.
  */
-export async function createErrand(formData: FormData) {
+export async function createErrand(
+  _previousState: DemoActionState,
+  formData: FormData,
+): Promise<DemoActionState> {
   const userId = await requireUserId();
   await enforceRateLimit("post-errand", userId, 5, 300);
   const db = getServiceClient();
@@ -331,39 +337,35 @@ export async function createErrand(formData: FormData) {
       throw new Error("Selected runner is not available");
     }
 
-    const { data: task, error } = await db
-      .from("tasks")
-      .insert({
-        buyer_id: userId,
-        title,
-        description: description || null,
-        category: category || null,
-        urgency,
-        price,
-        fee,
-        pickup_lat: pickupLat,
-        pickup_lng: pickupLng,
-        dropoff_lat: dropoff?.lat ?? null,
-        dropoff_lng: dropoff?.lng ?? null,
-        stops,
-        recurrence,
-        recurrence_end_date: recurrenceEndDate,
-        series_number: 1,
-        status: "matched",
-        selected_runner_id: runnerId,
-      })
-      .select("id")
-      .single<{ id: string }>();
-    if (error || !task) {
-      throw new Error(error?.message ?? "Could not create errand");
+    const { data, error } = await db.rpc("create_and_hold_direct_demo_errand", {
+      p_buyer_id: userId,
+      p_runner_id: runnerId,
+      p_title: title,
+      p_description: description || null,
+      p_category: category || null,
+      p_urgency: urgency,
+      p_price: price,
+      p_fee: fee,
+      p_pickup_lat: pickupLat,
+      p_pickup_lng: pickupLng,
+      p_dropoff_lat: dropoff?.lat ?? null,
+      p_dropoff_lng: dropoff?.lng ?? null,
+      p_stops: stops,
+      p_recurrence: recurrence,
+      p_recurrence_end_date: recurrenceEndDate,
+    });
+    const taskId = typeof data === "string" ? data : null;
+    if (error || !taskId) {
+      return {
+        error: demoMoneyError(error ?? new Error("direct task was not created")),
+      };
     }
 
-    await holdFunds(task.id);
-    await createNotification(runnerId, "offer", { task_id: task.id, task_title: title });
+    await createNotification(runnerId, "offer", { task_id: taskId, task_title: title });
 
     revalidatePath("/app");
-    revalidatePath(`/app/errands/${task.id}`);
-    redirect(`/app/errands/${task.id}`);
+    revalidatePath(`/app/errands/${taskId}`);
+    redirect(`/app/errands/${taskId}`);
   }
 
   // Flexible, direct automatic errands enter the sharing window. Express,
@@ -439,42 +441,60 @@ export async function rematch(taskId: string) {
 }
 
 /**
- * Buyer confirms the matched runner and pays the price into escrow. Tops up the
- * buyer's simulated wallet if needed (no real payment rail in the skeleton),
- * assigns the top-ranked runner, and holds the funds.
+ * Buyer confirms the matched runner and places existing demo credits in
+ * escrow. The database rejects a shortfall without creating an offer.
  */
-export async function payIntoEscrow(taskId: string) {
+export async function payIntoEscrow(
+  taskId: string,
+  _previousState: DemoActionState,
+  _formData: FormData,
+): Promise<DemoActionState> {
   const userId = await requireUserId();
   const task = await ownedTask(taskId, userId);
   if (
     task.status !== "matched" ||
     task.selected_runner_id
   ) {
-    return;
+    return { error: null };
   }
-  if (task.share_group_id) {
-    const { ready } = await confirmShareFunding(task.share_group_id, taskId, userId);
-    if (ready) await offerShareToTopCandidate(task.share_group_id);
-    revalidatePath(`/app/errands/${taskId}`);
-    revalidatePath("/app");
-    return;
-  }
-  if (!task.active_match_run_id) throw new Error("No active match is available");
+  try {
+    if (task.share_group_id) {
+      const { ready } = await confirmShareFunding(task.share_group_id, taskId, userId);
+      if (ready) await offerShareToTopCandidate(task.share_group_id);
+      revalidatePath(`/app/errands/${taskId}`);
+      revalidatePath("/app");
+      return { error: null };
+    }
+    if (!task.active_match_run_id) throw new Error("No active match is available");
 
-  await offerToTopCandidate(taskId, true);
+    await offerToTopCandidate(taskId, true);
+  } catch (error) {
+    return { error: demoMoneyError(error) };
+  }
 
   revalidatePath(`/app/errands/${taskId}`);
   revalidatePath("/app");
+  return { error: null };
 }
 
-export async function confirmSharedEscrow(groupId: string, taskId: string) {
+export async function confirmSharedEscrow(
+  groupId: string,
+  taskId: string,
+  _previousState: DemoActionState,
+  _formData: FormData,
+): Promise<DemoActionState> {
   const userId = await requireUserId();
   const task = await ownedTask(taskId, userId);
   if (task.share_group_id !== groupId) throw new Error("Shared errand not found");
-  const { ready } = await confirmShareFunding(groupId, taskId, userId);
-  if (ready) await offerShareToTopCandidate(groupId);
+  try {
+    const { ready } = await confirmShareFunding(groupId, taskId, userId);
+    if (ready) await offerShareToTopCandidate(groupId);
+  } catch (error) {
+    return { error: demoMoneyError(error) };
+  }
   revalidatePath(`/app/errands/${taskId}`);
   revalidatePath("/app");
+  return { error: null };
 }
 
 export async function rematchSharedGroup(groupId: string) {

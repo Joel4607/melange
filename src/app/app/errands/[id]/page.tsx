@@ -34,6 +34,7 @@ import {
 } from "../../actions";
 import { TaskActions } from "../../dashboard-widgets";
 import { TaskChat } from "./task-chat";
+import { FundingForm } from "./funding-form";
 
 function isUuid(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
@@ -416,12 +417,11 @@ export default async function ErrandPage({
               {shareGroup.predicted_saved_km.toFixed(1)} km.
             </p>
             {shareGroup.status === "awaiting_funding" && !held ? (
-              <form
-                action={confirmSharedEscrow.bind(null, shareGroup.id, task.id)}
-                className="mt-4"
-              >
-                <PrimaryButton>Confirm your unchanged budget</PrimaryButton>
-              </form>
+              <div className="mt-4">
+                <FundingForm action={confirmSharedEscrow.bind(null, shareGroup.id, task.id)}>
+                  Confirm your unchanged demo budget
+                </FundingForm>
+              </div>
             ) : null}
             {shareGroup.status === "posted" ? (
               <form action={rematchSharedGroup.bind(null, shareGroup.id)} className="mt-4">
@@ -656,11 +656,9 @@ export default async function ErrandPage({
             {(task.status === "posted" || task.status === "matched") && (
               <div className="flex flex-col gap-3">
                 {task.status === "matched" && !task.selected_runner_id && candidate ? (
-                  <form action={payIntoEscrow.bind(null, task.id)}>
-                    <PrimaryButton>
-                      Confirm &amp; pay GHS {price} into escrow
-                    </PrimaryButton>
-                  </form>
+                  <FundingForm action={payIntoEscrow.bind(null, task.id)}>
+                    Confirm &amp; use Demo GHS {price} in escrow
+                  </FundingForm>
                 ) : null}
                 <form action={cancelErrand.bind(null, task.id)}>
                   <SecondaryButton>Cancel errand</SecondaryButton>

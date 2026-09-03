@@ -29,6 +29,13 @@ describe("matching action contracts", () => {
     expect(payment).not.toContain("topUp(");
   });
 
+  it("creates a direct request and its demo hold atomically", () => {
+    const create = actionBody("createErrand");
+    expect(create).toContain('create_and_hold_direct_demo_errand');
+    expect(create).not.toContain("await holdFunds(");
+    expect(create).not.toContain("topUp(");
+  });
+
   it("self-claim uses transactional finalization instead of a direct task assignment", () => {
     const claim = actionBody("claimTask");
     expect(claim).toContain("finalizeSelfClaim(taskId, runnerId)");

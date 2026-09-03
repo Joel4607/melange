@@ -37,6 +37,7 @@ describe("Errand-Share UI contracts", () => {
     expect(tracking).toContain("Paired");
     expect(tracking).toContain("Waiting for both payments");
     expect(tracking).toContain("Continuing alone");
+    expect(tracking).toContain("<FundingForm");
     expect(tracking).toContain("confirmSharedEscrow.bind(");
     expect(tracking).toContain("rematchSharedGroup.bind(");
   });

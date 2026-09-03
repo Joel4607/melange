@@ -28,4 +28,17 @@ describe("demo money", () => {
       ).formatDemoMoney?.("5"),
     ).toBe("Demo GHS 5.00");
   });
+
+  it("maps database failures to safe public demo-credit messages", async () => {
+    const demoMoney = await loadDemoMoney() as {
+      demoMoneyError?: (error: unknown) => string;
+    };
+
+    expect(demoMoney.demoMoneyError?.(
+      new Error("demo_wallet_insufficient_credits"),
+    )).toBe("You do not have enough demo credits for this transaction.");
+    expect(demoMoney.demoMoneyError?.(
+      new Error("postgres host secret detail"),
+    )).toBe("The demo transaction could not be completed. Please try again.");
+  });
 });

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { LoaderCircle, MapPin, Navigation, Plus, Star, Trash2, User } from "lucide-react";
 import type { Urgency } from "@/lib/algorithm";
@@ -46,6 +46,7 @@ export function PostForm({
   };
   defaultCategory?: string;
 }) {
+  const [actionState, formAction] = useActionState(createErrand, { error: null });
   const [coords, setCoords] = useState<{ lat: string; lng: string }>({
     lat: "",
     lng: "",
@@ -114,7 +115,7 @@ export function PostForm({
   }
 
   return (
-    <form action={createErrand} className="space-y-6">
+    <form action={formAction} className="space-y-6">
       {preselectedRunner ? (
         <div className="rounded-2xl border border-cream-deep bg-white p-5 shadow-sm">
           <p className="text-xs font-medium uppercase tracking-wide text-muted">
@@ -416,6 +417,12 @@ export function PostForm({
             className={inputClass}
           />
         </Field>
+      ) : null}
+
+      {actionState.error ? (
+        <p role="alert" className="rounded-xl bg-orange/10 px-4 py-3 text-sm text-orange-deep">
+          {actionState.error}
+        </p>
       ) : null}
 
       <Submit
