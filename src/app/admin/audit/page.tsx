@@ -22,9 +22,9 @@ interface AdminAction {
 const actionLabels: Record<string, string> = {
   verification_approve: "Approved verification",
   verification_reject: "Rejected verification",
-  dispute_release: "Released dispute funds to runner",
-  dispute_refund: "Refunded dispute funds to buyer",
-  dispute_partial: "Resolved dispute with partial payment",
+  dispute_release: "Released dispute demo credits to runner",
+  dispute_refund: "Refunded dispute demo credits to buyer",
+  dispute_partial: "Resolved dispute with a partial demo-credit allocation",
   telegram_link: "Linked Telegram account",
 };
 

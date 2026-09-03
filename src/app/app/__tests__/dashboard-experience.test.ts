@@ -83,7 +83,8 @@ describe("dashboard experience", () => {
     expect(html).toContain("New offer");
     expect(html).toContain("Groceries from Osu Market");
     expect(html).toContain('href="/app/errands/offer-1"');
-    expect(html.indexOf("New offer")).toBeLessThan(html.indexOf("Total earned"));
+    expect(html).toContain("Demo payout Demo GHS 58.00");
+    expect(html.indexOf("New offer")).toBeLessThan(html.indexOf("Demo earnings"));
     expect(html).not.toContain("**** **** **** 4242");
   });
 
@@ -117,9 +118,9 @@ describe("dashboard experience", () => {
     const runnerNav = mobileNav(runnerHtml);
     expect(buyerNav).toContain("Post");
     expect(buyerNav).toContain("Runners");
-    expect(buyerNav).toContain("Wallet");
+    expect(buyerNav).toContain("Demo wallet");
     expect(runnerNav).toContain("Find work");
-    expect(runnerNav).toContain("Earnings");
+    expect(runnerNav).toContain("Demo earnings");
     expect(runnerNav).toContain("Settings");
   });
 });

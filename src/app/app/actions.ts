@@ -305,7 +305,7 @@ export async function createErrand(
 
   const price = priceRaw;
   if (price <= fee) {
-    throw new Error(`Budget must be greater than the platform fee of GHS ${fee.toFixed(2)}`);
+    throw new Error(`Demo budget must be greater than the platform fee of Demo GHS ${fee.toFixed(2)}`);
   }
   if (runnerPayout <= 0) {
     throw new Error("Budget is too low to pay the runner");
@@ -449,6 +449,8 @@ export async function payIntoEscrow(
   _previousState: DemoActionState,
   _formData: FormData,
 ): Promise<DemoActionState> {
+  void _previousState;
+  void _formData;
   const userId = await requireUserId();
   const task = await ownedTask(taskId, userId);
   if (
@@ -483,6 +485,8 @@ export async function confirmSharedEscrow(
   _previousState: DemoActionState,
   _formData: FormData,
 ): Promise<DemoActionState> {
+  void _previousState;
+  void _formData;
   const userId = await requireUserId();
   const task = await ownedTask(taskId, userId);
   if (task.share_group_id !== groupId) throw new Error("Shared errand not found");

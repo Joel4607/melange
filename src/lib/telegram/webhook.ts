@@ -153,8 +153,8 @@ function originalDisputeReplyMarkup(disputeId: string) {
   return {
     inline_keyboard: [
       [
-        { text: "Release to runner", callback_data: `dr:${disputeId}` },
-        { text: "Refund buyer", callback_data: `df:${disputeId}` },
+        { text: "Release demo credits", callback_data: `dr:${disputeId}` },
+        { text: "Refund demo credits", callback_data: `df:${disputeId}` },
       ],
     ],
   };
@@ -195,8 +195,8 @@ async function handleDisputeAction(
   await logAdminAction(admin.id, actionType, disputeId, { resolution });
 
   const text = `Dispute #${disputeId.slice(0, 8)} was resolved by ${escapeHtml(admin.name ?? "admin")}: ${
-    resolution === "release" ? "released to runner" : "refunded to buyer"
-  }.`;
+    resolution === "release" ? "demo credits released to runner" : "demo credits refunded to buyer"
+  }. Simulation only; no real funds are transferred.`;
   if (messageId) {
     await editTelegramMessage(chatId, messageId, text, { reply_markup: { inline_keyboard: [] } });
   } else {
@@ -229,8 +229,9 @@ async function handleDisputeConfirmation(
   const text = [
     `<b>Confirm dispute resolution</b>`,
     `Errand: ${escapeHtml(ctx.title)}`,
-    `Action: ${resolution === "release" ? "Release to runner" : "Refund to buyer"}`,
-    `Amount: GHS ${amount.toFixed(2)}`,
+    `Action: ${resolution === "release" ? "Release demo credits to runner" : "Refund demo credits to buyer"}`,
+    `Demo amount: Demo GHS ${amount.toFixed(2)}`,
+    `Simulation only; no real funds are transferred.`,
     `ID: #${disputeId.slice(0, 8)}`,
   ].join("\n");
 
@@ -273,8 +274,9 @@ async function cancelDisputeAction(
   const text = [
     `<b>Escalated dispute</b>`,
     `Errand: ${escapeHtml(ctx.title)}`,
-    `Buyer refund: GHS ${ctx.buyerRefund.toFixed(2)}`,
-    `Runner payout: GHS ${ctx.runnerPayout.toFixed(2)}`,
+    `Demo buyer refund: Demo GHS ${ctx.buyerRefund.toFixed(2)}`,
+    `Demo runner payout: Demo GHS ${ctx.runnerPayout.toFixed(2)}`,
+    `Simulation only; no real funds are transferred.`,
     `ID: #${disputeId.slice(0, 8)}`,
   ].join("\n");
 

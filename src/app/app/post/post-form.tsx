@@ -188,7 +188,7 @@ export function PostForm({
             className={inputClass}
           />
           <p className="mt-2 text-sm text-muted">
-            Demo platform fee GHS {fee.toFixed(2)} ({distanceKm.toFixed(1)} km · {urgency}).
+            Demo platform fee: Demo GHS {fee.toFixed(2)} ({distanceKm.toFixed(1)} km · {urgency}).
             Runner receives Demo GHS {runnerPayout.toFixed(2)}.
           </p>
           <p className="mt-1 text-xs text-muted">{DEMO_MONEY_NOTICE}</p>

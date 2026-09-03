@@ -315,16 +315,17 @@ export async function notifyAdminsOfDispute(
     `Buyer: ${escapeHtml(namesById.get(task.buyer_id) ?? "—")}`,
     `Runner: ${escapeHtml(task.selected_runner_id ? namesById.get(task.selected_runner_id) ?? "—" : "—")}`,
     `Reason: ${escapeHtml(dispute.reason)}`,
-    `Buyer refund: GHS ${price.toFixed(2)}`,
-    `Runner payout: GHS ${runnerPayout.toFixed(2)}`,
+    `Demo buyer refund: Demo GHS ${price.toFixed(2)}`,
+    `Demo runner payout: Demo GHS ${runnerPayout.toFixed(2)}`,
+    `Simulation only; no real funds are transferred.`,
     `ID: #${disputeId.slice(0, 8)}`,
   ].join("\n");
 
   const replyMarkup = {
     inline_keyboard: [
       [
-        { text: "Release to runner", callback_data: `dr:${disputeId}` },
-        { text: "Refund buyer", callback_data: `df:${disputeId}` },
+        { text: "Release demo credits", callback_data: `dr:${disputeId}` },
+        { text: "Refund demo credits", callback_data: `df:${disputeId}` },
       ],
       [{ text: "View in admin panel", url: adminUrl }],
     ],

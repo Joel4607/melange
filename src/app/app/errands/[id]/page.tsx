@@ -36,6 +36,7 @@ import { TaskActions } from "../../dashboard-widgets";
 import { TaskChat } from "./task-chat";
 import { FundingForm } from "./funding-form";
 import { RatingTipForm } from "./rating-tip-form";
+import { DEMO_MONEY_NOTICE, formatDemoMoney } from "@/lib/demo-money";
 
 function isUuid(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
@@ -55,7 +56,7 @@ type TaskStatus =
   | "resolved"
   | "cancelled";
 
-const STEPS = ["Posted", "Matched", "Paid", "Delivered"] as const;
+const STEPS = ["Posted", "Matched", "Demo held", "Delivered"] as const;
 const SHARE_ROUTE_LABELS = ["Pickup 1", "Pickup 2", "Drop-off 1", "Drop-off 2"] as const;
 
 interface ShareGroupView {
@@ -267,9 +268,9 @@ export default async function ErrandPage({
   ]);
 
   const step = stepIndex(task.status, task.selected_runner_id);
-  const price = Number(task.price).toFixed(2);
-  const fee = Number(task.fee).toFixed(2);
-  const runnerPayout = Number(Number(task.price) - Number(task.fee)).toFixed(2);
+  const price = formatDemoMoney(task.price);
+  const fee = formatDemoMoney(task.fee);
+  const runnerPayout = formatDemoMoney(Number(task.price) - Number(task.fee));
   const trustStars = runnerId ? (runnerTrust * 5).toFixed(1) : null;
   const runnerDistanceKm =
     candidate?.distance_km ??
@@ -403,7 +404,7 @@ export default async function ErrandPage({
           <section className="mt-6 rounded-[1.5rem] border border-green/30 bg-white p-6 shadow-sm">
             <p className="font-display text-lg font-semibold text-green-deep">
               {shareGroup.status === "awaiting_funding"
-                ? "Waiting for both payments"
+                ? "Waiting for both demo-credit holds"
                 : shareGroup.status === "accepted"
                   ? "Shared trip accepted"
                   : shareGroup.status === "in_progress"
@@ -531,41 +532,42 @@ export default async function ErrandPage({
         <section className="mt-5 rounded-[1.5rem] border border-cream-deep bg-white p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <span className="flex items-center gap-2 font-medium text-green-deep">
-              <Wallet className="h-5 w-5 text-orange-deep" aria-hidden /> Budget
+              <Wallet className="h-5 w-5 text-orange-deep" aria-hidden /> Demo budget
             </span>
             <span className="font-display text-2xl font-semibold text-green-deep">
-              GHS {price}
+              {price}
             </span>
           </div>
           <p className="mt-2 text-sm text-muted">
             {refunded
-              ? "Refunded to your wallet — the errand was cancelled or the dispute was resolved in your favour."
+              ? "Demo credits returned to your demo wallet — the errand was cancelled or the dispute was resolved in your favour."
               : released
-                ? `Released to ${runnerName}.`
+                ? `Demo credits released to ${runnerName}.`
                 : held
-                  ? `GHS ${price} held in escrow. ${task.status === "completed" ? "Rate to release or raise a dispute." : "Released when you confirm delivery."}`
-                  : "You'll pay into escrow when you confirm the match. Funds are only released on delivery."}
+                  ? `Demo credits in escrow: ${price}. ${task.status === "completed" ? "Rate to release them or raise a dispute." : "They are released when you confirm delivery."}`
+                  : "You’ll place demo credits in escrow when you confirm the match. They are only released on delivery."}
           </p>
           <div className="mt-3 rounded-xl border border-cream-deep bg-cream/40 p-4 text-sm">
             <div className="flex justify-between">
               <span className="text-muted">Total</span>
-              <span className="font-medium text-ink">GHS {price}</span>
+              <span className="font-medium text-ink">{price}</span>
             </div>
             <div className="mt-1 flex justify-between">
-              <span className="text-muted">Platform fee</span>
-              <span className="font-medium text-ink">GHS {fee}</span>
+              <span className="text-muted">Demo platform fee</span>
+              <span className="font-medium text-ink">{fee}</span>
             </div>
             <div className="mt-1 flex justify-between border-t border-cream-deep pt-1">
-              <span className="text-muted">Runner payout</span>
-              <span className="font-medium text-ink">GHS {runnerPayout}</span>
+              <span className="text-muted">Demo runner payout</span>
+              <span className="font-medium text-ink">{runnerPayout}</span>
             </div>
             {task.payment_reference ? (
               <div className="mt-1 flex justify-between border-t border-cream-deep pt-1">
-                <span className="text-muted">Mobile money ref</span>
+                <span className="text-muted">Demo transaction reference</span>
                 <span className="font-medium text-ink">{task.payment_reference}</span>
               </div>
             ) : null}
           </div>
+          <p className="mt-3 text-xs text-muted">{DEMO_MONEY_NOTICE}</p>
         </section>
 
         {/* Locations */}
@@ -658,7 +660,7 @@ export default async function ErrandPage({
               <div className="flex flex-col gap-3">
                 {task.status === "matched" && !task.selected_runner_id && candidate ? (
                   <FundingForm action={payIntoEscrow.bind(null, task.id)}>
-                    Confirm &amp; use Demo GHS {price} in escrow
+                    Confirm &amp; use {price} in escrow
                   </FundingForm>
                 ) : null}
                 <form action={cancelErrand.bind(null, task.id)}>
@@ -670,7 +672,7 @@ export default async function ErrandPage({
             {task.status === "matched" && task.selected_runner_id ? (
               <div className="rounded-[1.5rem] border border-cream-deep bg-white p-6 text-center shadow-sm">
                 <p className="font-medium text-green-deep">
-                  Paid — waiting for {runnerName} to accept
+                  Demo credits held — waiting for {runnerName} to accept
                 </p>
               </div>
             ) : null}
@@ -701,17 +703,17 @@ export default async function ErrandPage({
                   <p className="mt-1 text-sm text-muted">
                     You rated {runnerName} {existingRating.stars}★
                     {Number(existingRating.tip_amount ?? 0) > 0
-                      ? ` and tipped GHS ${Number(existingRating.tip_amount).toFixed(2)}`
+                      ? ` and sent a demo tip of ${formatDemoMoney(existingRating.tip_amount)}`
                       : ""}
                     . Thanks!
                   </p>
                 ) : released ? (
                   <p className="mt-1 text-sm text-muted">
-                    Payment released. How did {runnerName} do?
+                    Demo credits released. How did {runnerName} do?
                   </p>
                 ) : (
                   <p className="mt-1 text-sm text-muted">
-                    Rate to release payment, or raise a dispute if something is wrong.
+                    Rate to release the demo credits, or raise a dispute if something is wrong.
                   </p>
                 )}
                 {!existingRating && (
@@ -753,14 +755,14 @@ export default async function ErrandPage({
                 </p>
                 <p className="mt-1 text-sm text-muted">
                   {refunded
-                    ? "Dispute resolved with a refund to your wallet."
-                    : `Payment released to ${runnerName}.`}
+                    ? "Dispute resolved with demo credits returned to your demo wallet."
+                    : `Demo credits released to ${runnerName}.`}
                 </p>
                 {existingRating ? (
                   <p className="mt-1 text-sm text-muted">
                     You rated {runnerName} {existingRating.stars}★
                     {Number(existingRating.tip_amount ?? 0) > 0
-                      ? ` and tipped GHS ${Number(existingRating.tip_amount).toFixed(2)}`
+                      ? ` and sent a demo tip of ${formatDemoMoney(existingRating.tip_amount)}`
                       : ""}
                     .
                   </p>
@@ -787,7 +789,7 @@ export default async function ErrandPage({
                   In dispute
                 </p>
                 <p className="mt-1 text-sm text-muted">
-                  Your dispute is under review. Funds stay in escrow until a decision is made.
+                  Your dispute is under review. Demo credits stay in escrow until a decision is made.
                 </p>
               </div>
             ) : null}
@@ -799,7 +801,7 @@ export default async function ErrandPage({
                 </p>
                 <p className="mt-1 text-sm text-muted">
                   {refunded
-                    ? "Your wallet has been refunded."
+                    ? "Your demo wallet credits have been restored."
                     : "This errand was cancelled."}
                 </p>
               </div>

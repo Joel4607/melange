@@ -44,6 +44,7 @@ already created, RLS is enabled last once every table exists):
 | `0008_notifications.sql` | `notifications` |
 | `0009_rls.sql` | `is_admin()` + Row-Level Security policies |
 | `0045_matching_reliability.sql` | atomic match finalization, active-run linkage, outcome telemetry |
+| `0049_demo_wallet_safety.sql` | fixed prototype allocation, atomic demo escrow/tips, restricted mutation RPCs |
 
 **Verify migrations** (apply them to a throwaway Postgres + smoke-test the
 signup trigger and RLS) — this is exactly what CI runs:
@@ -154,6 +155,17 @@ dispute resolutions:
 | `holdFunds` / `releaseFunds` / `refund` | simulated escrow: move a task's price between `wallets.balance` / `held`, append the `ledger_entries` audit row |
 | `cancelTaskWithRefund(...)` | atomically authorizes cancellation, refunds any held escrow, and marks the errand cancelled |
 | `resolveDispute(disputeId)` | gathers proof/GPS/fraud context, runs `arbitrate`, auto-resolves clear cases (applying the escrow effect) or marks the dispute `escalated` |
+
+### Prototype money boundary
+
+Mélange does not accept or transfer real money. Each account receives one
+database-enforced, non-redeemable allocation of Demo GHS 1,000. The app cannot
+top up that allocation or automatically cover a shortfall; an unaffordable
+errand or tip fails without leaving partial task, escrow, or rating state.
+Demo holds, releases, refunds, payouts, and tips remain only to demonstrate the
+product workflow. Before any balance becomes redeemable, these functions must
+be replaced with an authoritative payment ledger driven by verified payment
+provider events.
 
 Seed a fresh end-to-end scenario (users → task → match → hold → proof → dispute
 → release) against your project:

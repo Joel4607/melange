@@ -12,6 +12,7 @@ import {
   rejectVerification,
 } from "./actions";
 import type { DisputeRow, FraudFlagRow, VerificationRequestRow } from "@/lib/server/rows";
+import { formatDemoMoney } from "@/lib/demo-money";
 
 async function signedStorageUrl(
   db: ReturnType<typeof getServiceClient>,
@@ -384,7 +385,7 @@ export default async function AdminPage() {
                   <p className="mt-2 text-sm text-ink">{d.reason}</p>
                   {d.payment_reference ? (
                     <p className="mt-1 text-xs text-muted">
-                      Payment reference: {d.payment_reference}
+                      Demo transaction reference: {d.payment_reference}
                     </p>
                   ) : null}
                   <p className="mt-1 text-xs text-muted">
@@ -481,14 +482,14 @@ export default async function AdminPage() {
 
                   {d.ledger.length > 0 ? (
                     <div className="mt-3 rounded-xl border border-cream-deep bg-cream/40 p-3 text-sm">
-                      <p className="font-medium text-green-deep">Transaction ledger</p>
+                      <p className="font-medium text-green-deep">Demo transaction ledger</p>
                       <ul className="mt-1 space-y-1 text-muted">
                         {d.ledger.map((entry, i) => (
                           <li key={i} className="flex justify-between">
                             <span>
                               {entry.type} · {nameById.get(entry.user_id) ?? "Unknown"}
                             </span>
-                            <span>GHS {Number(entry.amount).toFixed(2)}</span>
+                            <span>{formatDemoMoney(entry.amount)}</span>
                           </li>
                         ))}
                       </ul>
@@ -534,7 +535,7 @@ export default async function AdminPage() {
                         type="submit"
                         className="rounded-full bg-orange px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-deep"
                       >
-                        Refund buyer
+                        Refund demo credits
                       </button>
                     </form>
                     <form action={adminResolveDispute.bind(null, d.id, "release")}>
@@ -542,7 +543,7 @@ export default async function AdminPage() {
                         type="submit"
                         className="rounded-full bg-green px-4 py-2 text-sm font-semibold text-cream transition hover:bg-green-deep"
                       >
-                        Release to runner
+                        Release demo credits to runner
                       </button>
                     </form>
                   </div>

@@ -35,7 +35,7 @@ function navItems(role: Role): NavItem[] {
     return [
       { href: "/app", label: "Dashboard", shortLabel: "Home", icon: LayoutDashboard },
       { href: "/app/feed", label: "Find work", icon: PackageCheck },
-      { href: "/app/earnings", label: "Earnings", icon: Wallet },
+      { href: "/app/earnings", label: "Demo earnings", icon: Wallet },
       { href: "/app/settings", label: "Settings", icon: Settings },
     ];
   }
@@ -43,7 +43,7 @@ function navItems(role: Role): NavItem[] {
     { href: "/app", label: "Dashboard", shortLabel: "Home", icon: LayoutDashboard },
     { href: "/app/post", label: "Post errand", shortLabel: "Post", icon: PlusCircle },
     { href: "/app/runners", label: "Runners", icon: Users },
-    { href: "/app/wallet", label: "Wallet", icon: Wallet },
+    { href: "/app/wallet", label: "Demo wallet", icon: Wallet },
     { href: "/app/settings", label: "Settings", icon: Settings },
   ];
 }

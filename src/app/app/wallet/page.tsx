@@ -9,7 +9,7 @@ import { DEMO_MONEY_NOTICE, formatDemoMoney } from "@/lib/demo-money";
 import { RealtimeStatus } from "../realtime-status";
 
 export const metadata: Metadata = {
-  title: "Wallet — Mélange",
+  title: "Demo wallet — Mélange",
 };
 
 const LABELS: Record<string, string> = {
@@ -92,7 +92,7 @@ export default async function WalletPage() {
         </div>
 
         <section className="mt-8">
-          <h2 className="font-display text-lg font-semibold text-green-deep">Transactions</h2>
+          <h2 className="font-display text-lg font-semibold text-green-deep">Demo transactions</h2>
           {ledger?.length ? (
             <ul className="mt-4 space-y-3">
               {ledger.map((entry) => {
@@ -120,7 +120,7 @@ export default async function WalletPage() {
               })}
             </ul>
           ) : (
-            <p className="mt-3 text-sm text-muted">No transactions yet.</p>
+            <p className="mt-3 text-sm text-muted">No demo transactions yet.</p>
           )}
         </section>
         <RealtimeStatus userId={user.id} />

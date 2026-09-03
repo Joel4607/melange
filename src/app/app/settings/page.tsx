@@ -9,6 +9,7 @@ import { updateNotificationPreferences, updateProfile } from "../actions";
 import { AvailabilityToggle } from "../availability-toggle";
 import { CapabilitiesEditor } from "../capabilities-editor";
 import { ScheduleEditor } from "../schedule-editor";
+import { formatDemoMoney } from "@/lib/demo-money";
 
 export const metadata: Metadata = {
   title: "Settings — Mélange",
@@ -353,10 +354,10 @@ export default async function SettingsPage() {
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-muted">Total earned</span>
+                <span className="text-muted">Demo earnings</span>
                 <span className="inline-flex items-center gap-1 font-medium text-ink">
                   <Wallet className="h-4 w-4" aria-hidden />
-                  GHS {totalEarned.toFixed(2)}
+                  {formatDemoMoney(totalEarned)}
                 </span>
               </div>
               <div className="flex items-center justify-between">
@@ -401,7 +402,7 @@ export default async function SettingsPage() {
               href="/app/earnings"
               className="mt-4 inline-block text-sm font-medium text-green-deep underline transition hover:text-green"
             >
-              View earnings history
+              View demo earnings history
             </Link>
           </section>
         ) : null}

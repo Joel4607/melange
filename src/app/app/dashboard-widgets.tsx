@@ -2,6 +2,7 @@ import Link from "next/link";
 import { PackageCheck, ArrowRight, type LucideIcon } from "lucide-react";
 import { acceptOffer, declineOffer, markPickedUp, cancelRunnerErrand } from "./actions";
 import { MarkDeliveredForm } from "./mark-delivered-form";
+import { formatDemoMoney } from "@/lib/demo-money";
 
 /* ------------------------------------------------------------------ */
 /* Shared types                                                         */
@@ -245,7 +246,7 @@ export function BuyerErrandList({ errands }: { errands: DashboardErrand[] }) {
                 {e.title}
               </span>
               <span className="text-xs text-muted">
-                {e.category ?? "Errand"} · GHS {Number(e.price).toFixed(2)}
+                {e.category ?? "Errand"} · {formatDemoMoney(e.price)}
               </span>
             </span>
             <span className="flex shrink-0 items-center gap-2">
@@ -272,15 +273,17 @@ export function TaskCard({
 }) {
   const payout =
     task.fee !== undefined
-      ? (Number(task.price) - Number(task.fee)).toFixed(2)
-      : Number(task.price).toFixed(2);
+      ? Number(task.price) - Number(task.fee)
+      : Number(task.price);
 
   return (
     <div className="rounded-2xl border border-cream-deep bg-white p-4 shadow-sm transition hover:border-green/20">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="truncate font-medium text-ink">{task.title}</p>
-          <p className="text-xs text-muted">{task.category ?? "Errand"} · Payout GHS {payout}</p>
+          <p className="text-xs text-muted">
+            {task.category ?? "Errand"} · Demo payout {formatDemoMoney(payout)}
+          </p>
         </div>
         <StatusPill status={task.status} />
       </div>

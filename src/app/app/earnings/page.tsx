@@ -5,9 +5,10 @@ import { ArrowLeft, Bike, Star, Wallet } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getServiceClient } from "@/lib/supabase/service";
 import { Logo } from "@/components/brand";
+import { DEMO_MONEY_NOTICE, formatDemoMoney } from "@/lib/demo-money";
 
 export const metadata: Metadata = {
-  title: "Earnings — Mélange",
+  title: "Demo earnings — Mélange",
 };
 
 interface CompletedTask {
@@ -85,16 +86,17 @@ export default async function EarningsPage() {
       </header>
 
       <main className="mx-auto w-full max-w-4xl flex-1 px-5 py-8 sm:py-10">
-        <h1 className="font-display text-fluid-h2 font-semibold text-green-deep">Earnings</h1>
+        <h1 className="font-display text-fluid-h2 font-semibold text-green-deep">Demo earnings</h1>
         <p className="mt-2 text-muted">
-          A history of completed errands, payouts, and the ratings buyers left you.
+          A history of completed errands, demo payouts, and the ratings buyers left you.
         </p>
+        <p className="mt-2 text-sm text-muted">{DEMO_MONEY_NOTICE}</p>
 
         <div className="mt-6 grid gap-4 sm:grid-cols-3">
           <SummaryCard
             icon={<Wallet className="h-5 w-5 text-orange-deep" aria-hidden />}
-            label="Total earned"
-            value={`GHS ${totalEarned.toFixed(2)}`}
+            label="Total demo earnings"
+            value={formatDemoMoney(totalEarned)}
           />
           <SummaryCard
             icon={<Bike className="h-5 w-5 text-orange-deep" aria-hidden />}
@@ -112,7 +114,7 @@ export default async function EarningsPage() {
           <div className="mt-8 rounded-[1.5rem] border border-cream-deep bg-white p-8 text-center shadow-sm">
             <p className="font-medium text-green-deep">No completed errands yet</p>
             <p className="mt-1 text-sm text-muted">
-              Complete your first errand and your earnings history will show up here.
+              Complete your first errand and your demo earnings history will show up here.
             </p>
           </div>
         ) : (
@@ -140,7 +142,7 @@ export default async function EarningsPage() {
                         <Star className="h-3.5 w-3.5 fill-current" aria-hidden />
                         {rating.stars} / 5
                         {rating.comment ? ` · ${rating.comment}` : null}
-                        {tip > 0 ? ` · Tip GHS ${tip.toFixed(2)}` : null}
+                        {tip > 0 ? ` · Demo tip ${formatDemoMoney(tip)}` : null}
                       </p>
                     ) : (
                       <p className="mt-2 text-sm text-muted">No rating yet</p>
@@ -148,11 +150,11 @@ export default async function EarningsPage() {
                   </div>
                   <div className="text-left sm:text-right">
                     <p className="font-display text-xl font-semibold text-green-deep">
-                      GHS {total.toFixed(2)}
+                      {formatDemoMoney(total)}
                     </p>
                     <p className="text-sm text-muted">
-                      Payout GHS {payout.toFixed(2)}
-                      {tip > 0 ? ` · Tip GHS ${tip.toFixed(2)}` : ""}
+                      Demo payout {formatDemoMoney(payout)}
+                      {tip > 0 ? ` · Demo tip ${formatDemoMoney(tip)}` : ""}
                     </p>
                   </div>
                 </li>

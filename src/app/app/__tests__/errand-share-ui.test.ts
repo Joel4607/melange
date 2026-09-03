@@ -16,7 +16,7 @@ describe("Errand-Share UI contracts", () => {
     expect(feed).toContain("claimSharedGroup.bind(null, opportunity.id)");
     expect(feed).toContain("2 errands");
     expect(feed).toContain("4 ordered stops");
-    expect(feed).toContain("Combined payout GHS");
+    expect(feed).toContain("Combined demo payout");
     expect(feed).toContain("Stricter deadline");
   });
 
@@ -35,7 +35,7 @@ describe("Errand-Share UI contracts", () => {
     expect(tracking).toContain('.from("errand_share_groups")');
     expect(tracking).toContain("Looking for a shared trip");
     expect(tracking).toContain("Paired");
-    expect(tracking).toContain("Waiting for both payments");
+    expect(tracking).toContain("Waiting for both demo-credit holds");
     expect(tracking).toContain("Continuing alone");
     expect(tracking).toContain("<FundingForm");
     expect(tracking).toContain("confirmSharedEscrow.bind(");

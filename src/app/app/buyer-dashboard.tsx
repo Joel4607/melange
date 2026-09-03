@@ -17,6 +17,7 @@ import {
   type DashboardErrand,
   type DashboardFocus,
 } from "./dashboard-widgets";
+import { formatDemoMoney } from "@/lib/demo-money";
 
 export function BuyerDashboard({
   errands,
@@ -82,8 +83,8 @@ function WalletBalanceCard({
 }: {
   wallet: { balance: string; held: string } | null;
 }) {
-  const balance = Number(wallet?.balance ?? 0).toFixed(2);
-  const held = Number(wallet?.held ?? 0).toFixed(2);
+  const balance = formatDemoMoney(wallet?.balance ?? 0);
+  const held = formatDemoMoney(wallet?.held ?? 0);
 
   return (
     <section
@@ -97,9 +98,9 @@ function WalletBalanceCard({
         <p className="text-sm font-medium text-ink">Demo wallet balance</p>
       </div>
       <p className="mt-3 font-display text-2xl font-semibold leading-tight tracking-tight text-ink sm:text-3xl">
-        Demo GHS {balance}
+        {balance}
       </p>
-      <p className="mt-1 text-xs text-muted">Demo GHS {held} in escrow</p>
+      <p className="mt-1 text-xs text-muted">{held} in escrow</p>
 
       <div className="mt-4">
         <Link

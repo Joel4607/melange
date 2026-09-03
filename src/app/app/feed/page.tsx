@@ -10,6 +10,7 @@ import { isRunnerAvailable } from "@/lib/availability";
 import { claimSharedGroup, claimTask } from "../actions";
 import { RealtimeStatus } from "../realtime-status";
 import { MapView, MapMarker } from "../map-view";
+import { formatDemoMoney } from "@/lib/demo-money";
 
 export const metadata: Metadata = {
   title: "Open errands — Mélange",
@@ -269,7 +270,7 @@ export default async function FeedPage() {
                           {opportunity.categories.join(" + ") || "Flexible errands"} · 4 ordered stops
                         </p>
                         <p className="mt-1 text-sm text-muted">
-                          Combined payout GHS {opportunity.payout.toFixed(2)} · {opportunity.distanceKm.toFixed(1)} km route
+                          Combined demo payout {formatDemoMoney(opportunity.payout)} · {opportunity.distanceKm.toFixed(1)} km route
                         </p>
                         <p className="mt-1 text-sm text-muted">
                           Stricter deadline: {opportunity.deadlineAt
@@ -304,7 +305,7 @@ export default async function FeedPage() {
                 !task.category ||
                 capabilities.size === 0 ||
                 capabilities.has(task.category);
-              const payout = (Number(task.price) - Number(task.fee)).toFixed(2);
+              const payout = Number(task.price) - Number(task.fee);
               return (
                 <li
                   key={task.id}
@@ -316,7 +317,7 @@ export default async function FeedPage() {
                         {task.title}
                       </p>
                       <p className="text-sm text-muted">
-                        {task.category ?? "Errand"} · {task.urgency} · Payout GHS {payout}
+                        {task.category ?? "Errand"} · {task.urgency} · Demo payout {formatDemoMoney(payout)}
                       </p>
                       {task.distance != null ? (
                         <p className="mt-1 flex items-center gap-1 text-sm text-muted">

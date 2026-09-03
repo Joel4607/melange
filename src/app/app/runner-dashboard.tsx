@@ -17,6 +17,7 @@ import {
   type DashboardFocus,
   type DashboardTask,
 } from "./dashboard-widgets";
+import { formatDemoMoney } from "@/lib/demo-money";
 
 interface RunnerDashboardProps {
   profile: {
@@ -79,9 +80,9 @@ export function RunnerDashboard({
 
       <div className="grid grid-cols-3 gap-2 sm:gap-4">
         <StatCard
-          title="Total earned"
-          value={`GHS ${totalEarned.toFixed(2)}`}
-          subtitle={`${completedCount} completed errands`}
+          title="Demo earnings"
+          value={formatDemoMoney(totalEarned)}
+          subtitle={`${completedCount} completed errands · non-redeemable`}
           icon={WalletIcon}
           tone="green"
         />
@@ -198,11 +199,11 @@ function runnerFocus(
   hasProfile: boolean,
 ): DashboardFocus {
   if (task?.status === "matched") {
-    const payout = Math.max(0, Number(task.price) - Number(task.fee ?? 0)).toFixed(2);
+    const payout = Math.max(0, Number(task.price) - Number(task.fee ?? 0));
     return {
       eyebrow: "New offer",
       title: task.title,
-      description: `${task.category ?? "Errand"} · Payout GHS ${payout}. Review the details before accepting.`,
+      description: `${task.category ?? "Errand"} · Demo payout ${formatDemoMoney(payout)}. Review the details before accepting.`,
       primary: { href: `/app/errands/${task.id}`, label: "Review offer" },
       tone: "orange",
     };
@@ -238,7 +239,7 @@ function runnerFocus(
 
   return {
     eyebrow: "Start here",
-    title: "Ready to start earning?",
+    title: "Ready for your first demo errand?",
     description: "Set your availability and capabilities so buyers can match with you.",
     primary: { href: "/app/settings", label: "Set availability" },
     secondary: { href: "/app/feed", label: "Browse open errands" },
