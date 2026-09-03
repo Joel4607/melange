@@ -1,5 +1,4 @@
 import { getServiceClient } from "@/lib/supabase/service";
-import type { WalletRow } from "./rows";
 
 /**
  * Simulated escrow. Every wallet/ledger mutation goes through this server-only
@@ -27,49 +26,6 @@ export async function hasLedgerEntry(
     .maybeSingle<{ id: string }>();
   if (error) throw new Error(`escrow: ${error.message}`);
   return data != null;
-}
-
-async function loadWallet(db: Db, userId: string): Promise<WalletRow> {
-  const existing = await db
-    .from("wallets")
-    .select("user_id, balance, held")
-    .eq("user_id", userId)
-    .maybeSingle<WalletRow>();
-  if (existing.error) throw new Error(`escrow: ${existing.error.message}`);
-  if (existing.data) return existing.data;
-
-  const created = await db
-    .from("wallets")
-    .insert({ user_id: userId })
-    .select("user_id, balance, held")
-    .single<WalletRow>();
-  if (created.error || !created.data) {
-    throw new Error(`escrow: could not create wallet for ${userId}`);
-  }
-  return created.data;
-}
-
-/**
- * Credit simulated funds to a user's available balance, recording a `topup`
- * ledger entry. There is no real payment rail in this walking skeleton, so this
- * stands in for "the buyer loaded their wallet". Returns the new balance.
- */
-export async function topUp(userId: string, amount: number): Promise<number> {
-  const db = getServiceClient();
-  if (!Number.isFinite(amount) || amount <= 0) {
-    throw new Error("escrow: top-up amount must be a positive number");
-  }
-  const cents = Math.round(amount * 100);
-  if (cents <= 0) throw new Error("escrow: top-up amount must be positive");
-
-  const { error } = await db.rpc("top_up_wallet", {
-    p_user_id: userId,
-    p_amount_cents: cents,
-  });
-  if (error) throw new Error(`escrow: ${error.message}`);
-
-  const wallet = await loadWallet(db, userId);
-  return Number(wallet.balance);
 }
 
 /**

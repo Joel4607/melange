@@ -5,6 +5,7 @@ import { useFormStatus } from "react-dom";
 import { LoaderCircle, MapPin, Navigation, Plus, Star, Trash2, User } from "lucide-react";
 import type { Urgency } from "@/lib/algorithm";
 import { estimateErrandFee } from "@/lib/pricing";
+import { DEMO_MONEY_NOTICE } from "@/lib/demo-money";
 import { createErrand } from "../actions";
 
 export const CATEGORIES = [
@@ -174,7 +175,7 @@ export function PostForm({
           </select>
         </Field>
 
-        <Field label="Budget (GHS)">
+        <Field label="Budget (Demo GHS)">
           <input
             name="price"
             type="number"
@@ -186,21 +187,12 @@ export function PostForm({
             className={inputClass}
           />
           <p className="mt-2 text-sm text-muted">
-            Platform fee GHS {fee.toFixed(2)} ({distanceKm.toFixed(1)} km · {urgency}).
-            Runner receives GHS {runnerPayout.toFixed(2)}.
+            Demo platform fee GHS {fee.toFixed(2)} ({distanceKm.toFixed(1)} km · {urgency}).
+            Runner receives Demo GHS {runnerPayout.toFixed(2)}.
           </p>
+          <p className="mt-1 text-xs text-muted">{DEMO_MONEY_NOTICE}</p>
         </Field>
       </div>
-
-      <Field label="Mobile money reference (optional)">
-        <input
-          name="payment_reference"
-          type="text"
-          placeholder="e.g. 1234567890"
-          maxLength={40}
-          className={inputClass}
-        />
-      </Field>
 
       <Field label="How soon?">
         <input type="hidden" name="urgency" value={urgency} />

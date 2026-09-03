@@ -5,7 +5,7 @@ import { ArrowLeft, Wallet } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Logo } from "@/components/brand";
 import { LedgerRow } from "@/lib/server/rows";
-import { TopUpForm } from "./top-up-form";
+import { DEMO_MONEY_NOTICE, formatDemoMoney } from "@/lib/demo-money";
 import { RealtimeStatus } from "../realtime-status";
 
 export const metadata: Metadata = {
@@ -13,13 +13,13 @@ export const metadata: Metadata = {
 };
 
 const LABELS: Record<string, string> = {
-  topup: "Top up",
-  hold: "Held in escrow",
-  release: "Escrow released",
-  payout: "Payout",
-  refund: "Refund",
-  tip: "Tip",
-  tip_charge: "Tip",
+  topup: "Initial demo credits",
+  hold: "Demo credits held in escrow",
+  release: "Demo escrow released",
+  payout: "Demo payout",
+  refund: "Demo refund",
+  tip: "Demo tip",
+  tip_charge: "Demo tip",
 };
 
 export default async function WalletPage() {
@@ -70,25 +70,25 @@ export default async function WalletPage() {
       </header>
 
       <main className="mx-auto w-full max-w-2xl flex-1 px-5 py-10">
-        <h1 className="font-display text-fluid-h2 font-semibold text-green-deep">Wallet</h1>
+        <h1 className="font-display text-fluid-h2 font-semibold text-green-deep">Demo wallet</h1>
 
         <div className="mt-6 rounded-[1.5rem] border border-cream-deep bg-white p-6 shadow-sm">
           <p className="flex items-center gap-2 font-medium text-green-deep">
-            <Wallet className="h-5 w-5 text-orange-deep" aria-hidden /> Balance
+            <Wallet className="h-5 w-5 text-orange-deep" aria-hidden /> Demo balance
           </p>
           <div className="mt-4 grid grid-cols-2 gap-4">
             <div>
-              <p className="text-sm text-muted">Available</p>
-              <p className="font-display text-3xl font-semibold text-green-deep">GHS {balance}</p>
+              <p className="text-sm text-muted">Available demo credits</p>
+              <p className="font-display text-3xl font-semibold text-green-deep">{formatDemoMoney(balance)}</p>
             </div>
             <div>
-              <p className="text-sm text-muted">In escrow</p>
-              <p className="font-display text-3xl font-semibold text-green-deep">GHS {held}</p>
+              <p className="text-sm text-muted">Demo credits in escrow</p>
+              <p className="font-display text-3xl font-semibold text-green-deep">{formatDemoMoney(held)}</p>
             </div>
           </div>
-          <div className="mt-6">
-            <TopUpForm />
-          </div>
+          <p className="mt-6 rounded-xl bg-orange/10 px-4 py-3 text-sm text-orange-deep">
+            {DEMO_MONEY_NOTICE} Each account receives one fixed Demo GHS 1,000.00 allocation.
+          </p>
         </div>
 
         <section className="mt-8">
@@ -113,7 +113,7 @@ export default async function WalletPage() {
                     <span
                       className={`font-medium ${isCredit ? "text-green-deep" : "text-orange-deep"}`}
                     >
-                      {isCredit ? "+" : ""}GHS {amount.toFixed(2)}
+                      {isCredit ? "+" : ""}{formatDemoMoney(amount)}
                     </span>
                   </li>
                 );
@@ -128,4 +128,3 @@ export default async function WalletPage() {
     </div>
   );
 }
-

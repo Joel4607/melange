@@ -5,7 +5,6 @@ import {
   CheckCircle,
   Clock,
   Navigation,
-  Plus,
   PlusCircle,
   Wallet as WalletIcon,
   type LucideIcon,
@@ -88,33 +87,26 @@ function WalletBalanceCard({
 
   return (
     <section
-      aria-label="Wallet balance"
+      aria-label="Demo wallet balance"
       className="col-span-2 min-w-0 rounded-2xl border border-cream-deep bg-white p-4 shadow-sm sm:col-span-1 sm:rounded-3xl sm:p-5"
     >
       <div className="flex items-center gap-2">
         <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-green/10 text-green-deep">
           <WalletIcon className="h-4 w-4" aria-hidden />
         </span>
-        <p className="text-sm font-medium text-ink">Wallet balance</p>
+        <p className="text-sm font-medium text-ink">Demo wallet balance</p>
       </div>
       <p className="mt-3 font-display text-2xl font-semibold leading-tight tracking-tight text-ink sm:text-3xl">
-        GHS {balance}
+        Demo GHS {balance}
       </p>
-      <p className="mt-1 text-xs text-muted">GHS {held} in escrow</p>
+      <p className="mt-1 text-xs text-muted">Demo GHS {held} in escrow</p>
 
-      <div className="mt-4 grid grid-cols-2 gap-2">
+      <div className="mt-4">
         <Link
           href="/app/wallet"
           className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-green px-3 py-2.5 text-sm font-semibold text-cream transition hover:bg-green-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green"
         >
-          <Plus className="h-4 w-4" aria-hidden />
-          Top up
-        </Link>
-        <Link
-          href="/app/wallet"
-          className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-cream-deep bg-cream/30 px-3 py-2.5 text-sm font-semibold text-green-deep transition hover:bg-cream focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green"
-        >
-          Wallet
+          View demo wallet
           <ArrowUpRight className="h-4 w-4" aria-hidden />
         </Link>
       </div>

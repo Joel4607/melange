@@ -31,7 +31,6 @@ import {
   hasLedgerEntry,
   holdFunds,
   releaseFunds,
-  topUp,
 } from "@/lib/server/escrow";
 import { resolveDispute } from "@/lib/server/disputes";
 import {
@@ -269,8 +268,6 @@ export async function createErrand(formData: FormData) {
   const dropoffLat = dropoffLatRaw ? parseNumber(formData.get("dropoff_lat")) : Number.NaN;
   const dropoffLng = dropoffLngRaw ? parseNumber(formData.get("dropoff_lng")) : Number.NaN;
   const runnerId = String(formData.get("runner_id") ?? "").trim();
-  const paymentReference = String(formData.get("payment_reference") ?? "").trim();
-
   const stopsRaw = String(formData.get("stops") ?? "[]").trim();
   const stops = parseStops(stopsRaw);
 
@@ -348,7 +345,6 @@ export async function createErrand(formData: FormData) {
         pickup_lng: pickupLng,
         dropoff_lat: dropoff?.lat ?? null,
         dropoff_lng: dropoff?.lng ?? null,
-        payment_reference: paymentReference || null,
         stops,
         recurrence,
         recurrence_end_date: recurrenceEndDate,
@@ -362,15 +358,6 @@ export async function createErrand(formData: FormData) {
       throw new Error(error?.message ?? "Could not create errand");
     }
 
-    const { data: wallet } = await db
-      .from("wallets")
-      .select("balance")
-      .eq("user_id", userId)
-      .maybeSingle<{ balance: string }>();
-    const balance = wallet ? Number(wallet.balance) : 0;
-    if (balance < price) {
-      await topUp(userId, price - balance);
-    }
     await holdFunds(task.id);
     await createNotification(runnerId, "offer", { task_id: task.id, task_title: title });
 
@@ -403,7 +390,6 @@ export async function createErrand(formData: FormData) {
       pickup_lng: pickupLng,
       dropoff_lat: dropoff?.lat ?? null,
       dropoff_lng: dropoff?.lng ?? null,
-      payment_reference: paymentReference || null,
       stops,
       recurrence,
       recurrence_end_date: recurrenceEndDate,
@@ -1367,19 +1353,6 @@ export async function updateCapabilities(formData: FormData) {
 
   revalidatePath("/app");
   revalidatePath("/app/settings");
-}
-
-/** Top up the signed-in user's simulated wallet. */
-export async function topUpWallet(formData: FormData) {
-  const userId = await requireUserId();
-  const amountRaw = parseNumber(formData.get("amount"));
-  const amount = Number.isFinite(amountRaw) ? Math.max(0, amountRaw) : Number.NaN;
-  if (!Number.isFinite(amount) || amount <= 0) {
-    throw new Error("Amount must be a positive number");
-  }
-  await topUp(userId, amount);
-  revalidatePath("/app");
-  revalidatePath("/app/wallet");
 }
 
 /** Mark all notifications read for the signed-in user. */
