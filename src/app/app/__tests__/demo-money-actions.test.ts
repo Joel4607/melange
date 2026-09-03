@@ -46,6 +46,16 @@ describe("SEC-011 application money boundary", () => {
     expect(dashboard).toContain("View demo wallet");
   });
 
+  it("rates, releases, and tips through one atomic database action", () => {
+    const actions = source("src/app/app/actions.ts");
+    const rating = actionBody(actions, "rateRunner");
+
+    expect(rating).toContain("parseDemoTip(");
+    expect(rating).toContain('.rpc("rate_and_tip"');
+    expect(rating).not.toContain("releaseFunds(");
+    expect(rating).toContain("DemoActionState");
+  });
+
   it("creates direct requests and their holds through one RPC", () => {
     const actions = source("src/app/app/actions.ts");
     const create = actionBody(actions, "createErrand");

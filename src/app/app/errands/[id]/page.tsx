@@ -35,6 +35,7 @@ import {
 import { TaskActions } from "../../dashboard-widgets";
 import { TaskChat } from "./task-chat";
 import { FundingForm } from "./funding-form";
+import { RatingTipForm } from "./rating-tip-form";
 
 function isUuid(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
@@ -714,35 +715,12 @@ export default async function ErrandPage({
                   </p>
                 )}
                 {!existingRating && (
-                  <form className="mt-3 space-y-3">
-                    <div className="flex justify-center gap-2">
-                      {[1, 2, 3, 4, 5].map((n) => (
-                        <button
-                          key={n}
-                          type="submit"
-                          formAction={rateRunner.bind(null, task.id, n)}
-                          aria-label={`Rate ${n} stars`}
-                          className="grid h-10 w-10 place-items-center rounded-full border border-cream-deep text-orange-deep transition hover:bg-orange/10"
-                        >
-                          <Star className="h-5 w-5" aria-hidden />
-                        </button>
-                      ))}
-                    </div>
-                    <textarea
-                      name="comment"
-                      placeholder="Add a comment (optional)"
-                      rows={2}
-                      className="mx-auto w-full max-w-xs rounded-xl border border-cream-deep bg-white px-4 py-2 text-sm text-ink outline-none transition placeholder:text-muted focus:border-green-soft"
+                  <div className="mt-3">
+                    <RatingTipForm
+                      runnerName={runnerName}
+                      action={rateRunner.bind(null, task.id)}
                     />
-                    <input
-                      type="number"
-                      name="tip"
-                      step="0.01"
-                      min={0}
-                      placeholder="Optional tip (GHS)"
-                      className="mx-auto w-full max-w-xs rounded-xl border border-cream-deep bg-white px-4 py-2 text-sm text-ink outline-none transition placeholder:text-muted focus:border-green-soft"
-                    />
-                  </form>
+                  </div>
                 )}
                 {!existingRating && !released && (
                   <form action={raiseDispute.bind(null, task.id)} className="mt-4">
@@ -791,35 +769,12 @@ export default async function ErrandPage({
                     <p className="mt-1 text-sm text-muted">
                       How did {runnerName} do?
                     </p>
-                    <form className="mt-3 space-y-3">
-                      <div className="flex justify-center gap-2">
-                        {[1, 2, 3, 4, 5].map((n) => (
-                          <button
-                            key={n}
-                            type="submit"
-                            formAction={rateRunner.bind(null, task.id, n)}
-                            aria-label={`Rate ${n} stars`}
-                            className="grid h-10 w-10 place-items-center rounded-full border border-cream-deep text-orange-deep transition hover:bg-orange/10"
-                          >
-                            <Star className="h-5 w-5" aria-hidden />
-                          </button>
-                        ))}
-                      </div>
-                      <textarea
-                        name="comment"
-                        placeholder="Add a comment (optional)"
-                        rows={2}
-                        className="mx-auto w-full max-w-xs rounded-xl border border-cream-deep bg-white px-4 py-2 text-sm text-ink outline-none transition placeholder:text-muted focus:border-green-soft"
+                    <div className="mt-3">
+                      <RatingTipForm
+                        runnerName={runnerName}
+                        action={rateRunner.bind(null, task.id)}
                       />
-                      <input
-                        type="number"
-                        name="tip"
-                        step="0.01"
-                        min={0}
-                        placeholder="Optional tip (GHS)"
-                        className="mx-auto w-full max-w-xs rounded-xl border border-cream-deep bg-white px-4 py-2 text-sm text-ink outline-none transition placeholder:text-muted focus:border-green-soft"
-                      />
-                    </form>
+                    </div>
                   </>
                 ) : null}
               </div>

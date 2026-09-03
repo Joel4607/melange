@@ -41,4 +41,32 @@ describe("demo money", () => {
       new Error("postgres host secret detail"),
     )).toBe("The demo transaction could not be completed. Please try again.");
   });
+
+  it.each([
+    [null, 0],
+    ["", 0],
+    ["0", 0],
+    ["5", 500],
+    ["10.25", 1025],
+    ["1000.00", 100000],
+  ])("parses %p as %i pesewas", async (raw, expected) => {
+    const demoMoney = await loadDemoMoney() as {
+      parseDemoTip?: (value: FormDataEntryValue | null) => number;
+    };
+
+    expect(demoMoney.parseDemoTip?.(raw)).toBe(expected);
+  });
+
+  it.each(["-1", "1.001", "1000.01", "Infinity", "not-money"])(
+    "rejects invalid demo tip %s",
+    async (raw) => {
+      const demoMoney = await loadDemoMoney() as {
+        parseDemoTip?: (value: FormDataEntryValue | null) => number;
+      };
+
+      expect(() => demoMoney.parseDemoTip?.(raw)).toThrow(
+        "Enter a demo tip from GHS 0 to GHS 1,000 with no more than two decimal places.",
+      );
+    },
+  );
 });

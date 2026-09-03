@@ -29,10 +29,10 @@ import {
 import {
   cancelTaskWithRefund,
   hasLedgerEntry,
-  releaseFunds,
 } from "@/lib/server/escrow";
 import {
   demoMoneyError,
+  parseDemoTip,
   type DemoActionState,
 } from "@/lib/demo-money";
 import { resolveDispute } from "@/lib/server/disputes";
@@ -1027,28 +1027,33 @@ async function spawnNextRecurrence(
 
 /** Buyer rates the runner after delivery; releases escrow, records the review,
  * and transfers an optional tip from the buyer's wallet to the runner. */
-export async function rateRunner(taskId: string, stars: number, formData: FormData) {
+export async function rateRunner(
+  taskId: string,
+  _previousState: DemoActionState,
+  formData: FormData,
+): Promise<DemoActionState> {
+  const stars = Number(String(formData.get("stars") ?? ""));
   if (!Number.isInteger(stars) || stars < 1 || stars > 5) {
-    throw new Error("Rating must be an integer between 1 and 5 stars");
+    return { error: "Choose a rating from 1 to 5 stars." };
   }
   const comment = (formData.get("comment")?.toString().trim() ?? null) || null;
-  const tipRaw = parseNumber(formData.get("tip"));
-  const tipAmount = Number.isNaN(tipRaw) ? 0 : Math.max(0, tipRaw);
-  const tipCents = Math.round(tipAmount * 100);
-  if (tipAmount > 10000) {
-    throw new Error("Tip amount cannot exceed GHS 10,000");
+  let tipCents: number;
+  try {
+    tipCents = parseDemoTip(formData.get("tip"));
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : demoMoneyError(error),
+    };
   }
 
   const userId = await requireUserId();
   const task = await ownedTask(taskId, userId);
-  if (!task.selected_runner_id) return;
-  if (task.status !== "completed" && task.status !== "resolved") return;
+  if (!task.selected_runner_id) return { error: null };
+  if (task.status !== "completed" && task.status !== "resolved") {
+    return { error: null };
+  }
 
   const db = getServiceClient();
-
-  if (task.status === "completed") {
-    await releaseFunds(taskId);
-  }
 
   const { data: ratingId, error: rpcError } = await db.rpc("rate_and_tip", {
     p_task_id: taskId,
@@ -1060,11 +1065,15 @@ export async function rateRunner(taskId: string, stars: number, formData: FormDa
 
   if (rpcError) {
     const message = rpcError.message ?? String(rpcError);
-    if (message.toLowerCase().includes("already been rated")) return;
-    throw new Error(message);
+    if (message.toLowerCase().includes("already been rated")) {
+      return { error: null };
+    }
+    return { error: demoMoneyError(rpcError) };
   }
 
-  if (!ratingId) return;
+  if (!ratingId) {
+    return { error: "The demo transaction could not be completed. Please try again." };
+  }
 
   await db.from("trust_events").insert({
     runner_id: task.selected_runner_id,
@@ -1077,7 +1086,7 @@ export async function rateRunner(taskId: string, stars: number, formData: FormDa
     task_title: task.title,
   });
 
-  if (tipAmount > 0) {
+  if (tipCents > 0) {
     await createNotification(task.selected_runner_id, "tip_received", {
       task_id: taskId,
       task_title: task.title,
@@ -1085,6 +1094,7 @@ export async function rateRunner(taskId: string, stars: number, formData: FormDa
   }
 
   revalidatePath(`/app/errands/${taskId}`);
+  return { error: null };
 }
 
 const CHAT_ALLOWED_STATUSES = new Set([
