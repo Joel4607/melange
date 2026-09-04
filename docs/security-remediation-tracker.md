@@ -1,6 +1,6 @@
 # Security Remediation Tracker
 
-Updated: 2026-09-03
+Updated: 2026-09-04
 
 This document is the canonical tracker for the security audit. SEC-001 and
 SEC-002 retain their original identifiers. The remaining findings received
@@ -22,14 +22,14 @@ effort.
 | SEC-009 | The application rate limiter failed open when Redis was absent or unavailable | PostgreSQL now provides the authoritative atomic counter for every potentially allowed request; Redis remains an aligned early-rejection layer, and failures deny access instead of bypassing protection. |
 | SEC-010 | Production CSP permitted executable inline scripts, evaluation, and broad outbound connections | Every HTML request now receives a unique nonce-based script policy, a pinned hash covers Next.js's built-in error style, and browser connections/images are restricted to the configured Supabase and map origins. |
 | SEC-011 | Wallet and escrow balances were simulated and could be auto-credited | The prototype now grants one database-enforced GHS 1,000 demo allocation per account, removes arbitrary and automatic credits, preserves atomic simulated escrow/tips, and labels every balance as non-redeemable demo data. |
+| SEC-012 | Local Supabase defaults were unsafe if reused in a shared or exposed environment | The CLI stack is now started through a localhost-bound Docker network, its Auth and optional-service defaults are hardened, CI enforces the policy, and deployment guidance explicitly prohibits using the local stack outside one development computer. |
 
 ## Open SEC items
 
 | Order | ID | Finding | Risk / required outcome |
 | ---: | --- | --- | --- |
-| 1 | SEC-012 | Local Supabase defaults are unsafe if reused in a shared or exposed environment | Harden configuration before any non-local deployment of the bundled development stack. |
-| 2 | SEC-013 | Authenticated chat typing presence is broadcast broadly | Scope ephemeral presence events to the intended conversation participants. |
-| 3 | SEC-014 | Runner-filter URLs contain precise GPS coordinates | Reduce precision or move location criteria out of URLs where logs/history exposure is unacceptable. |
+| 1 | SEC-013 | Authenticated chat typing presence is broadcast broadly | Scope ephemeral presence events to the intended conversation participants. |
+| 2 | SEC-014 | Runner-filter URLs contain precise GPS coordinates | Reduce precision or move location criteria out of URLs where logs/history exposure is unacceptable. |
 
 ## Completed related audit remediations
 

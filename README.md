@@ -17,6 +17,31 @@ cp .env.example .env.local   # fill in your Supabase URL + anon key
 npm run dev                  # http://localhost:3000
 ```
 
+### Local Supabase safety
+
+The Supabase CLI stack is for development on this computer only. It uses
+development credentials and does not provide the TLS or edge rate limiting
+required for an exposed environment. Do not run `supabase start` directly and
+never publish its ports to a LAN or the internet.
+
+After installing project dependencies and starting Docker Desktop, use:
+
+```bash
+npm run supabase:start:local
+```
+
+This command validates `supabase/config.toml`, creates a dedicated Docker
+network whose published ports bind to `127.0.0.1`, and starts Supabase with that
+network using the repository-pinned Supabase CLI. `npm run
+supabase:check-local` runs the configuration policy without starting Docker.
+
+For hosted production, use a Supabase Platform project rather than the CLI
+stack. Before launch, enable database Network Restrictions and SSL enforcement,
+configure CAPTCHA and trusted custom SMTP, mirror the repository's password
+policy, protect the Supabase organization with MFA, and review Security Advisor.
+See Supabase's [production checklist](https://supabase.com/docs/guides/deployment/going-into-prod)
+and [local-development warning](https://supabase.com/docs/guides/local-development/cli-workflows).
+
 The home page shows a live **Supabase connection** status.
 
 ## Database & migrations
@@ -207,6 +232,8 @@ it from Git history.
 | `npm run lint`      | ESLint                   |
 | `npm test`          | Vitest (algorithm tests) |
 | `npm run typecheck` | TypeScript (no emit)     |
+| `npm run supabase:check-local` | Validate the localhost-only Supabase policy |
+| `npm run supabase:start:local` | Start Supabase with Docker ports bound to `127.0.0.1` |
 | `npx tsx scripts/evaluate-matching.ts --mode final` | Reproduce the locked matching evaluation |
 
 ## Deploy (Vercel)

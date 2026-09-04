@@ -148,10 +148,11 @@ export function SignupForm() {
           type="password"
           autoComplete="new-password"
           required
-          minLength={6}
+          minLength={12}
+          pattern="(?=.*[A-Za-z])(?=.*\d).{12,}"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          placeholder="At least 6 characters"
+          placeholder="At least 12 characters with a letter and a number"
         />
 
         {error ? (
