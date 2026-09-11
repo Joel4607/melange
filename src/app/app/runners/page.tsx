@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
@@ -9,6 +10,7 @@ import { Logo } from "@/components/brand";
 import { CATEGORIES } from "../post/post-form";
 import { RunnerFilters } from "./runner-filters";
 import { RunnerCard } from "./runner-card";
+import { parseRunnerLocation, runnerFilterParams, RUNNER_LOCATION_COOKIE } from "./runner-location";
 
 export const metadata: Metadata = {
   title: "Browse runners — Mélange",
@@ -40,6 +42,18 @@ export default async function RunnersPage({
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
+  // Old bookmarks must not keep propagating GPS into navigation and referrers.
+  if (params.lat !== undefined || params.lng !== undefined) {
+    const legacy = new URLSearchParams();
+    for (const [key, value] of Object.entries(params)) {
+      for (const item of Array.isArray(value) ? value : value === undefined ? [] : [value]) {
+        legacy.append(key, item);
+      }
+    }
+    const clean = runnerFilterParams(legacy.toString()).toString();
+    redirect(`/app/runners${clean ? `?${clean}` : ""}`);
+  }
+
   const db = getServiceClient();
 
   const category = typeof params.category === "string" ? params.category : undefined;
@@ -47,10 +61,9 @@ export default async function RunnersPage({
     typeof params.minTrust === "string" ? Number(params.minTrust) : Number.NaN;
   const minTrust = Number.isFinite(minTrustRaw) ? minTrustRaw : Number.NaN;
   const sort = typeof params.sort === "string" ? params.sort : "trust";
-  const latRaw = typeof params.lat === "string" ? Number(params.lat) : Number.NaN;
-  const lngRaw = typeof params.lng === "string" ? Number(params.lng) : Number.NaN;
-  const lat = Number.isFinite(latRaw) ? latRaw : Number.NaN;
-  const lng = Number.isFinite(lngRaw) ? lngRaw : Number.NaN;
+  const buyerLocation = parseRunnerLocation(
+    (await cookies()).get(RUNNER_LOCATION_COOKIE)?.value, user.id,
+  );
 
   let query = db
     .from("runner_profile")
@@ -98,9 +111,6 @@ export default async function RunnersPage({
     }
   }
 
-  const buyerHasLocation = !Number.isNaN(lat) && !Number.isNaN(lng);
-  const buyerLocation = buyerHasLocation ? { lat, lng } : null;
-
   const runners: RunnerListItem[] = (rows ?? []).map((r) => {
     const distanceKm =
       buyerLocation && r.current_lat != null && r.current_lng != null
@@ -147,7 +157,7 @@ export default async function RunnersPage({
 
         <RunnerFilters
           categories={CATEGORIES as unknown as string[]}
-          buyerLocation={buyerLocation}
+          hasLocation={buyerLocation !== null}
         />
 
         {runners.length === 0 ? (

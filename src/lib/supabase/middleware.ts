@@ -10,6 +10,15 @@ export async function updateSession(
   request: NextRequest,
   requestHeaders: Headers = new Headers(request.headers),
 ) {
+  // Clean legacy runner GPS URLs before auth can copy them into /login?next=.
+  if (request.nextUrl.pathname === "/app/runners"
+      && (request.nextUrl.searchParams.has("lat") || request.nextUrl.searchParams.has("lng"))) {
+    const clean = request.nextUrl.clone();
+    clean.searchParams.delete("lat");
+    clean.searchParams.delete("lng");
+    return NextResponse.redirect(clean);
+  }
+
   let response = NextResponse.next({ request: { headers: requestHeaders } });
 
   const supabase = createServerClient(

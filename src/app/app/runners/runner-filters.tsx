@@ -3,13 +3,15 @@
 import { useCallback, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { LoaderCircle, MapPin, Navigation } from "lucide-react";
+import { setRunnerSearchLocation } from "./location-actions";
+import { runnerFilterParams } from "./runner-location";
 
 export function RunnerFilters({
   categories,
-  buyerLocation,
+  hasLocation,
 }: {
   categories: string[];
-  buyerLocation: { lat: number; lng: number } | null;
+  hasLocation: boolean;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -19,7 +21,7 @@ export function RunnerFilters({
 
   const setParam = useCallback(
     (key: string, value: string | null) => {
-      const sp = new URLSearchParams(searchParams.toString());
+      const sp = runnerFilterParams(searchParams.toString());
       if (value) {
         sp.set(key, value);
       } else {
@@ -38,15 +40,20 @@ export function RunnerFilters({
     }
     setLocating(true);
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const sp = new URLSearchParams(searchParams.toString());
-        sp.set("lat", pos.coords.latitude.toFixed(6));
-        sp.set("lng", pos.coords.longitude.toFixed(6));
-        if (sp.get("sort") !== "distance") {
-          sp.set("sort", "distance");
+      async (pos) => {
+        try {
+          const result = await setRunnerSearchLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+          if (result.error) {
+            setLocError(result.error);
+            return;
+          }
+          setParam("sort", "distance");
+          router.refresh();
+        } catch {
+          setLocError("Couldn't save your location. Please try again.");
+        } finally {
+          setLocating(false);
         }
-        router.replace(`${pathname}?${sp.toString()}`, { scroll: false });
-        setLocating(false);
       },
       () => {
         setLocError("Couldn't get your location.");
@@ -56,11 +63,18 @@ export function RunnerFilters({
     );
   }
 
-  function clearLocation() {
-    const sp = new URLSearchParams(searchParams.toString());
-    sp.delete("lat");
-    sp.delete("lng");
-    router.replace(`${pathname}?${sp.toString()}`, { scroll: false });
+  async function clearLocation() {
+    setLocating(true);
+    setLocError(null);
+    try {
+      const result = await setRunnerSearchLocation(null);
+      if (result.error) setLocError(result.error);
+      else router.refresh();
+    } catch {
+      setLocError("Couldn't clear your location. Please try again.");
+    } finally {
+      setLocating(false);
+    }
   }
 
   const category = searchParams.get("category") ?? "";
@@ -112,10 +126,11 @@ export function RunnerFilters({
 
         <FilterField label="Your location">
           <div className="flex gap-2">
-            {buyerLocation ? (
+            {hasLocation ? (
               <button
                 type="button"
                 onClick={clearLocation}
+                disabled={locating}
                 className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-cream-deep bg-cream/40 px-3 py-2.5 text-sm font-medium text-green-deep transition hover:bg-white"
               >
                 <MapPin className="h-4 w-4" aria-hidden />
@@ -141,10 +156,10 @@ export function RunnerFilters({
         </FilterField>
       </div>
 
-      {buyerLocation ? (
+      {hasLocation ? (
         <p className="mt-3 flex items-center gap-1.5 text-sm text-green-soft">
           <MapPin className="h-4 w-4" aria-hidden />
-          Location set ({buyerLocation.lat.toFixed(5)}, {buyerLocation.lng.toFixed(5)})
+          Location set for nearby search (expires after 30 minutes).
         </p>
       ) : null}
     </div>

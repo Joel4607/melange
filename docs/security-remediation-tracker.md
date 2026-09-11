@@ -22,14 +22,14 @@ effort.
 | SEC-009 | The application rate limiter failed open when Redis was absent or unavailable | PostgreSQL now provides the authoritative atomic counter for every potentially allowed request; Redis remains an aligned early-rejection layer, and failures deny access instead of bypassing protection. |
 | SEC-010 | Production CSP permitted executable inline scripts, evaluation, and broad outbound connections | Every HTML request now receives a unique nonce-based script policy, a pinned hash covers Next.js's built-in error style, and browser connections/images are restricted to the configured Supabase and map origins. |
 | SEC-011 | Wallet and escrow balances were simulated and could be auto-credited | The prototype now grants one database-enforced GHS 1,000 demo allocation per account, removes arbitrary and automatic credits, preserves atomic simulated escrow/tips, and labels every balance as non-redeemable demo data. |
+| SEC-014 | Runner-filter URLs contained precise GPS coordinates | An authenticated server action stores search location in a 30-minute, HttpOnly, path-scoped, SameSite=Strict cookie (Secure in production). Filter URLs and legacy redirects strip GPS, including before login redirects. Unit and server-render tests, type-checking, and production build passed; deployed browser smoke-check remains pending. |
 
 ## Open SEC items
 
 | Order | ID | Finding | Risk / required outcome |
 | ---: | --- | --- | --- |
 | 1 | SEC-013 | Authenticated chat typing presence is broadcast broadly | Implemented and policy-tested; hosted migration 0050 and live Realtime verification are pending. |
-| 2 | SEC-014 | Runner-filter URLs contain precise GPS coordinates | Reduce precision or move location criteria out of URLs where logs/history exposure is unacceptable. |
-| 3 | SEC-012 | Local Supabase defaults were unsafe if reused in a shared or exposed environment | Auth/config hardening is committed, but live testing showed Docker Desktop ignored the network's localhost binding default. Full-stack isolation is unresolved; do not treat the launcher as verified safe. |
+| 2 | SEC-012 | Local Supabase defaults were unsafe if reused in a shared or exposed environment | Auth/config hardening is committed, but live testing showed Docker Desktop ignored the network's localhost binding default. Full-stack isolation is unresolved; do not treat the launcher as verified safe. |
 
 ### SEC-013 deployment and verification
 
@@ -40,6 +40,12 @@ effort.
 - Realtime caches authorization until reconnect or a new JWT. Removing a selected runner takes effect at the next authorization check, not instantly on an already-authorized socket. See [Supabase Realtime authorization](https://supabase.com/docs/guides/realtime/authorization).
 
 Docker is used only for disposable tests, not as a replacement for the app's hosted Supabase/Vercel stack. No global Docker port-binding preference has been changed. Isolated SQL tests can run without publishing container ports while the separate SEC-012 startup issue remains open.
+
+### SEC-014 privacy boundary
+
+The search cookie is an untrusted preference, never proof of identity or location. It is validated and bound to the current account to avoid accidental reuse after account switching; no account-database location is written. Coordinates still travel in the authenticated POST and scoped cookie, so infrastructure must not log sensitive bodies or cookie headers. This fix cannot erase old URLs from historical logs, bookmarks, or browser history, nor hide the initial request when someone opens an old GPS URL.
+
+After deployment, use and clear nearby search, confirm distance sorting still works, and verify filter/login navigation contains no `lat` or `lng`. SEC-014 requires no SQL migration.
 
 ## Completed related audit remediations
 
