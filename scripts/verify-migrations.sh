@@ -16,7 +16,8 @@ echo ">>> auth shim"
 
 for f in "$ROOT"/supabase/migrations/*.sql; do
   echo ">>> applying $(basename "$f")"
-  "${PSQL[@]}" -f "$f"
+  # Match Supabase's transaction-per-migration execution (including temp tables).
+  "${PSQL[@]}" --single-transaction -f "$f"
 done
 
 echo ">>> smoke test: signup trigger + RLS coverage"
@@ -30,7 +31,7 @@ declare
   n_rls      int;
   v_user_id  uuid;
 begin
-  select count(*), min(id) into n_profiles, v_user_id
+  select count(*), min(id::text)::uuid into n_profiles, v_user_id
   from public.profiles where name = 'Verify';
   if n_profiles <> 1 then
     raise exception 'signup trigger did not create profile (got %)', n_profiles;
@@ -899,5 +900,8 @@ end $$;
 
 drop table public.rate_limit_race_results;
 SQL
+
+echo ">>> smoke test: private chat typing authorization"
+"${PSQL[@]}" -f "$ROOT/scripts/tests/chat-typing-rls.sql"
 
 echo ">>> migrations OK"

@@ -114,13 +114,13 @@ export function TaskChat({
       .subscribe();
 
     const typingChannel = supabase
-      .channel(`typing:${taskId}`, { config: { broadcast: { self: false } } })
+      .channel(`typing:${taskId}`, { config: { private: true, broadcast: { self: false } } })
       .on(
         "broadcast",
         { event: "typing" },
         (payload) => {
-          const event = payload.payload as { user_id: string; is_typing: boolean };
-          if (event.user_id !== userId) {
+          const event = payload.payload;
+          if (typeof event?.is_typing === "boolean" && event.user_id !== userId) {
             setOtherTyping(event.is_typing);
           }
         },
@@ -132,6 +132,7 @@ export function TaskChat({
       void supabase.removeChannel(channel);
       void supabase.removeChannel(typingChannel);
       typingChannelRef.current = null;
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     };
   }, [taskId, userId]);
 

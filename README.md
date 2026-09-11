@@ -24,16 +24,16 @@ development credentials and does not provide the TLS or edge rate limiting
 required for an exposed environment. Do not run `supabase start` directly and
 never publish its ports to a LAN or the internet.
 
-After installing project dependencies and starting Docker Desktop, use:
+Docker is optional test infrastructure; it does not replace the hosted
+Supabase project or change the app's stack. Disposable SQL tests can run in
+a container with no published ports.
 
-```bash
-npm run supabase:start:local
-```
-
-This command validates `supabase/config.toml`, creates a dedicated Docker
-network whose published ports bind to `127.0.0.1`, and starts Supabase with that
-network using the repository-pinned Supabase CLI. `npm run
-supabase:check-local` runs the configuration policy without starting Docker.
+**Local full-stack startup is not yet verified safe (SEC-012).** The
+`supabase:start:local` launcher requests a localhost-bound Docker network,
+but live testing on this computer showed Docker Desktop publishing wildcard
+addresses despite that setting. Do not use the launcher until actual port
+isolation is fixed and verified. `npm run supabase:check-local` checks the
+configuration only; it does not prove runtime port isolation.
 
 For hosted production, use a Supabase Platform project rather than the CLI
 stack. Before launch, enable database Network Restrictions and SSL enforcement,
@@ -70,6 +70,16 @@ already created, RLS is enabled last once every table exists):
 | `0009_rls.sql` | `is_admin()` + Row-Level Security policies |
 | `0045_matching_reliability.sql` | atomic match finalization, active-run linkage, outcome telemetry |
 | `0049_demo_wallet_safety.sql` | fixed prototype allocation, atomic demo escrow/tips, restricted mutation RPCs |
+| `0050_private_chat_typing.sql` | participant-only authorization for private chat typing broadcasts |
+
+For SEC-013, run only `0050_private_chat_typing.sql` in the hosted SQL editor
+after preceding migrations are applied, then deploy the private-channel
+client and reload chat tabs. Verify buyer/selected-runner typing works and
+an unrelated account cannot join their private topic. Realtime authorization
+is cached until reconnect or a new JWT, so membership removal is not instant
+on existing sockets. See the [security tracker](docs/security-remediation-tracker.md)
+for verification status and limitations. The auth shim and fixture tests below
+are for disposable databases only, never the hosted project.
 
 **Verify migrations** (apply them to a throwaway Postgres + smoke-test the
 signup trigger and RLS) — this is exactly what CI runs:
@@ -233,7 +243,7 @@ it from Git history.
 | `npm test`          | Vitest (algorithm tests) |
 | `npm run typecheck` | TypeScript (no emit)     |
 | `npm run supabase:check-local` | Validate the localhost-only Supabase policy |
-| `npm run supabase:start:local` | Start Supabase with Docker ports bound to `127.0.0.1` |
+| `npm run supabase:start:local` | Local Supabase launcher; blocked pending verified port isolation (SEC-012) |
 | `npx tsx scripts/evaluate-matching.ts --mode final` | Reproduce the locked matching evaluation |
 
 ## Deploy (Vercel)

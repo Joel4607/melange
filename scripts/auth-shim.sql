@@ -34,3 +34,21 @@ stable
 as $$
   select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid;
 $$;
+
+-- Minimal Realtime authorization surface for the local/CI policy tests.
+-- This shim is never applied to a managed Supabase database.
+create schema if not exists realtime;
+create table if not exists realtime.messages (
+  topic text not null,
+  extension text not null,
+  event text,
+  payload jsonb,
+  private boolean default true
+);
+alter table realtime.messages enable row level security;
+grant usage on schema realtime to anon, authenticated;
+grant select, insert on realtime.messages to anon, authenticated;
+create or replace function realtime.topic()
+returns text language sql stable as $$
+  select nullif(current_setting('realtime.topic', true), '');
+$$;

@@ -1,6 +1,6 @@
 # Security Remediation Tracker
 
-Updated: 2026-09-04
+Updated: 2026-09-11
 
 This document is the canonical tracker for the security audit. SEC-001 and
 SEC-002 retain their original identifiers. The remaining findings received
@@ -22,14 +22,24 @@ effort.
 | SEC-009 | The application rate limiter failed open when Redis was absent or unavailable | PostgreSQL now provides the authoritative atomic counter for every potentially allowed request; Redis remains an aligned early-rejection layer, and failures deny access instead of bypassing protection. |
 | SEC-010 | Production CSP permitted executable inline scripts, evaluation, and broad outbound connections | Every HTML request now receives a unique nonce-based script policy, a pinned hash covers Next.js's built-in error style, and browser connections/images are restricted to the configured Supabase and map origins. |
 | SEC-011 | Wallet and escrow balances were simulated and could be auto-credited | The prototype now grants one database-enforced GHS 1,000 demo allocation per account, removes arbitrary and automatic credits, preserves atomic simulated escrow/tips, and labels every balance as non-redeemable demo data. |
-| SEC-012 | Local Supabase defaults were unsafe if reused in a shared or exposed environment | The CLI stack is now started through a localhost-bound Docker network, its Auth and optional-service defaults are hardened, CI enforces the policy, and deployment guidance explicitly prohibits using the local stack outside one development computer. |
 
 ## Open SEC items
 
 | Order | ID | Finding | Risk / required outcome |
 | ---: | --- | --- | --- |
-| 1 | SEC-013 | Authenticated chat typing presence is broadcast broadly | Scope ephemeral presence events to the intended conversation participants. |
+| 1 | SEC-013 | Authenticated chat typing presence is broadcast broadly | Implemented and policy-tested; hosted migration 0050 and live Realtime verification are pending. |
 | 2 | SEC-014 | Runner-filter URLs contain precise GPS coordinates | Reduce precision or move location criteria out of URLs where logs/history exposure is unacceptable. |
+| 3 | SEC-012 | Local Supabase defaults were unsafe if reused in a shared or exposed environment | Auth/config hardening is committed, but live testing showed Docker Desktop ignored the network's localhost binding default. Full-stack isolation is unresolved; do not treat the launcher as verified safe. |
+
+### SEC-013 deployment and verification
+
+- Run `supabase/migrations/0050_private_chat_typing.sql` in the hosted Supabase SQL editor. Do **not** run `scripts/auth-shim.sql` or the fixture tests on hosted Supabase.
+- The updated client joins a private typing channel. A restrictive Realtime RLS policy permits only the task buyer and selected runner, even when another policy grants broad access. Until the migration is applied, private typing should fail closed; persisted chat messages use their existing authorization.
+- Disposable PostgreSQL migration/policy tests passed, including outsider, unrelated-admin, anonymous, malformed-topic, and broad-policy bypass cases. Native local Supabase accepted the migration, but live WebSocket isolation has not yet been verified.
+- After deploying, reload old chat tabs and check typing between buyer and selected runner, then verify a third account cannot join their private topic. Public and private topics are separate; old public-only clients must be refreshed.
+- Realtime caches authorization until reconnect or a new JWT. Removing a selected runner takes effect at the next authorization check, not instantly on an already-authorized socket. See [Supabase Realtime authorization](https://supabase.com/docs/guides/realtime/authorization).
+
+Docker is used only for disposable tests, not as a replacement for the app's hosted Supabase/Vercel stack. No global Docker port-binding preference has been changed. Isolated SQL tests can run without publishing container ports while the separate SEC-012 startup issue remains open.
 
 ## Completed related audit remediations
 
