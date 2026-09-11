@@ -1389,6 +1389,38 @@ export async function updateCapabilities(formData: FormData) {
   revalidatePath("/app/settings");
 }
 
+/** Add non-redeemable prototype credits to the signed-in user's wallet only. */
+export async function topUpWallet(
+  _previousState: DemoActionState,
+  formData: FormData,
+): Promise<DemoActionState & { success?: string }> {
+  const userId = await requireUserId();
+  const raw = formData.get("amount");
+  const value = typeof raw === "string" ? raw.trim() : "";
+  if (!/^\d{1,10}(?:\.\d{1,2})?$/.test(value)) {
+    return { error: "Enter a positive demo amount with no more than two decimal places." };
+  }
+  const [whole, fraction = ""] = value.split(".");
+  const cents = Number(whole) * 100 + Number(fraction.padEnd(2, "0"));
+  if (cents <= 0 || cents > 999_999_999_999) {
+    return { error: "Enter a positive demo amount below GHS 10 billion." };
+  }
+  if (!(await withinRateLimit("demo-top-up", userId, 10, 60))) {
+    return { error: "Please wait a moment before adding more demo credits." };
+  }
+  try {
+    const { error } = await getServiceClient().rpc("top_up_wallet", {
+      p_user_id: userId, p_amount_cents: cents,
+    });
+    if (error) throw new Error("Demo top-up failed");
+  } catch {
+    return { error: "The demo top-up could not be completed. Please try again." };
+  }
+  revalidatePath("/app");
+  revalidatePath("/app/wallet");
+  return { error: null, success: "Demo credits added. No real money was charged." };
+}
+
 /** Mark all notifications read for the signed-in user. */
 export async function markAllNotificationsRead() {
   const userId = await requireUserId();

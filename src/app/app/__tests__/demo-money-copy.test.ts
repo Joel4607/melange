@@ -25,7 +25,6 @@ const monetarySources = [
 describe("SEC-011 demo-money copy", () => {
   it("removes obsolete real-payment language from monetary surfaces", () => {
     for (const content of monetarySources) {
-      expect(content).not.toMatch(/\bTop up\b/);
       expect(content).not.toContain("Mobile money reference");
       expect(content).not.toContain("Mobile money ref");
     }

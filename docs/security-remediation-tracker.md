@@ -21,19 +21,29 @@ effort.
 | SEC-008 | CI workflows used mutable third-party references and implicit token permissions | External actions and the PostgreSQL service image are pinned to immutable digests, while the workflow token is limited to read-only repository contents. |
 | SEC-009 | The application rate limiter failed open when Redis was absent or unavailable | PostgreSQL now provides the authoritative atomic counter for every potentially allowed request; Redis remains an aligned early-rejection layer, and failures deny access instead of bypassing protection. |
 | SEC-010 | Production CSP permitted executable inline scripts, evaluation, and broad outbound connections | Every HTML request now receives a unique nonce-based script policy, a pinned hash covers Next.js's built-in error style, and browser connections/images are restricted to the configured Supabase and map origins. |
-| SEC-011 | Wallet and escrow balances were simulated and could be auto-credited | The prototype now grants one database-enforced GHS 1,000 demo allocation per account, removes arbitrary and automatic credits, preserves atomic simulated escrow/tips, and labels every balance as non-redeemable demo data. |
 | SEC-014 | Runner-filter URLs contained precise GPS coordinates | An authenticated server action stores search location in a 30-minute, HttpOnly, path-scoped, SameSite=Strict cookie (Secure in production). Filter URLs and legacy redirects strip GPS, including before login redirects. Unit and server-render tests, type-checking, and production build passed; deployed browser smoke-check remains pending. |
 
 ## Open SEC items
 
 | Order | ID | Finding | Risk / required outcome |
 | ---: | --- | --- | --- |
-| 1 | SEC-013 | Authenticated chat typing presence is broadcast broadly | Implemented and policy-tested; hosted migration 0050 and live Realtime verification are pending. |
-| 2 | SEC-012 | Local Supabase defaults were unsafe if reused in a shared or exposed environment | Auth/config hardening is committed, but live testing showed Docker Desktop ignored the network's localhost binding default. Full-stack isolation is unresolved; do not treat the launcher as verified safe. |
+| 1 | SEC-013 | Authenticated chat typing presence is broadcast broadly | Implemented and policy-tested; user confirmed hosted migration 0050 returned success on 2026-09-11. Live Realtime verification remains pending. |
+| 2 | SEC-011 | Prototype wallet policy revised by user request | Restoration of simulated top-ups and automatic errand funding is implemented and database-tested. Hosted migration 0051 and deployed wallet smoke-check remain pending; this behavior is intentionally unsuitable for real money. |
+| 3 | SEC-012 | Local Supabase defaults were unsafe if reused in a shared or exposed environment | Auth/config hardening is committed, but live testing showed Docker Desktop ignored the network's localhost binding default. Full-stack isolation is unresolved; do not treat the launcher as verified safe. |
+
+### SEC-011 approved prototype wallet restoration
+
+On 2026-09-11, the user explicitly approved restoring simulated manual top-ups and automatic errand funding instead of the fixed GHS 1,000 signup allocation. Migration `0051_restore_simulated_wallet_funding.sql` provisions new wallets at zero and preserves all existing balances, open holds, and ledger rows. It does not recover history previously removed by 0049, and 0049 must not be rerun.
+
+The top-up action derives the wallet owner from the authenticated session, validates positive cent-precision amounts, rate-limits requests, and returns safe errors. Database mutations remain service-role-only. The shared hold function locks the task and wallet, adds only the shortfall, and records the hold atomically; existing direct, matched, self-claimed, and shared errand flows reuse it. Existing tip selection and atomic rating/payout/tip behavior are retained; tips still require enough available demo credits.
+
+Disposable PostgreSQL tests cover zero signup allocation, repeated top-ups, invalid amounts, RPC permissions, automatic funding with and without a shortfall, retry and concurrent funding, atomic rollback on overflow/failed tips, and unchanged existing data when 0051 is applied twice. The full migration smoke suite also passed for matching, sharing, rate limiting, Telegram token linking, and private typing RLS.
+
+Apply only 0051 in hosted Supabase, deploy the wallet UI, and confirm manual top-ups and an underfunded test errand work. Keep all balances explicitly non-redeemable. Real-money use requires replacing simulated credit issuance with verified payment-provider events; this exception is for the supervisor's prototype demonstration only.
 
 ### SEC-013 deployment and verification
 
-- Run `supabase/migrations/0050_private_chat_typing.sql` in the hosted Supabase SQL editor. Do **not** run `scripts/auth-shim.sql` or the fixture tests on hosted Supabase.
+- User reported that `supabase/migrations/0050_private_chat_typing.sql` returned success in hosted Supabase on 2026-09-11. This records migration execution, not independent verification of live channel access. Do **not** run `scripts/auth-shim.sql` or the fixture tests on hosted Supabase.
 - The updated client joins a private typing channel. A restrictive Realtime RLS policy permits only the task buyer and selected runner, even when another policy grants broad access. Until the migration is applied, private typing should fail closed; persisted chat messages use their existing authorization.
 - Disposable PostgreSQL migration/policy tests passed, including outsider, unrelated-admin, anonymous, malformed-topic, and broad-policy bypass cases. Native local Supabase accepted the migration, but live WebSocket isolation has not yet been verified.
 - After deploying, reload old chat tabs and check typing between buyer and selected runner, then verify a third account cannot join their private topic. Public and private topics are separate; old public-only clients must be refreshed.

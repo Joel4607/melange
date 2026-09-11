@@ -35,7 +35,7 @@ describe("dashboard experience", () => {
     );
   });
 
-  it("shows the buyer's fixed demo wallet without a top-up action", () => {
+  it("shows the buyer's demo wallet with a top-up link", () => {
     const html = renderToStaticMarkup(
       createElement(BuyerDashboard, {
         errands: [],
@@ -46,9 +46,9 @@ describe("dashboard experience", () => {
     const balanceCard = labelledSection(html, "Demo wallet balance");
     expect(balanceCard).toContain("Demo GHS 86.00");
     expect(balanceCard).toContain("Demo GHS 12.00 in escrow");
-    expect(balanceCard).not.toContain("Top up");
+    expect(balanceCard).toContain("Top up demo credits");
     expect(balanceCard).toContain("View demo wallet");
-    expect(balanceCard.match(/href="\/app\/wallet"/g)).toHaveLength(1);
+    expect(balanceCard).toContain('href="/app/wallet#top-up"');
     expect(html).not.toContain("**** **** **** 4242");
   });
 

@@ -17,7 +17,11 @@ echo ">>> auth shim"
 for f in "$ROOT"/supabase/migrations/*.sql; do
   echo ">>> applying $(basename "$f")"
   # Match Supabase's transaction-per-migration execution (including temp tables).
-  "${PSQL[@]}" --single-transaction -f "$f"
+  if [[ "$(basename "$f")" == "0051_restore_simulated_wallet_funding.sql" ]]; then
+    "${PSQL[@]}" -f "$ROOT/scripts/tests/demo-wallet-upgrade.sql"
+  else
+    "${PSQL[@]}" --single-transaction -f "$f"
+  fi
 done
 
 echo ">>> smoke test: signup trigger + RLS coverage"
@@ -37,16 +41,10 @@ begin
     raise exception 'signup trigger did not create profile (got %)', n_profiles;
   end if;
 
-  if (select balance from public.wallets where user_id = v_user_id) <> 1000
-     or (select held from public.wallets where user_id = v_user_id) <> 0
-     or (select count(*) from public.ledger_entries
-         where user_id = v_user_id and task_id is null
-           and type = 'topup' and amount = 1000) <> 1 then
-    raise exception 'signup did not receive exactly one fixed demo allocation';
-  end if;
-
-  if to_regprocedure('public.top_up_wallet(uuid,bigint)') is not null then
-    raise exception 'arbitrary top_up_wallet still exists';
+  if (select balance from public.wallets where user_id = v_user_id) is distinct from 0::numeric
+     or (select held from public.wallets where user_id = v_user_id) is distinct from 0::numeric
+     or exists (select 1 from public.ledger_entries where user_id = v_user_id) then
+    raise exception 'signup should create an empty demo wallet without a fixed allocation';
   end if;
 
   if has_function_privilege(
@@ -71,157 +69,39 @@ begin
 end $$;
 SQL
 
-echo ">>> smoke test: fixed demo-credit boundary"
+echo ">>> smoke test: restored simulated wallet funding"
+"${PSQL[@]}" -f "$ROOT/scripts/tests/demo-wallet-restoration.sql"
+
+echo ">>> smoke test: concurrent demo funding and top-ups"
 "${PSQL[@]}" <<'SQL'
-insert into auth.users (email, raw_user_meta_data)
-values
-  ('demo-buyer-verify@example.com', '{"name":"Demo Buyer Verify"}'::jsonb),
-  ('demo-runner-verify@example.com', '{"name":"Demo Runner Verify"}'::jsonb);
-
-do $$
-declare
-  v_buyer_id uuid;
-  v_runner_id uuid;
-  v_over_budget_task_id uuid;
-  v_direct_task_id uuid;
-  v_atomic_task_id uuid;
-  v_rating_id uuid;
-begin
-  select id into v_buyer_id
-  from public.profiles where name = 'Demo Buyer Verify';
-  select id into v_runner_id
-  from public.profiles where name = 'Demo Runner Verify';
-
-  if has_function_privilege(
-       'authenticated',
-       'public.create_and_hold_direct_demo_errand(uuid,uuid,text,text,text,urgency,numeric,numeric,double precision,double precision,double precision,double precision,jsonb,text,date)',
-       'EXECUTE'
-     ) or not has_function_privilege(
-       'service_role',
-       'public.create_and_hold_direct_demo_errand(uuid,uuid,text,text,text,urgency,numeric,numeric,double precision,double precision,double precision,double precision,jsonb,text,date)',
-       'EXECUTE'
-     ) then
-    raise exception 'direct demo errand grants are incorrect';
-  end if;
-
-  insert into public.tasks (
-    buyer_id, title, pickup_lat, pickup_lng, price, status
-  ) values (
-    v_buyer_id, 'Over-budget funding', 5.56, -0.20, 1001, 'matched'
-  ) returning id into v_over_budget_task_id;
-
-  begin
-    perform public.fund_and_hold_task(v_over_budget_task_id);
-    raise exception 'insufficient demo credits were accepted';
-  exception
-    when others then
-      if sqlerrm <> 'demo_wallet_insufficient_credits' then
-        raise;
-      end if;
-  end;
-
-  if (select balance from public.wallets where user_id = v_buyer_id) <> 1000
-     or (select held from public.wallets where user_id = v_buyer_id) <> 0
-     or exists (
-       select 1 from public.ledger_entries
-       where task_id = v_over_budget_task_id
-     ) then
-    raise exception 'failed funding changed demo wallet state';
-  end if;
-
-  begin
-    perform public.create_and_hold_direct_demo_errand(
-      v_buyer_id, v_runner_id, 'Rolled-back direct request', null, null,
-      'normal', 1001, 0, 5.56, -0.20, null, null, '[]'::jsonb,
-      'none', null
-    );
-    raise exception 'over-budget direct request was accepted';
-  exception
-    when others then
-      if sqlerrm <> 'demo_wallet_insufficient_credits' then
-        raise;
-      end if;
-  end;
-
-  if exists (
-    select 1 from public.tasks where title = 'Rolled-back direct request'
-  ) then
-    raise exception 'failed direct request was not rolled back';
-  end if;
-
-  select public.create_and_hold_direct_demo_errand(
-    v_buyer_id, v_runner_id, 'Atomic rating and tip', null, 'delivery',
-    'normal', 100, 10, 5.56, -0.20, null, null, '[]'::jsonb,
-    'none', null
-  ) into v_direct_task_id;
-
-  if (select balance from public.wallets where user_id = v_buyer_id) <> 900
-     or (select held from public.wallets where user_id = v_buyer_id) <> 100
-     or (select payment_reference from public.tasks where id = v_direct_task_id)
-       not like 'DEMO-%'
-     or not exists (
-       select 1 from public.ledger_entries
-       where task_id = v_direct_task_id and type = 'hold' and amount = 100
-     ) then
-    raise exception 'direct request and hold were not atomic';
-  end if;
-
-  update public.tasks set status = 'completed' where id = v_direct_task_id;
-  select public.rate_and_tip(
-    v_direct_task_id, v_buyer_id, 5::smallint, 'Excellent', 2500
-  ) into v_rating_id;
-
-  if v_rating_id is null
-     or (select balance from public.wallets where user_id = v_buyer_id) <> 875
-     or (select held from public.wallets where user_id = v_buyer_id) <> 0
-     or (select balance from public.wallets where user_id = v_runner_id) <> 1115
-     or not exists (
-       select 1 from public.ledger_entries
-       where task_id = v_direct_task_id and type = 'release'
-     )
-     or not exists (
-       select 1 from public.ledger_entries
-       where task_id = v_direct_task_id and type = 'payout' and amount = 90
-     )
-     or not exists (
-       select 1 from public.ledger_entries
-       where task_id = v_direct_task_id and type = 'tip' and amount = 25
-     ) then
-    raise exception 'release, rating and tip did not commit together';
-  end if;
-
-  select public.create_and_hold_direct_demo_errand(
-    v_buyer_id, v_runner_id, 'Rejected atomic tip', null, 'delivery',
-    'normal', 100, 10, 5.56, -0.20, null, null, '[]'::jsonb,
-    'none', null
-  ) into v_atomic_task_id;
-  update public.tasks set status = 'completed' where id = v_atomic_task_id;
-
-  begin
-    perform public.rate_and_tip(
-      v_atomic_task_id, v_buyer_id, 5::smallint, null, 100000
-    );
-    raise exception 'unaffordable demo tip was accepted';
-  exception
-    when others then
-      if sqlerrm <> 'demo_wallet_insufficient_credits' then
-        raise;
-      end if;
-  end;
-
-  if (select balance from public.wallets where user_id = v_buyer_id) <> 775
-     or (select held from public.wallets where user_id = v_buyer_id) <> 100
-     or exists (
-       select 1 from public.ratings where task_id = v_atomic_task_id
-     )
-     or exists (
-       select 1 from public.ledger_entries
-       where task_id = v_atomic_task_id
-         and type in ('release', 'payout', 'tip', 'tip_charge')
-     ) then
-    raise exception 'failed rating/tip left partial financial state';
+insert into auth.users (id, email, raw_user_meta_data)
+values ('52000000-0000-0000-0000-000000000001', 'wallet-race@example.test', '{}');
+insert into public.tasks (id, buyer_id, title, pickup_lat, pickup_lng, price, status)
+values ('52000000-0000-0000-0000-000000000010', '52000000-0000-0000-0000-000000000001',
+  'Concurrent demo funding', 0, 0, 100, 'matched');
+SQL
+wallet_workers=()
+for attempt in 1 2; do
+  "${PSQL[@]}" -c "begin;
+    select public.fund_and_hold_task('52000000-0000-0000-0000-000000000010');
+    select pg_sleep(0.3);
+    select public.top_up_wallet('52000000-0000-0000-0000-000000000001', 5000);
+    commit;" &
+  wallet_workers+=("$!")
+done
+for worker in "${wallet_workers[@]}"; do wait "$worker"; done
+"${PSQL[@]}" <<'SQL'
+do $$ begin
+  if (select balance from public.wallets where user_id = '52000000-0000-0000-0000-000000000001') <> 100
+     or (select held from public.wallets where user_id = '52000000-0000-0000-0000-000000000001') <> 100
+     or (select count(*) from public.ledger_entries where task_id = '52000000-0000-0000-0000-000000000010' and type = 'hold') <> 1
+     or (select count(*) from public.ledger_entries where task_id = '52000000-0000-0000-0000-000000000010' and type = 'topup' and amount = 100) <> 1
+     or (select count(*) from public.ledger_entries where user_id = '52000000-0000-0000-0000-000000000001' and task_id is null and type = 'topup' and amount = 50) <> 2 then
+    raise exception 'Concurrent funding duplicated a hold/shortfall or lost a top-up';
   end if;
 end $$;
+delete from public.tasks where id = '52000000-0000-0000-0000-000000000010';
+delete from auth.users where id = '52000000-0000-0000-0000-000000000001';
 SQL
 
 echo ">>> smoke test: atomic matching finalization"
@@ -243,6 +123,8 @@ declare
 begin
   select id into v_buyer_id from public.profiles where name = 'Verify';
   select id into v_runner_id from public.profiles where name = 'Runner Verify';
+  -- Explicit fixture top-up: these assertions cover spending an existing balance.
+  perform public.top_up_wallet(v_buyer_id, 100000);
 
   if to_regprocedure(
     'public.finalize_match_run(uuid,text,text,text,jsonb,jsonb,uuid)'

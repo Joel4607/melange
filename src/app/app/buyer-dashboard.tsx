@@ -102,7 +102,11 @@ function WalletBalanceCard({
       </p>
       <p className="mt-1 text-xs text-muted">{held} in escrow</p>
 
-      <div className="mt-4">
+      <div className="mt-4 flex flex-wrap gap-2">
+        <Link href="/app/wallet#top-up"
+          className="inline-flex min-h-11 items-center justify-center rounded-xl border border-green px-3 py-2.5 text-sm font-semibold text-green-deep transition hover:bg-cream focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green">
+          Top up demo credits
+        </Link>
         <Link
           href="/app/wallet"
           className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-green px-3 py-2.5 text-sm font-semibold text-cream transition hover:bg-green-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green"

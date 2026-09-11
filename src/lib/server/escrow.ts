@@ -30,7 +30,8 @@ export async function hasLedgerEntry(
 
 /**
  * Move a task's price from the buyer's available balance into escrow (`held`),
- * recording a `hold` ledger entry. Throws if the buyer has insufficient funds.
+ * recording a `hold` ledger entry. Prototype funding atomically adds only any
+ * missing demo credits first; repeated holds do not create more credits.
  */
 export async function holdFunds(taskId: string): Promise<void> {
   const db = getServiceClient();

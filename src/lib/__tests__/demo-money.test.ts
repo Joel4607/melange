@@ -14,7 +14,6 @@ describe("demo money", () => {
     const demoMoney = await loadDemoMoney();
 
     expect(demoMoney).toMatchObject({
-      DEMO_CREDIT_ALLOCATION: 1000,
       DEMO_CURRENCY_LABEL: "Demo GHS",
     });
     expect(

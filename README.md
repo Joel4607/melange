@@ -71,6 +71,7 @@ already created, RLS is enabled last once every table exists):
 | `0045_matching_reliability.sql` | atomic match finalization, active-run linkage, outcome telemetry |
 | `0049_demo_wallet_safety.sql` | fixed prototype allocation, atomic demo escrow/tips, restricted mutation RPCs |
 | `0050_private_chat_typing.sql` | participant-only authorization for private chat typing broadcasts |
+| `0051_restore_simulated_wallet_funding.sql` | restore prototype top-ups and automatic shortfall funding without resetting existing balances/history |
 
 For SEC-013, run only `0050_private_chat_typing.sql` in the hosted SQL editor
 after preceding migrations are applied, then deploy the private-channel
@@ -193,14 +194,25 @@ dispute resolutions:
 
 ### Prototype money boundary
 
-Mélange does not accept or transfer real money. Each account receives one
-database-enforced, non-redeemable allocation of Demo GHS 1,000. The app cannot
-top up that allocation or automatically cover a shortfall; an unaffordable
-errand or tip fails without leaving partial task, escrow, or rating state.
+Mélange does not accept or transfer real money. New accounts start with an empty
+demo wallet. Signed-in users can add simulated credits to their own wallet;
+the server validates amounts and rate-limits top-ups. Funding an errand
+automatically credits only the missing amount and holds it in the same database
+transaction. Repeated funding cannot duplicate a hold or automatic credit.
+Existing balances and ledger history are preserved. Tips remain selected by the
+buyer and must be affordable; add demo credits first if needed. Failed funding
+or tipping rolls back its task/escrow/rating changes together.
 Demo holds, releases, refunds, payouts, and tips remain only to demonstrate the
 product workflow. Before any balance becomes redeemable, these functions must
 be replaced with an authoritative payment ledger driven by verified payment
 provider events.
+
+To restore this behavior on an existing hosted project, run only
+`supabase/migrations/0051_restore_simulated_wallet_funding.sql` in the Supabase
+SQL editor after migrations 0049 and 0050, then deploy the updated app. Do not
+rerun 0049: its historical reset would erase settled prototype history. Until
+0051 is applied, restored top-ups fail safely and automatic funding remains
+disabled. Never apply the test fixtures or auth shim to hosted Supabase.
 
 Seed a fresh end-to-end scenario (users → task → match → hold → proof → dispute
 → release) against your project:

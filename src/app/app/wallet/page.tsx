@@ -7,13 +7,14 @@ import { Logo } from "@/components/brand";
 import { LedgerRow } from "@/lib/server/rows";
 import { DEMO_MONEY_NOTICE, formatDemoMoney } from "@/lib/demo-money";
 import { RealtimeStatus } from "../realtime-status";
+import { TopUpForm } from "./top-up-form";
 
 export const metadata: Metadata = {
   title: "Demo wallet — Mélange",
 };
 
 const LABELS: Record<string, string> = {
-  topup: "Initial demo credits",
+  topup: "Demo credits added",
   hold: "Demo credits held in escrow",
   release: "Demo escrow released",
   payout: "Demo payout",
@@ -87,8 +88,9 @@ export default async function WalletPage() {
             </div>
           </div>
           <p className="mt-6 rounded-xl bg-orange/10 px-4 py-3 text-sm text-orange-deep">
-            {DEMO_MONEY_NOTICE} Each account receives one fixed Demo GHS 1,000.00 allocation.
+            {DEMO_MONEY_NOTICE} Add demo credits here; errand funding automatically covers any shortfall.
           </p>
+          <TopUpForm />
         </div>
 
         <section className="mt-8">
